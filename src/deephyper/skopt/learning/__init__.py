@@ -12,10 +12,3 @@ __all__ = [
     "GradientBoostingQuantileRegressor",
     "GaussianProcessRegressor",
 ]
-
-try:
-    from skgarden.mondrian import MondrianForestRegressor  # noqa: F401
-
-    __all__.append("MondrianForestRegressor")
-except ImportError:
-    pass

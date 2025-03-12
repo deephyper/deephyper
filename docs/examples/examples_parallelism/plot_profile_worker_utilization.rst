@@ -23,70 +23,122 @@ Profile the Worker Utilization
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates the advantages of parallel evaluations over serial
-evaluations. We start by defining an artificial black-box ``run``-function by
-using the Ackley function:
+In this example, you will learn how to profile the activity of workers during a 
+search. 
+
+We start by defining an artificial black-box ``run``-function by using the Ackley function:
 
 .. image:: https://www.sfu.ca/~ssurjano/ackley.png
   :width: 400
   :alt: Ackley Function in 2D
 
-We will use the ``time.sleep`` function to simulate a budget of 2 secondes of
-execution in average which helps illustrate the advantage of parallel
-evaluations. The ``@profile`` decorator is useful to collect starting/ending
-time of the ``run``-function execution which help us know exactly when we are
-inside the black-box. This decorator is necessary when profiling the worker
-utilization. When using this decorator, the ``run``-function will return a
-dictionnary with 2 new keys ``"timestamp_start"`` and ``"timestamp_end"``.
-The ``run``-function is defined in a separate module because of
-the "multiprocessing" backend that we are using in this example.
+.. GENERATED FROM PYTHON SOURCE LINES 17-33
 
-.. literalinclude:: ../../examples/black_box_util.py
-   :language: python
-   :emphasize-lines: 19-28
-   :linenos:
+.. dropdown:: Code (Import statements)
 
-After defining the black-box we can continue with the definition of our main script:
+    .. code-block:: Python
 
-.. GENERATED FROM PYTHON SOURCE LINES 32-45
+
+        import time
+
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        from deephyper.analysis import figure_size
+        from deephyper.analysis.hpo import (
+            plot_search_trajectory_single_objective_hpo,
+            plot_worker_utilization,
+        )
+        from deephyper.evaluator import Evaluator, profile
+        from deephyper.evaluator.callback import TqdmCallback
+        from deephyper.hpo import CBO, HpProblem
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 34-35
+
+We define the Ackley function:
+
+.. GENERATED FROM PYTHON SOURCE LINES 35-46
+
+.. dropdown:: Code (Ackley function)
+
+    .. code-block:: Python
+
+
+        def ackley(x, a=20, b=0.2, c=2 * np.pi):
+            d = len(x)
+            s1 = np.sum(x**2)
+            s2 = np.sum(np.cos(c * x))
+            term1 = -a * np.exp(-b * np.sqrt(s1 / d))
+            term2 = -np.exp(s2 / d)
+            y = term1 + term2 + a + np.exp(1)
+            return y
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 47-53
+
+We will use the ``time.sleep`` function to simulate a budget of 2 secondes of execution in average 
+which helps illustrate the advantage of parallel evaluations. The ``@profile`` decorator is useful 
+to collect starting/ending time of the ``run``-function execution which help us know exactly when 
+we are inside the black-box. This decorator is necessary when profiling the worker utilization. When 
+using this decorator, the ``run``-function will return a dictionnary with 2 new keys ``"timestamp_start"`` 
+and ``"timestamp_end"``.
+
+.. GENERATED FROM PYTHON SOURCE LINES 53-66
 
 .. code-block:: Python
 
 
-    import black_box_util as black_box
-    import matplotlib.pyplot as plt
+    @profile
+    def run_ackley(config, sleep_loc=2, sleep_scale=0.5):
+        # to simulate the computation of an expensive black-box
+        if sleep_loc > 0:
+            t_sleep = np.random.normal(loc=sleep_loc, scale=sleep_scale)
+            t_sleep = max(t_sleep, 0)
+            time.sleep(t_sleep)
 
-    from deephyper.analysis import figure_size
-    from deephyper.analysis.hpo import (
-        plot_search_trajectory_single_objective_hpo,
-        plot_worker_utilization,
-    )
-    from deephyper.evaluator import Evaluator
-    from deephyper.evaluator.callback import TqdmCallback
-    from deephyper.hpo import CBO, HpProblem
-
-
+        x = np.array([config[k] for k in config if "x" in k])
+        x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
+        return -ackley(x)  # maximisation is performed
 
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 46-49
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 67-70
 
 Then we define the variable(s) we want to optimize. For this problem we
 optimize Ackley in a 2-dimensional search space, the true minimul is
 located at ``(0, 0)``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-57
+.. GENERATED FROM PYTHON SOURCE LINES 70-82
 
 .. code-block:: Python
 
 
-    nb_dim = 2
-    problem = HpProblem()
-    for i in range(nb_dim):
-        problem.add_hyperparameter((-32.768, 32.768), f"x{i}")
+    def create_problem(nb_dim=2):
+        nb_dim = 2
+        problem = HpProblem()
+        for i in range(nb_dim):
+            problem.add_hyperparameter((-32.768, 32.768), f"x{i}")
+        return problem
+
+    problem = create_problem()
     problem
 
 
@@ -107,34 +159,41 @@ located at ``(0, 0)``.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 58-59
+.. GENERATED FROM PYTHON SOURCE LINES 83-86
 
 Then we define a parallel search.
+ As the ``run``-function is defined in the same module  we use the "loky" backend 
+that serialize by value.
 
-.. GENERATED FROM PYTHON SOURCE LINES 59-80
+.. GENERATED FROM PYTHON SOURCE LINES 86-112
 
 .. code-block:: Python
 
-
-    if __name__ == "__main__":
-        timeout = 20
-        num_workers = 4
-        results = {}
+    def execute_search(timeout, num_workers):
 
         evaluator = Evaluator.create(
-            black_box.run_ackley,
-            method="process",
+            run_ackley,
+            method="loky",
             method_kwargs={
                 "num_workers": num_workers,
                 "callbacks": [TqdmCallback()],
             },
         )
+
         search = CBO(
             problem,
             evaluator,
             random_state=42,
         )
+
         results = search.search(timeout=timeout)
+
+        return results
+
+    if __name__ == "__main__":
+        timeout = 20
+        num_workers = 4
+        results = execute_search(timeout, num_workers)
 
 
 
@@ -144,255 +203,43 @@ Then we define a parallel search.
 
  .. code-block:: none
 
+    0it [00:00, ?it/s]    1it [00:00, 4505.16it/s, failures=0, objective=-21.5]    2it [00:00, 12.79it/s, failures=0, objective=-21.5]      2it [00:00, 12.79it/s, failures=0, objective=-19.8]    3it [00:00, 12.79it/s, failures=0, objective=-19.8]    4it [00:00,  9.29it/s, failures=0, objective=-19.8]    4it [00:00,  9.29it/s, failures=0, objective=-19.8]    5it [00:01,  2.22it/s, failures=0, objective=-19.8]    5it [00:01,  2.22it/s, failures=0, objective=-15.4]    6it [00:02,  1.80it/s, failures=0, objective=-15.4]    6it [00:02,  1.80it/s, failures=0, objective=-15.4]    7it [00:02,  2.27it/s, failures=0, objective=-15.4]    7it [00:02,  2.27it/s, failures=0, objective=-15.4]    8it [00:02,  2.27it/s, failures=0, objective=-15.4]    9it [00:04,  1.75it/s, failures=0, objective=-15.4]    9it [00:04,  1.75it/s, failures=0, objective=-15.4]    10it [00:04,  1.89it/s, failures=0, objective=-15.4]    10it [00:04,  1.89it/s, failures=0, objective=-15.4]    11it [00:04,  2.29it/s, failures=0, objective=-15.4]    11it [00:04,  2.29it/s, failures=0, objective=-15.4]    12it [00:05,  2.08it/s, failures=0, objective=-15.4]    12it [00:05,  2.08it/s, failures=0, objective=-12.6]    13it [00:06,  1.73it/s, failures=0, objective=-12.6]    13it [00:06,  1.73it/s, failures=0, objective=-12.6]    14it [00:06,  1.90it/s, failures=0, objective=-12.6]    14it [00:06,  1.90it/s, failures=0, objective=-12.6]    15it [00:07,  1.78it/s, failures=0, objective=-12.6]    15it [00:07,  1.78it/s, failures=0, objective=-12.6]    16it [00:08,  1.33it/s, failures=0, objective=-12.6]    16it [00:08,  1.33it/s, failures=0, objective=-12.6]    17it [00:08,  1.47it/s, failures=0, objective=-12.6]    17it [00:08,  1.47it/s, failures=0, objective=-6.37]    18it [00:09,  1.92it/s, failures=0, objective=-6.37]    18it [00:09,  1.92it/s, failures=0, objective=-6.37]    19it [00:09,  1.84it/s, failures=0, objective=-6.37]    19it [00:09,  1.84it/s, failures=0, objective=-6.37]    20it [00:10,  1.56it/s, failures=0, objective=-6.37]    20it [00:10,  1.56it/s, failures=0, objective=-6.37]    21it [00:10,  2.02it/s, failures=0, objective=-6.37]    21it [00:10,  2.02it/s, failures=0, objective=-6.37]    22it [00:11,  2.16it/s, failures=0, objective=-6.37]    22it [00:11,  2.16it/s, failures=0, objective=-6.37]    23it [00:11,  1.85it/s, failures=0, objective=-6.37]    23it [00:11,  1.85it/s, failures=0, objective=-6.37]    24it [00:12,  1.48it/s, failures=0, objective=-6.37]    24it [00:12,  1.48it/s, failures=0, objective=-6.37]    25it [00:12,  1.80it/s, failures=0, objective=-6.37]    25it [00:12,  1.80it/s, failures=0, objective=-6.37]    26it [00:13,  2.34it/s, failures=0, objective=-6.37]    26it [00:13,  2.34it/s, failures=0, objective=-6.37]    27it [00:14,  1.43it/s, failures=0, objective=-6.37]    27it [00:14,  1.43it/s, failures=0, objective=-6.37]    28it [00:14,  1.85it/s, failures=0, objective=-6.37]    28it [00:14,  1.85it/s, failures=0, objective=-6.37]    29it [00:14,  2.45it/s, failures=0, objective=-6.37]    29it [00:14,  2.45it/s, failures=0, objective=-6.37]    30it [00:15,  1.62it/s, failures=0, objective=-6.37]    30it [00:15,  1.62it/s, failures=0, objective=-6.37]    31it [00:16,  1.59it/s, failures=0, objective=-6.37]    31it [00:16,  1.59it/s, failures=0, objective=-6.37]    32it [00:16,  1.86it/s, failures=0, objective=-6.37]    32it [00:16,  1.86it/s, failures=0, objective=-6.37]    33it [00:16,  2.39it/s, failures=0, objective=-6.37]    33it [00:16,  2.39it/s, failures=0, objective=-6.37]    34it [00:17,  2.46it/s, failures=0, objective=-6.37]    34it [00:17,  2.46it/s, failures=0, objective=-6.37]    35it [00:19,  1.02it/s, failures=0, objective=-6.37]    35it [00:19,  1.02it/s, failures=0, objective=-6.37]    36it [00:19,  1.02it/s, failures=0, objective=-6.37]    37it [00:19,  1.02it/s, failures=0, objective=-6.37]
 
 
 
-    0it [00:00, ?it/s]
-
-
-    1it [00:00, 2763.05it/s, failures=0, objective=-19.8]
-
-
-    2it [00:00, 11.22it/s, failures=0, objective=-19.8]  
-
-
-    2it [00:00, 11.22it/s, failures=0, objective=-19.8]
-
-
-    3it [00:00, 11.22it/s, failures=0, objective=-19.8]
-
-
-    4it [00:01,  3.48it/s, failures=0, objective=-19.8]
-
-
-    4it [00:01,  3.48it/s, failures=0, objective=-19.8]
-
-
-    5it [00:01,  3.23it/s, failures=0, objective=-19.8]
-
-
-    5it [00:01,  3.23it/s, failures=0, objective=-15.4]
-
-
-    6it [00:01,  3.23it/s, failures=0, objective=-15.4]
-
-
-    7it [00:01,  3.71it/s, failures=0, objective=-15.4]
-
-
-    7it [00:01,  3.71it/s, failures=0, objective=-15.4]
-
-
-    8it [00:02,  2.07it/s, failures=0, objective=-15.4]
-
-
-    8it [00:02,  2.07it/s, failures=0, objective=-15.4]
-
-
-    9it [00:03,  2.25it/s, failures=0, objective=-15.4]
-
-
-    9it [00:03,  2.25it/s, failures=0, objective=-15.4]
-
-
-    10it [00:03,  2.60it/s, failures=0, objective=-15.4]
-
-
-    10it [00:03,  2.60it/s, failures=0, objective=-12.6]
-
-
-    11it [00:03,  2.58it/s, failures=0, objective=-12.6]
-
-
-    11it [00:03,  2.58it/s, failures=0, objective=-12.6]
-
-
-    12it [00:04,  1.76it/s, failures=0, objective=-12.6]
-
-
-    12it [00:04,  1.76it/s, failures=0, objective=-12.6]
-
-
-    13it [00:05,  2.16it/s, failures=0, objective=-12.6]
-
-
-    13it [00:05,  2.16it/s, failures=0, objective=-12.6]
-
-
-    14it [00:06,  1.72it/s, failures=0, objective=-12.6]
-
-
-    14it [00:06,  1.72it/s, failures=0, objective=-12.6]
-
-
-    15it [00:06,  1.57it/s, failures=0, objective=-12.6]
-
-
-    15it [00:06,  1.57it/s, failures=0, objective=-12.6]
-
-
-    16it [00:07,  1.68it/s, failures=0, objective=-12.6]
-
-
-    16it [00:07,  1.68it/s, failures=0, objective=-12.6]
-
-
-    17it [00:08,  1.47it/s, failures=0, objective=-12.6]
-
-
-    17it [00:08,  1.47it/s, failures=0, objective=-12.6]
-
-
-    18it [00:08,  1.69it/s, failures=0, objective=-12.6]
-
-
-    18it [00:08,  1.69it/s, failures=0, objective=-12.6]
-
-
-    19it [00:09,  1.63it/s, failures=0, objective=-12.6]
-
-
-    19it [00:09,  1.63it/s, failures=0, objective=-12.6]
-
-
-    20it [00:09,  2.07it/s, failures=0, objective=-12.6]
-
-
-    20it [00:09,  2.07it/s, failures=0, objective=-12.6]
-
-
-    21it [00:09,  2.30it/s, failures=0, objective=-12.6]
-
-
-    21it [00:09,  2.30it/s, failures=0, objective=-12.6]
-
-
-    22it [00:10,  1.68it/s, failures=0, objective=-12.6]
-
-
-    22it [00:10,  1.68it/s, failures=0, objective=-12.6]
-
-
-    23it [00:12,  1.21it/s, failures=0, objective=-12.6]
-
-
-    23it [00:12,  1.21it/s, failures=0, objective=-12.6]
-
-
-    24it [00:12,  1.62it/s, failures=0, objective=-12.6]
-
-
-    24it [00:12,  1.62it/s, failures=0, objective=-12.6]
-
-
-    25it [00:12,  1.62it/s, failures=0, objective=-12.6]
-
-
-    26it [00:12,  2.27it/s, failures=0, objective=-12.6]
-
-
-    26it [00:12,  2.27it/s, failures=0, objective=-12.6]
-
-
-    27it [00:13,  1.62it/s, failures=0, objective=-12.6]
-
-
-    27it [00:13,  1.62it/s, failures=0, objective=-12.6]
-
-
-    28it [00:14,  1.66it/s, failures=0, objective=-12.6]
-
-
-    28it [00:14,  1.66it/s, failures=0, objective=-12.6]
-
-
-    29it [00:14,  2.07it/s, failures=0, objective=-12.6]
-
-
-    29it [00:14,  2.07it/s, failures=0, objective=-12.6]
-
-
-    30it [00:14,  2.31it/s, failures=0, objective=-12.6]
-
-
-    30it [00:14,  2.31it/s, failures=0, objective=-12.6]
-
-
-    31it [00:15,  1.68it/s, failures=0, objective=-12.6]
-
-
-    31it [00:15,  1.68it/s, failures=0, objective=-12.6]
-
-
-    32it [00:16,  1.79it/s, failures=0, objective=-12.6]
-
-
-    32it [00:16,  1.79it/s, failures=0, objective=-12.6]
-
-
-    33it [00:16,  2.24it/s, failures=0, objective=-12.6]
-
-
-    33it [00:16,  2.24it/s, failures=0, objective=-12.6]
-
-
-    34it [00:16,  2.89it/s, failures=0, objective=-12.6]
-
-
-    34it [00:16,  2.89it/s, failures=0, objective=-12.6]
-
-
-    35it [00:18,  1.28it/s, failures=0, objective=-12.6]
-
-
-    35it [00:18,  1.28it/s, failures=0, objective=-12.6]
-
-
-    36it [00:18,  1.51it/s, failures=0, objective=-12.6]
-
-
-    36it [00:18,  1.51it/s, failures=0, objective=-12.6]
-
-
-    37it [00:18,  1.51it/s, failures=0, objective=-12.6]
-
-
-    38it [00:18,  1.51it/s, failures=0, objective=-12.6]
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 81-82
+.. GENERATED FROM PYTHON SOURCE LINES 113-114
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-106
+.. GENERATED FROM PYTHON SOURCE LINES 114-138
 
-.. code-block:: Python
+.. dropdown:: Code (Plot search trajectory an workers utilization)
+
+    .. code-block:: Python
 
 
-    if __name__ == "__main__":
-        t0 = results["m:timestamp_start"].iloc[0]
-        results["m:timestamp_start"] = results["m:timestamp_start"] - t0
-        results["m:timestamp_end"] = results["m:timestamp_end"] - t0
-        tmax = results["m:timestamp_end"].max()
+        if __name__ == "__main__":
+            t0 = results["m:timestamp_start"].iloc[0]
+            results["m:timestamp_start"] = results["m:timestamp_start"] - t0
+            results["m:timestamp_end"] = results["m:timestamp_end"] - t0
+            tmax = results["m:timestamp_end"].max()
 
-        fig, axes = plt.subplots(
-            nrows=2,
-            ncols=1,
-            sharex=True,
-            figsize=figure_size(width=600),
-        )
+            fig, axes = plt.subplots(
+                nrows=2,
+                ncols=1,
+                sharex=True,
+                figsize=figure_size(width=600),
+                tight_layout=True,
+            )
 
-        plot_search_trajectory_single_objective_hpo(
-            results, mode="min", x_units="seconds", ax=axes[0]
-        )
+            plot_search_trajectory_single_objective_hpo(
+                results, mode="min", x_units="seconds", ax=axes[0],
+            )
 
-        plot_worker_utilization(
-            results, num_workers=num_workers, profile_type="start/end", ax=axes[1]
-        )
-
-        plt.tight_layout()
-        plt.show()
+            plot_worker_utilization(
+                results, num_workers=num_workers, profile_type="start/end", ax=axes[1],
+            )
+            plt.show()
 
 
 
@@ -402,13 +249,20 @@ Finally, we plot the results from the collected DataFrame.
    :class: sphx-glr-single-img
 
 
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    /Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_parallelism/plot_profile_worker_utilization.py:137: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+      plt.show()
+
 
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 23.647 seconds)
+   **Total running time of the script:** (0 minutes 24.738 seconds)
 
 
 .. _sphx_glr_download_examples_examples_parallelism_plot_profile_worker_utilization.py:

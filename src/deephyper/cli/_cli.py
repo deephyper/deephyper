@@ -1,4 +1,5 @@
-"""DeepHyper command line interface.
+"""Command line interface.
+=======================
 
 It can be used in the shell with:
 
@@ -6,21 +7,21 @@ It can be used in the shell with:
 
     $ deephyper --help
 
-    usage: deephyper [-h] {hps} ...
+    usage: deephyper [-h] {hpo} ...
 
     DeepHyper command line.
 
     positional arguments:
-    {hps}
-        hps                 Command line to run hyperparameter search.
+    {hpo}
+        hpo                 Command line to run hyperparameter optimization.
 
     optional arguments:
     -h, --help            show this help message and exit
-"""
+"""  # noqa: D205
 
 import argparse
 
-from deephyper.core.cli import _hpo
+from . import _hpo
 
 
 def create_parser():

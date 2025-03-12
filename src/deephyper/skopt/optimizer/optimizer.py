@@ -10,7 +10,7 @@ from sklearn.base import clone, is_regressor
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.utils import check_random_state
 
-from deephyper.core.utils.joblib_utils import Parallel, delayed
+from deephyper.skopt.joblib import Parallel, delayed
 
 from ..acquisition import _gaussian_acquisition, gaussian_acquisition_1D
 from ..learning import GaussianProcessRegressor
@@ -174,7 +174,7 @@ class Optimizer(object):
             Keeps list of models only as long as the argument given. In the
             case of None, the list has no capped length.
 
-        model_sdv (Model or None, optional): Default None
+        custom_sampler (Model or None, optional): Default None
             A Model from Synthetic-Data-Vault.
 
         moo_scalarization_strategy (string, optional): Default is `"Chebyshev"`
@@ -219,7 +219,7 @@ class Optimizer(object):
         model_queue_size=None,
         acq_func_kwargs=None,
         acq_optimizer_kwargs=None,
-        model_sdv=None,
+        custom_sampler=None,
         sample_max_size=-1,
         sample_strategy="quantile",
         moo_upper_bounds=None,
@@ -369,13 +369,13 @@ class Optimizer(object):
         self.acq_optimizer_kwargs = acq_optimizer_kwargs
 
         # keep track of the generative model from sdv
-        self.model_sdv = model_sdv
+        self.custom_sampler = custom_sampler
 
         if isinstance(dimensions, Space):
             self.space = dimensions
-            self.space.model_sdv = self.model_sdv
+            self.space.custom_sampler = self.custom_sampler
         elif isinstance(dimensions, (list, tuple)):
-            self.space = Space(dimensions, model_sdv=self.model_sdv)
+            self.space = Space(dimensions, custom_sampler=self.custom_sampler)
         else:
             raise ValueError("Dimensions should be a list or an instance of Space.")
 
@@ -384,10 +384,7 @@ class Optimizer(object):
         self.space.set_transformer(transformer)
 
         # normalize space if GP regressor
-        if (
-            isinstance(self.base_estimator_, GaussianProcessRegressor)
-            or type(self.base_estimator_).__name__ == "MondrianForestRegressor"
-        ):
+        if isinstance(self.base_estimator_, GaussianProcessRegressor):
             self.space.dimensions = normalize_dimensions(self.space.dimensions)
 
         if self.space.config_space:
@@ -499,7 +496,7 @@ class Optimizer(object):
             acq_func_kwargs=self.acq_func_kwargs,
             acq_optimizer_kwargs=self.acq_optimizer_kwargs,
             random_state=random_state,
-            model_sdv=self.model_sdv,
+            custom_sampler=self.custom_sampler,
             sample_max_size=self._sample_max_size,
             sample_strategy=self._sample_strategy,
             moo_upper_bounds=self._moo_upper_bounds,

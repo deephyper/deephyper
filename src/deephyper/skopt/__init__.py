@@ -111,7 +111,6 @@ else:
         "callbacks",
         "learning",
         "optimizer",
-        "plots",
         "sampler",
         "space",
         "gp_minimize",

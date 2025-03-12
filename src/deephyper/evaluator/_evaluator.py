@@ -9,14 +9,14 @@ import os
 import sys
 import time
 import warnings
-from typing import Dict, List, Hashable
+from typing import Dict, Hashable, List
 
 import numpy as np
-from deephyper.evaluator._job import Job, HPOJob, JobStatus
+
+from deephyper.evaluator._job import HPOJob, Job, JobStatus
+from deephyper.evaluator.storage import MemoryStorage, Storage
+from deephyper.evaluator.utils import test_ipython_interpretor
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
-from deephyper.evaluator.storage import Storage, MemoryStorage
-from deephyper.core.exceptions import MaximumJobsSpawnReached
-from deephyper.core.warnings import deprecated_api
 
 EVALUATORS = {
     "mpicomm": "_mpi_comm.MPICommEvaluator",
@@ -28,30 +28,8 @@ EVALUATORS = {
 }
 
 
-def _test_ipython_interpretor() -> bool:
-    """Test if the current Python interpretor is IPython or not.
-
-    Suggested by
-    https://stackoverflow.com/questions/15411967/
-    how-can-i-check-if-code-is-executed-in-the-ipython-notebook
-    """
-    # names of shells/modules using jupyter
-    notebooks_shells = ["ZMQInteractiveShell"]
-    notebooks_modules = ["google.colab._shell"]
-
-    try:
-        shell_name = get_ipython().__class__.__name__  # type: ignore
-        shell_module = get_ipython().__class__.__module__  # type: ignore
-
-        if shell_name in notebooks_shells or shell_module in notebooks_modules:
-            return True  # Jupyter notebook or qtconsole
-        elif shell_name == "TerminalInteractiveShell":
-            return False  # Terminal running IPython
-        else:
-            return False  # Other type (?)
-
-    except NameError:
-        return False  # Probably standard Python interpreter
+class MaximumJobsSpawnReached(RuntimeError):
+    """Raised when the maximum number of jobs spawned by the evaluator is reached."""
 
 
 class Evaluator(abc.ABC):
@@ -146,7 +124,7 @@ class Evaluator(abc.ABC):
                 )
 
         # to avoid "RuntimeError: This event loop is already running"
-        if not (Evaluator.NEST_ASYNCIO_PATCHED) and _test_ipython_interpretor():
+        if not (Evaluator.NEST_ASYNCIO_PATCHED) and test_ipython_interpretor():
             warnings.warn("Applying nest-asyncio patch for IPython Shell!", category=UserWarning)
             import deephyper.evaluator._nest_asyncio as nest_asyncio
 
@@ -452,7 +430,6 @@ class Evaluator(abc.ABC):
         other_results = []
         if len(job_id_not_gathered) > 0:
             jobs_data = self._storage.load_jobs(job_id_not_gathered)
-            print(f"{jobs_data}")
 
             for job_id in job_id_not_gathered:
                 job_data = jobs_data[job_id]
@@ -731,13 +708,6 @@ class Evaluator(abc.ABC):
 
                     writer.writerows(resultsList)
                     self.jobs_done = []
-
-    def dump_evals(self, log_dir: str = ".", filename="results.csv", flush: bool = False):
-        deprecated_api(
-            "The ``Evaluator.dump_evals(...)`` method is deprecated and will be removed. The "
-            "``Evaluator.dump_jobs_done_to_csv(...)`` method should be used instead."
-        )
-        self.dump_jobs_done_to_csv(log_dir, filename, flush)
 
     @property
     def is_master(self):

@@ -23,54 +23,108 @@ From Sequential to Massively-Parallel Bayesian Optimization
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates the advantages of parallel evaluations over sequential
-evaluations with Bayesian optimization. We start by defining a black-box ``run``-function that 
-implements the Ackley function:
+In this example you will learn about the advantages of parallel over sequential
+evaluations with Bayesian optimization. 
+
+We start by defining a black-box ``run``-function that implements the Ackley function:
 
 .. image:: https://www.sfu.ca/~ssurjano/ackley.png
   :width: 400
   :alt: Ackley Function in 2D
 
-To help illustrate the parallelization gain, we will simulate a computational cost
-by using ``time.sleep``. We also use the ``@profile`` decorator to collect starting/ending
-times of each call to the ``run``-function. When using this decorator, the ``run``-function will
-return a dictionnary including ``"metadata"`` with 2 new keys ``"timestamp_start"`` and
-``"timestamp_end"``. The ``run``-function is defined in a separate Python module
-for better serialization (through ``pickle``) in case other parallel backends such as ``"process"`` would be used
+.. GENERATED FROM PYTHON SOURCE LINES 18-32
 
-.. literalinclude:: ../../examples/black_box_util.py
-   :language: python
+.. dropdown:: Code (Import statements)
 
-After defining the ``run``-function we can continue with the definition of our optimization script:
+    .. code-block:: Python
 
-.. GENERATED FROM PYTHON SOURCE LINES 29-39
+
+        import time
+
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        from deephyper.analysis import figure_size
+        from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
+        from deephyper.analysis.hpo import plot_worker_utilization
+        from deephyper.evaluator import Evaluator, profile
+        from deephyper.evaluator.callback import TqdmCallback
+        from deephyper.hpo import HpProblem, CBO, RandomSearch
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 33-34
+
+We define the Ackley function:
+
+.. GENERATED FROM PYTHON SOURCE LINES 34-45
+
+.. dropdown:: Code (Ackley function)
+
+    .. code-block:: Python
+
+
+        def ackley(x, a=20, b=0.2, c=2 * np.pi):
+            d = len(x)
+            s1 = np.sum(x**2)
+            s2 = np.sum(np.cos(c * x))
+            term1 = -a * np.exp(-b * np.sqrt(s1 / d))
+            term2 = -np.exp(s2 / d)
+            y = term1 + term2 + a + np.exp(1)
+            return y
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 46-52
+
+We will use the ``time.sleep`` function to simulate a budget of 2 secondes of execution in average 
+which helps illustrate the advantage of parallel evaluations. The ``@profile`` decorator is useful 
+to collect starting/ending time of the ``run``-function execution which help us know exactly when 
+we are inside the black-box. This decorator is necessary when profiling the worker utilization. When 
+using this decorator, the ``run``-function will return a dictionnary with 2 new keys ``"timestamp_start"`` 
+and ``"timestamp_end"``.
+
+.. GENERATED FROM PYTHON SOURCE LINES 52-65
 
 .. code-block:: Python
 
-    import black_box_util as black_box
-    import matplotlib.pyplot as plt
 
-    from deephyper.analysis import figure_size
-    from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
-    from deephyper.analysis.hpo import plot_worker_utilization
-    from deephyper.evaluator import Evaluator
-    from deephyper.evaluator.callback import TqdmCallback
-    from deephyper.hpo import HpProblem, CBO, RandomSearch
+    @profile
+    def run_ackley(config, sleep_loc=2, sleep_scale=0.5):
+        # to simulate the computation of an expensive black-box
+        if sleep_loc > 0:
+            t_sleep = np.random.normal(loc=sleep_loc, scale=sleep_scale)
+            t_sleep = max(t_sleep, 0)
+            time.sleep(t_sleep)
 
-
-
-
-
+        x = np.array([config[k] for k in config if "x" in k])
+        x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
+        return -ackley(x)  # maximisation is performed
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-43
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 66-69
 
 Then, we define the variable(s) we want to optimize. For this problem we
 optimize Ackley in a N-dimensional search space. Each dimension in the continuous range
 [-32.768, 32.768]. The true minimum is located at ``(0, ..., 0)``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 43-50
+.. GENERATED FROM PYTHON SOURCE LINES 69-76
 
 .. code-block:: Python
 
@@ -101,11 +155,11 @@ optimize Ackley in a N-dimensional search space. Each dimension in the continuou
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 51-52
+.. GENERATED FROM PYTHON SOURCE LINES 77-78
 
 Then, we define some default search parameters for the Centralized Bayesian Optimization (CBO) algorithm.
 
-.. GENERATED FROM PYTHON SOURCE LINES 52-72
+.. GENERATED FROM PYTHON SOURCE LINES 78-98
 
 .. code-block:: Python
 
@@ -136,12 +190,12 @@ Then, we define some default search parameters for the Centralized Bayesian Opti
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-75
+.. GENERATED FROM PYTHON SOURCE LINES 99-101
 
 Then, we define the time budget for the optimization. We will compare the performance of a sequential
 search with a parallel search for the same time budget. The time budget is defined in seconds.
 
-.. GENERATED FROM PYTHON SOURCE LINES 75-77
+.. GENERATED FROM PYTHON SOURCE LINES 101-103
 
 .. code-block:: Python
 
@@ -154,15 +208,15 @@ search with a parallel search for the same time budget. The time budget is defin
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 78-79
+.. GENERATED FROM PYTHON SOURCE LINES 104-105
 
 Then, we define the sequential Bayesian optimization search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 79-81
+.. GENERATED FROM PYTHON SOURCE LINES 105-107
 
 .. code-block:: Python
 
-    sequential_search = CBO(problem, black_box.run_ackley, **search_kwargs)
+    sequential_search = CBO(problem, run_ackley, **search_kwargs)
 
 
 
@@ -171,20 +225,20 @@ Then, we define the sequential Bayesian optimization search.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 82-83
+.. GENERATED FROM PYTHON SOURCE LINES 108-109
 
 The previously simplified definition of the search is equivalent to the following:
 
-.. GENERATED FROM PYTHON SOURCE LINES 83-93
+.. GENERATED FROM PYTHON SOURCE LINES 109-119
 
 .. code-block:: Python
 
     sequential_evaluator = Evaluator.create(
-        black_box.run_ackley,
+        run_ackley,
         method="thread",  # For synchronous function defintion relying on the GIL or I/O bound tasks
         method_kwargs={
             "num_workers": 1, 
-            "callbacks": [TqdmCallback()]
+            "callbacks": [TqdmCallback("Sequential BO:")]
         },
     )
     sequential_search = CBO(problem, sequential_evaluator, **search_kwargs)
@@ -196,7 +250,30 @@ The previously simplified definition of the search is equivalent to the followin
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 94-101
+.. GENERATED FROM PYTHON SOURCE LINES 120-121
+
+We define a utility function to preprocess our results before plotting.
+
+.. GENERATED FROM PYTHON SOURCE LINES 121-129
+
+.. code-block:: Python
+
+
+    def preprocess_results(results):
+        results = results.dropna().copy()
+        offset = results["m:timestamp_start"].min()
+        results["m:timestamp_start"] -= offset
+        results["m:timestamp_end"] -= offset
+        return results
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 130-137
 
 Where we use the ``"thread"``-evaluator with a single worker and use the ``TqdmCallback`` to display
 a progress bar during the search. 
@@ -206,16 +283,15 @@ DataFrame with the results of the search.
 
 If this step is executed multiple times without creating a new search the results will be accumulated in the same DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 101-107
+.. GENERATED FROM PYTHON SOURCE LINES 137-142
 
 .. code-block:: Python
 
+
     results = {}
-    results["sequential"] = sequential_search.search(timeout=timeout)
-    offset = results["sequential"]["m:timestamp_start"].min()
-    results["sequential"]["m:timestamp_end"] -= offset
-    results["sequential"]["m:timestamp_start"] -= offset
+    results["sequential"] = preprocess_results(sequential_search.search(timeout=timeout))
     results["sequential"]
+
 
 
 
@@ -224,181 +300,7 @@ If this step is executed multiple times without creating a new search the result
 
  .. code-block:: none
 
-
-
-
-    0it [00:00, ?it/s]
-
-
-    1it [00:00, 5178.15it/s, failures=0, objective=-21.1]
-
-
-    2it [00:00,  2.21it/s, failures=0, objective=-21.1]  
-
-
-    2it [00:00,  2.21it/s, failures=0, objective=-21.1]
-
-
-    3it [00:03,  1.24s/it, failures=0, objective=-21.1]
-
-
-    3it [00:03,  1.24s/it, failures=0, objective=-20.6]
-
-
-    4it [00:05,  1.60s/it, failures=0, objective=-20.6]
-
-
-    4it [00:05,  1.60s/it, failures=0, objective=-20.6]
-
-
-    5it [00:07,  1.80s/it, failures=0, objective=-20.6]
-
-
-    5it [00:07,  1.80s/it, failures=0, objective=-20.1]
-
-
-    6it [00:09,  1.79s/it, failures=0, objective=-20.1]
-
-
-    6it [00:09,  1.79s/it, failures=0, objective=-20.1]
-
-
-    7it [00:11,  1.91s/it, failures=0, objective=-20.1]
-
-
-    7it [00:11,  1.91s/it, failures=0, objective=-20.1]
-
-
-    8it [00:14,  2.15s/it, failures=0, objective=-20.1]
-
-
-    8it [00:14,  2.15s/it, failures=0, objective=-20.1]
-
-
-    9it [00:16,  2.25s/it, failures=0, objective=-20.1]
-
-
-    9it [00:16,  2.25s/it, failures=0, objective=-20.1]
-
-
-    10it [00:17,  1.88s/it, failures=0, objective=-20.1]
-
-
-    10it [00:17,  1.88s/it, failures=0, objective=-20.1]
-
-
-    11it [00:19,  1.83s/it, failures=0, objective=-20.1]
-
-
-    11it [00:19,  1.83s/it, failures=0, objective=-20.1]
-
-
-    12it [00:21,  1.82s/it, failures=0, objective=-20.1]
-
-
-    12it [00:21,  1.82s/it, failures=0, objective=-20.1]
-
-
-    13it [00:23,  1.88s/it, failures=0, objective=-20.1]
-
-
-    13it [00:23,  1.88s/it, failures=0, objective=-20.1]
-
-
-    14it [00:25,  1.90s/it, failures=0, objective=-20.1]
-
-
-    14it [00:25,  1.90s/it, failures=0, objective=-20.1]
-
-
-    15it [00:27,  1.97s/it, failures=0, objective=-20.1]
-
-
-    15it [00:27,  1.97s/it, failures=0, objective=-20.1]
-
-
-    16it [00:29,  1.95s/it, failures=0, objective=-20.1]
-
-
-    16it [00:29,  1.95s/it, failures=0, objective=-20.1]
-
-
-    17it [00:32,  2.30s/it, failures=0, objective=-20.1]
-
-
-    17it [00:32,  2.30s/it, failures=0, objective=-20.1]
-
-
-    18it [00:34,  2.21s/it, failures=0, objective=-20.1]
-
-
-    18it [00:34,  2.21s/it, failures=0, objective=-20.1]
-
-
-    19it [00:36,  2.28s/it, failures=0, objective=-20.1]
-
-
-    19it [00:36,  2.28s/it, failures=0, objective=-20.1]
-
-
-    20it [00:38,  2.11s/it, failures=0, objective=-20.1]
-
-
-    20it [00:38,  2.11s/it, failures=0, objective=-20.1]
-
-
-    21it [00:40,  2.06s/it, failures=0, objective=-20.1]
-
-
-    21it [00:40,  2.06s/it, failures=0, objective=-20.1]
-
-
-    22it [00:42,  1.93s/it, failures=0, objective=-20.1]
-
-
-    22it [00:42,  1.93s/it, failures=0, objective=-20.1]
-
-
-    23it [00:45,  2.25s/it, failures=0, objective=-20.1]
-
-
-    23it [00:45,  2.25s/it, failures=0, objective=-19.8]
-
-
-    24it [00:47,  2.26s/it, failures=0, objective=-19.8]
-
-
-    24it [00:47,  2.26s/it, failures=0, objective=-19.8]
-
-
-    25it [00:50,  2.43s/it, failures=0, objective=-19.8]
-
-
-    25it [00:50,  2.43s/it, failures=0, objective=-19.8]
-
-
-    26it [00:51,  2.20s/it, failures=0, objective=-19.8]
-
-
-    26it [00:51,  2.20s/it, failures=0, objective=-19.3]
-
-
-    27it [00:53,  2.13s/it, failures=0, objective=-19.3]
-
-
-    27it [00:53,  2.13s/it, failures=0, objective=-19.3]
-
-
-    28it [00:55,  2.11s/it, failures=0, objective=-19.3]
-
-
-    28it [00:55,  2.11s/it, failures=0, objective=-19.3]
-
-
-    29it [00:58,  2.32s/it, failures=0, objective=-19.3]
-
-
-    29it [00:58,  2.32s/it, failures=0, objective=-19.3]
+    0it [00:00, ?it/s]    Sequential BO:: : 0it [00:00, ?it/s]    Sequential BO:: : 1it [00:00, 3865.72it/s, failures=0, objective=-21.1]    Sequential BO:: : 2it [00:01,  1.68it/s, failures=0, objective=-21.1]      Sequential BO:: : 2it [00:01,  1.68it/s, failures=0, objective=-21.1]    Sequential BO:: : 3it [00:03,  1.43s/it, failures=0, objective=-21.1]    Sequential BO:: : 3it [00:03,  1.43s/it, failures=0, objective=-20.6]    Sequential BO:: : 4it [00:06,  2.02s/it, failures=0, objective=-20.6]    Sequential BO:: : 4it [00:06,  2.02s/it, failures=0, objective=-20.6]    Sequential BO:: : 5it [00:09,  2.16s/it, failures=0, objective=-20.6]    Sequential BO:: : 5it [00:09,  2.16s/it, failures=0, objective=-20.1]    Sequential BO:: : 6it [00:11,  2.06s/it, failures=0, objective=-20.1]    Sequential BO:: : 6it [00:11,  2.06s/it, failures=0, objective=-20.1]    Sequential BO:: : 7it [00:12,  1.95s/it, failures=0, objective=-20.1]    Sequential BO:: : 7it [00:12,  1.95s/it, failures=0, objective=-20.1]    Sequential BO:: : 8it [00:15,  2.13s/it, failures=0, objective=-20.1]    Sequential BO:: : 8it [00:15,  2.13s/it, failures=0, objective=-20.1]    Sequential BO:: : 9it [00:16,  1.95s/it, failures=0, objective=-20.1]    Sequential BO:: : 9it [00:16,  1.95s/it, failures=0, objective=-20.1]    Sequential BO:: : 10it [00:18,  1.81s/it, failures=0, objective=-20.1]    Sequential BO:: : 10it [00:18,  1.81s/it, failures=0, objective=-20.1]    Sequential BO:: : 11it [00:21,  2.23s/it, failures=0, objective=-20.1]    Sequential BO:: : 11it [00:21,  2.23s/it, failures=0, objective=-20.1]    Sequential BO:: : 12it [00:23,  2.12s/it, failures=0, objective=-20.1]    Sequential BO:: : 12it [00:23,  2.12s/it, failures=0, objective=-20.1]    Sequential BO:: : 13it [00:25,  2.09s/it, failures=0, objective=-20.1]    Sequential BO:: : 13it [00:25,  2.09s/it, failures=0, objective=-20.1]    Sequential BO:: : 14it [00:27,  2.03s/it, failures=0, objective=-20.1]    Sequential BO:: : 14it [00:27,  2.03s/it, failures=0, objective=-20.1]    Sequential BO:: : 15it [00:29,  2.06s/it, failures=0, objective=-20.1]    Sequential BO:: : 15it [00:29,  2.06s/it, failures=0, objective=-20.1]    Sequential BO:: : 16it [00:31,  2.01s/it, failures=0, objective=-20.1]    Sequential BO:: : 16it [00:31,  2.01s/it, failures=0, objective=-20.1]    Sequential BO:: : 17it [00:34,  2.33s/it, failures=0, objective=-20.1]    Sequential BO:: : 17it [00:34,  2.33s/it, failures=0, objective=-20.1]    Sequential BO:: : 18it [00:36,  2.23s/it, failures=0, objective=-20.1]    Sequential BO:: : 18it [00:36,  2.23s/it, failures=0, objective=-20.1]    Sequential BO:: : 19it [00:38,  2.29s/it, failures=0, objective=-20.1]    Sequential BO:: : 19it [00:38,  2.29s/it, failures=0, objective=-20.1]    Sequential BO:: : 20it [00:40,  2.11s/it, failures=0, objective=-20.1]    Sequential BO:: : 20it [00:40,  2.11s/it, failures=0, objective=-20.1]    Sequential BO:: : 21it [00:42,  2.06s/it, failures=0, objective=-20.1]    Sequential BO:: : 21it [00:42,  2.06s/it, failures=0, objective=-20.1]    Sequential BO:: : 22it [00:44,  1.93s/it, failures=0, objective=-20.1]    Sequential BO:: : 22it [00:44,  1.93s/it, failures=0, objective=-20.1]    Sequential BO:: : 23it [00:47,  2.24s/it, failures=0, objective=-20.1]    Sequential BO:: : 23it [00:47,  2.24s/it, failures=0, objective=-19.8]    Sequential BO:: : 24it [00:49,  2.26s/it, failures=0, objective=-19.8]    Sequential BO:: : 24it [00:49,  2.26s/it, failures=0, objective=-19.8]    Sequential BO:: : 25it [00:52,  2.42s/it, failures=0, objective=-19.8]    Sequential BO:: : 25it [00:52,  2.42s/it, failures=0, objective=-19.8]    Sequential BO:: : 26it [00:53,  2.21s/it, failures=0, objective=-19.8]    Sequential BO:: : 26it [00:53,  2.21s/it, failures=0, objective=-19.3]    Sequential BO:: : 27it [00:55,  2.10s/it, failures=0, objective=-19.3]    Sequential BO:: : 27it [00:55,  2.10s/it, failures=0, objective=-19.3]    Sequential BO:: : 28it [00:57,  2.08s/it, failures=0, objective=-19.3]    Sequential BO:: : 28it [00:57,  2.08s/it, failures=0, objective=-19.3]    Sequential BO:: : 29it [01:00,  2.29s/it, failures=0, objective=-19.3]    Sequential BO:: : 29it [01:00,  2.29s/it, failures=0, objective=-19.3]
 
 .. raw:: html
 
@@ -446,10 +348,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.121996</td>
           <td>0</td>
           <td>DONE</td>
-          <td>0.008663</td>
+          <td>0.007932</td>
           <td>0.000000</td>
-          <td>2.195805</td>
-          <td>2.205323</td>
+          <td>1.649276</td>
+          <td>1.658893</td>
         </tr>
         <tr>
           <th>1</th>
@@ -461,10 +363,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.582693</td>
           <td>1</td>
           <td>DONE</td>
-          <td>2.229982</td>
-          <td>2.221432</td>
-          <td>3.102889</td>
-          <td>3.113489</td>
+          <td>1.688659</td>
+          <td>1.680842</td>
+          <td>2.863647</td>
+          <td>2.873554</td>
         </tr>
         <tr>
           <th>2</th>
@@ -476,10 +378,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.554624</td>
           <td>2</td>
           <td>DONE</td>
-          <td>3.135905</td>
-          <td>3.127370</td>
-          <td>5.440093</td>
-          <td>5.449542</td>
+          <td>2.885132</td>
+          <td>2.877263</td>
+          <td>5.465937</td>
+          <td>5.475179</td>
         </tr>
         <tr>
           <th>3</th>
@@ -491,10 +393,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.689044</td>
           <td>3</td>
           <td>DONE</td>
-          <td>5.472081</td>
-          <td>5.463583</td>
-          <td>7.655735</td>
-          <td>7.665310</td>
+          <td>5.487670</td>
+          <td>5.479809</td>
+          <td>8.469722</td>
+          <td>8.478934</td>
         </tr>
         <tr>
           <th>4</th>
@@ -506,10 +408,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.122708</td>
           <td>4</td>
           <td>DONE</td>
-          <td>7.688654</td>
-          <td>7.680056</td>
-          <td>9.822211</td>
-          <td>9.832082</td>
+          <td>8.491221</td>
+          <td>8.483336</td>
+          <td>10.882570</td>
+          <td>10.891833</td>
         </tr>
         <tr>
           <th>5</th>
@@ -521,10 +423,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.233767</td>
           <td>5</td>
           <td>DONE</td>
-          <td>9.857438</td>
-          <td>9.848885</td>
-          <td>11.600720</td>
-          <td>11.610216</td>
+          <td>10.904539</td>
+          <td>10.896668</td>
+          <td>12.744705</td>
+          <td>12.753932</td>
         </tr>
         <tr>
           <th>6</th>
@@ -536,10 +438,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.365415</td>
           <td>6</td>
           <td>DONE</td>
-          <td>11.633300</td>
-          <td>11.624711</td>
-          <td>13.771703</td>
-          <td>13.781245</td>
+          <td>12.764249</td>
+          <td>12.756378</td>
+          <td>14.464809</td>
+          <td>14.473965</td>
         </tr>
         <tr>
           <th>7</th>
@@ -551,10 +453,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.503655</td>
           <td>7</td>
           <td>DONE</td>
-          <td>13.801314</td>
-          <td>13.792754</td>
-          <td>16.432184</td>
-          <td>16.441688</td>
+          <td>14.486419</td>
+          <td>14.478545</td>
+          <td>16.991339</td>
+          <td>17.002173</td>
         </tr>
         <tr>
           <th>8</th>
@@ -566,10 +468,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.126941</td>
           <td>8</td>
           <td>DONE</td>
-          <td>16.460298</td>
-          <td>16.451933</td>
-          <td>18.915093</td>
-          <td>18.924557</td>
+          <td>17.011245</td>
+          <td>17.003353</td>
+          <td>18.525003</td>
+          <td>18.534214</td>
         </tr>
         <tr>
           <th>9</th>
@@ -581,10 +483,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.779287</td>
           <td>9</td>
           <td>DONE</td>
-          <td>18.948683</td>
-          <td>18.940162</td>
-          <td>19.940904</td>
-          <td>19.950168</td>
+          <td>18.546214</td>
+          <td>18.538342</td>
+          <td>20.029884</td>
+          <td>20.038579</td>
         </tr>
         <tr>
           <th>10</th>
@@ -596,10 +498,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.492612</td>
           <td>10</td>
           <td>DONE</td>
-          <td>19.971394</td>
-          <td>19.962828</td>
-          <td>21.650972</td>
-          <td>21.660955</td>
+          <td>20.044636</td>
+          <td>20.036664</td>
+          <td>23.213045</td>
+          <td>23.222348</td>
         </tr>
         <tr>
           <th>11</th>
@@ -611,10 +513,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.627368</td>
           <td>11</td>
           <td>DONE</td>
-          <td>21.826712</td>
-          <td>21.818016</td>
-          <td>23.467308</td>
-          <td>23.477084</td>
+          <td>23.449777</td>
+          <td>23.441815</td>
+          <td>25.091384</td>
+          <td>25.100609</td>
         </tr>
         <tr>
           <th>12</th>
@@ -626,10 +528,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.219134</td>
           <td>12</td>
           <td>DONE</td>
-          <td>23.639422</td>
-          <td>23.630716</td>
-          <td>25.495650</td>
-          <td>25.505117</td>
+          <td>25.249794</td>
+          <td>25.241821</td>
+          <td>27.110589</td>
+          <td>27.119825</td>
         </tr>
         <tr>
           <th>13</th>
@@ -641,10 +543,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.240460</td>
           <td>13</td>
           <td>DONE</td>
-          <td>25.704760</td>
-          <td>25.696057</td>
-          <td>27.415820</td>
-          <td>27.425083</td>
+          <td>27.281968</td>
+          <td>27.273995</td>
+          <td>28.994023</td>
+          <td>29.003257</td>
         </tr>
         <tr>
           <th>14</th>
@@ -656,10 +558,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.264850</td>
           <td>14</td>
           <td>DONE</td>
-          <td>27.593487</td>
-          <td>27.584799</td>
-          <td>29.574178</td>
-          <td>29.583647</td>
+          <td>29.160699</td>
+          <td>29.152728</td>
+          <td>31.142358</td>
+          <td>31.151538</td>
         </tr>
         <tr>
           <th>15</th>
@@ -671,10 +573,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.246063</td>
           <td>15</td>
           <td>DONE</td>
-          <td>29.738526</td>
-          <td>29.729821</td>
-          <td>31.460609</td>
-          <td>31.469883</td>
+          <td>31.297581</td>
+          <td>31.289603</td>
+          <td>33.023009</td>
+          <td>33.032118</td>
         </tr>
         <tr>
           <th>16</th>
@@ -686,10 +588,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.670787</td>
           <td>16</td>
           <td>DONE</td>
-          <td>31.618502</td>
-          <td>31.609836</td>
-          <td>34.563047</td>
-          <td>34.572866</td>
+          <td>33.157107</td>
+          <td>33.149134</td>
+          <td>36.102239</td>
+          <td>36.111450</td>
         </tr>
         <tr>
           <th>17</th>
@@ -701,10 +603,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.228295</td>
           <td>17</td>
           <td>DONE</td>
-          <td>34.763402</td>
-          <td>34.754697</td>
-          <td>36.569906</td>
-          <td>36.580739</td>
+          <td>36.295723</td>
+          <td>36.287748</td>
+          <td>38.103236</td>
+          <td>38.112440</td>
         </tr>
         <tr>
           <th>18</th>
@@ -716,10 +618,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.032773</td>
           <td>18</td>
           <td>DONE</td>
-          <td>36.721084</td>
-          <td>36.712374</td>
-          <td>39.003680</td>
-          <td>39.012981</td>
+          <td>38.242691</td>
+          <td>38.234718</td>
+          <td>40.526418</td>
+          <td>40.535656</td>
         </tr>
         <tr>
           <th>19</th>
@@ -731,10 +633,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.405414</td>
           <td>19</td>
           <td>DONE</td>
-          <td>39.197599</td>
-          <td>39.188904</td>
-          <td>40.710713</td>
-          <td>40.720165</td>
+          <td>40.708015</td>
+          <td>40.700045</td>
+          <td>42.226602</td>
+          <td>42.235812</td>
         </tr>
         <tr>
           <th>20</th>
@@ -746,10 +648,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.130219</td>
           <td>20</td>
           <td>DONE</td>
-          <td>40.886767</td>
-          <td>40.878133</td>
-          <td>42.654802</td>
-          <td>42.664732</td>
+          <td>42.385557</td>
+          <td>42.377580</td>
+          <td>44.154551</td>
+          <td>44.163790</td>
         </tr>
         <tr>
           <th>21</th>
@@ -761,10 +663,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.635096</td>
           <td>21</td>
           <td>DONE</td>
-          <td>42.842316</td>
-          <td>42.833650</td>
-          <td>44.303785</td>
-          <td>44.313070</td>
+          <td>44.317955</td>
+          <td>44.309982</td>
+          <td>45.784807</td>
+          <td>45.794036</td>
         </tr>
         <tr>
           <th>22</th>
@@ -776,10 +678,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-19.814299</td>
           <td>22</td>
           <td>DONE</td>
-          <td>44.461155</td>
-          <td>44.452450</td>
-          <td>47.276224</td>
-          <td>47.285909</td>
+          <td>45.930946</td>
+          <td>45.922970</td>
+          <td>48.747054</td>
+          <td>48.756384</td>
         </tr>
         <tr>
           <th>23</th>
@@ -791,10 +693,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-21.254536</td>
           <td>23</td>
           <td>DONE</td>
-          <td>47.457396</td>
-          <td>47.448689</td>
-          <td>49.580355</td>
-          <td>49.590169</td>
+          <td>48.914385</td>
+          <td>48.906410</td>
+          <td>51.041895</td>
+          <td>51.051102</td>
         </tr>
         <tr>
           <th>24</th>
@@ -806,10 +708,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.726448</td>
           <td>24</td>
           <td>DONE</td>
-          <td>49.765802</td>
-          <td>49.757094</td>
-          <td>52.394935</td>
-          <td>52.404573</td>
+          <td>51.215192</td>
+          <td>51.207214</td>
+          <td>53.840595</td>
+          <td>53.849511</td>
         </tr>
         <tr>
           <th>25</th>
@@ -821,10 +723,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-19.269794</td>
           <td>25</td>
           <td>DONE</td>
-          <td>52.552936</td>
-          <td>52.544225</td>
-          <td>54.061104</td>
-          <td>54.070639</td>
+          <td>54.066758</td>
+          <td>54.058795</td>
+          <td>55.576904</td>
+          <td>55.585439</td>
         </tr>
         <tr>
           <th>26</th>
@@ -836,10 +738,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-20.716449</td>
           <td>26</td>
           <td>DONE</td>
-          <td>54.369088</td>
-          <td>54.360382</td>
-          <td>56.026628</td>
-          <td>56.036153</td>
+          <td>55.753756</td>
+          <td>55.745780</td>
+          <td>57.414955</td>
+          <td>57.423503</td>
         </tr>
         <tr>
           <th>27</th>
@@ -851,10 +753,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-19.451697</td>
           <td>27</td>
           <td>DONE</td>
-          <td>56.208907</td>
-          <td>56.200198</td>
-          <td>58.082746</td>
-          <td>58.092268</td>
+          <td>57.580293</td>
+          <td>57.572314</td>
+          <td>59.457380</td>
+          <td>59.465970</td>
         </tr>
         <tr>
           <th>28</th>
@@ -866,10 +768,10 @@ If this step is executed multiple times without creating a new search the result
           <td>-19.275481</td>
           <td>28</td>
           <td>CANCELLED</td>
-          <td>58.272828</td>
-          <td>58.264122</td>
-          <td>60.885270</td>
-          <td>60.894893</td>
+          <td>59.626921</td>
+          <td>59.618944</td>
+          <td>62.245077</td>
+          <td>62.254129</td>
         </tr>
       </tbody>
     </table>
@@ -878,7 +780,7 @@ If this step is executed multiple times without creating a new search the result
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 108-118
+.. GENERATED FROM PYTHON SOURCE LINES 143-153
 
 Each row of the DataFrame corresponds to an evaluation of the ``run``-function. The DataFrame contains the following columns:
 - ``"p:*"``: The parameters of the search space.
@@ -891,27 +793,28 @@ Each row of the DataFrame corresponds to an evaluation of the ``run``-function. 
 We can now plot the results of the sequential search. The first plot shows the evolution of the objective.
 The second plot shows the utilization of the worker over time.
 
-.. GENERATED FROM PYTHON SOURCE LINES 118-136
+.. GENERATED FROM PYTHON SOURCE LINES 153-171
 
-.. code-block:: Python
+.. dropdown:: Code (Plot search trajectory and worker utilization)
 
-    fig, axes = plt.subplots(
-            nrows=2,
-            ncols=1,
-            sharex=True,
-            figsize=figure_size(width=600),
+    .. code-block:: Python
+
+
+        fig, axes = plt.subplots(
+                nrows=2,
+                ncols=1,
+                sharex=True,
+                figsize=figure_size(width=600),
+                tight_layout=True,
+            )
+
+        _ = plot_search_trajectory_single_objective_hpo(
+            results["sequential"], mode="min", x_units="seconds", ax=axes[0]
         )
 
-    plot_search_trajectory_single_objective_hpo(
-        results["sequential"], mode="min", x_units="seconds", ax=axes[0]
-    )
-
-    plot_worker_utilization(
-        results["sequential"], num_workers=1, profile_type="start/end", ax=axes[1]
-    )
-
-    plt.tight_layout()
-    plt.show()
+        _ = plot_worker_utilization(
+            results["sequential"], num_workers=1, profile_type="start/end", ax=axes[1]
+        )
 
 
 
@@ -925,20 +828,20 @@ The second plot shows the utilization of the worker over time.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-138
+.. GENERATED FROM PYTHON SOURCE LINES 172-173
 
 Then, we can create a parallel evaluator with 100 workers.
 
-.. GENERATED FROM PYTHON SOURCE LINES 138-148
+.. GENERATED FROM PYTHON SOURCE LINES 173-183
 
 .. code-block:: Python
 
     parallel_evaluator = Evaluator.create(
-        black_box.run_ackley,
+        run_ackley,
         method="thread",
         method_kwargs={
             "num_workers": 100, # For the parallel evaluations
-            "callbacks": [TqdmCallback()]
+            "callbacks": [TqdmCallback("Parallel BO:")]
         },
     )
     parallel_search = CBO(problem, parallel_evaluator, **search_kwargs)
@@ -947,21 +850,24 @@ Then, we can create a parallel evaluator with 100 workers.
 
 
 
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_parallelism/results_20250312-102104.csv
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 149-150
+
+.. GENERATED FROM PYTHON SOURCE LINES 184-185
 
 The parallel search is executed for 1 minute.
 
-.. GENERATED FROM PYTHON SOURCE LINES 150-156
+.. GENERATED FROM PYTHON SOURCE LINES 185-188
 
 .. code-block:: Python
 
-    results["parallel"] = parallel_search.search(timeout=timeout)
-    offset = results["parallel"]["m:timestamp_start"].min()
-    results["parallel"]["m:timestamp_start"] -= offset 
-    results["parallel"]["m:timestamp_end"] -= offset 
+    results["parallel"] = preprocess_results(parallel_search.search(timeout=timeout))
     results["parallel"]
 
 
@@ -973,10714 +879,2666 @@ The parallel search is executed for 1 minute.
  .. code-block:: none
 
 
-
-
-
     0it [00:00, ?it/s]
-
-
-
-    1it [00:00, 1984.06it/s, failures=0, objective=-21.2]
-
-
-
-    2it [00:00, 10.90it/s, failures=0, objective=-21.2]  
-
-
-
-    2it [00:00, 10.90it/s, failures=0, objective=-21.2]
-
-
-
-    3it [00:00, 10.90it/s, failures=0, objective=-17.7]
-
-
-
-    4it [00:00, 10.90it/s, failures=0, objective=-17.7]
-
-
-
-    5it [00:00, 14.75it/s, failures=0, objective=-17.7]
-
-
-
-    5it [00:00, 14.75it/s, failures=0, objective=-17.7]
-
-
-
-    6it [00:00, 14.75it/s, failures=0, objective=-17.7]
-
-
-
-    7it [00:00, 14.75it/s, failures=0, objective=-17.7]
-
-
-
-    8it [00:00, 14.75it/s, failures=0, objective=-17.7]
-
-
-
-    9it [00:00, 14.75it/s, failures=0, objective=-17.7]
-
-
-
-    10it [00:00, 23.96it/s, failures=0, objective=-17.7]
-
-
-
-    10it [00:00, 23.96it/s, failures=0, objective=-17.7]
-
-
-
-    11it [00:00, 23.96it/s, failures=0, objective=-17.7]
-
-
-
-    12it [00:00, 23.96it/s, failures=0, objective=-17.7]
-
-
-
-    13it [00:00, 22.75it/s, failures=0, objective=-17.7]
-
-
-
-    13it [00:00, 22.75it/s, failures=0, objective=-17.7]
-
-
-
-    14it [00:00, 22.75it/s, failures=0, objective=-17.7]
-
-
-
-    15it [00:00, 22.75it/s, failures=0, objective=-17.7]
-
-
-
-    16it [00:00, 23.43it/s, failures=0, objective=-17.7]
-
-
-
-    16it [00:00, 23.43it/s, failures=0, objective=-16.8]
-
-
-
-    17it [00:00, 23.43it/s, failures=0, objective=-16.8]
-
-
-
-    18it [00:00, 23.43it/s, failures=0, objective=-16.8]
-
-
-
-    19it [00:00, 22.61it/s, failures=0, objective=-16.8]
-
-
-
-    19it [00:00, 22.61it/s, failures=0, objective=-16.8]
-
-
-
-    20it [00:00, 22.61it/s, failures=0, objective=-16.8]
-
-
-
-    21it [00:00, 22.61it/s, failures=0, objective=-16.8]
-
-
-
-    22it [00:00, 22.61it/s, failures=0, objective=-16.8]
-
-
-
-    23it [00:00, 22.61it/s, failures=0, objective=-16.8]
-
-
-
-    24it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    24it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    25it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    26it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    27it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    28it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    29it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    30it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    31it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    32it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    33it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    34it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    35it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    36it [00:01, 27.22it/s, failures=0, objective=-16.8]
-
-
-
-    37it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    37it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    38it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    39it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    40it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    41it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    42it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    43it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    44it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    45it [00:01, 45.89it/s, failures=0, objective=-16.8]
-
-
-
-    46it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    46it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    47it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    48it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    49it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    50it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    51it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    52it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    53it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    54it [00:01, 49.43it/s, failures=0, objective=-16.8]
-
-
-
-    55it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    55it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    56it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    57it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    58it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    59it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    60it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    61it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    62it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    63it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    64it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    65it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    66it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    67it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    68it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    69it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    70it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    71it [00:01, 49.65it/s, failures=0, objective=-16.8]
-
-
-
-    72it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    72it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    73it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    74it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    75it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    76it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    77it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    78it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    79it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    80it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    81it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    82it [00:01, 66.72it/s, failures=0, objective=-16.8]
-
-
-
-    83it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    83it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    84it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    85it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    86it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    87it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    88it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    89it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    90it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    91it [00:01, 63.18it/s, failures=0, objective=-16.8]
-
-
-
-    92it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    92it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    93it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    94it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    95it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    96it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    97it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    98it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    99it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    100it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    101it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    102it [00:02, 47.67it/s, failures=0, objective=-16.8]
-
-
-
-    103it [00:02, 47.73it/s, failures=0, objective=-16.8]
-
-
-
-    103it [00:02, 47.73it/s, failures=0, objective=-16.8]
-
-
-
-    104it [00:02, 47.73it/s, failures=0, objective=-16.8]
-
-
-
-    105it [00:02, 47.73it/s, failures=0, objective=-16.8]
-
-
-
-    106it [00:02, 47.73it/s, failures=0, objective=-16.8]
-
-
-
-    107it [00:02, 47.73it/s, failures=0, objective=-16.8]
-
-
-
-    108it [00:02, 47.73it/s, failures=0, objective=-16.8]
-
-
-
-    109it [00:02, 34.93it/s, failures=0, objective=-16.8]
-
-
-
-    109it [00:02, 34.93it/s, failures=0, objective=-16.8]
-
-
-
-    110it [00:02, 34.93it/s, failures=0, objective=-16.8]
-
-
-
-    111it [00:02, 34.93it/s, failures=0, objective=-16.8]
-
-
-
-    112it [00:02, 34.93it/s, failures=0, objective=-16.8]
-
-
-
-    113it [00:02, 34.93it/s, failures=0, objective=-16.8]
-
-
-
-    114it [00:02, 33.61it/s, failures=0, objective=-16.8]
-
-
-
-    114it [00:02, 33.61it/s, failures=0, objective=-16.8]
-
-
-
-    115it [00:02, 33.61it/s, failures=0, objective=-16.8]
-
-
-
-    116it [00:02, 33.61it/s, failures=0, objective=-14.5]
-
-
-
-    117it [00:02, 33.61it/s, failures=0, objective=-14.5]
-
-
-
-    118it [00:02, 33.61it/s, failures=0, objective=-14.5]
-
-
-
-    119it [00:02, 33.61it/s, failures=0, objective=-14.5]
-
-
-
-    120it [00:02, 33.61it/s, failures=0, objective=-14.5]
-
-
-
-    121it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    121it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    122it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    123it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    124it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    125it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    126it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    127it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    128it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    129it [00:03, 31.56it/s, failures=0, objective=-14.5]
-
-
-
-    130it [00:03, 31.56it/s, failures=0, objective=-14.3]
-
-
-
-    131it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    131it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    132it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    133it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    134it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    135it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    136it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    137it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    138it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    139it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    140it [00:03, 37.67it/s, failures=0, objective=-14.3]
-
-
-
-    141it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    141it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    142it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    143it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    144it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    145it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    146it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    147it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    148it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    149it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    150it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    151it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    152it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    153it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    154it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    155it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    156it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    157it [00:03, 41.74it/s, failures=0, objective=-14.3]
-
-
-
-    158it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    158it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    159it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    160it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    161it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    162it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    163it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    164it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    165it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    166it [00:03, 55.20it/s, failures=0, objective=-14.3]
-
-
-
-    167it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    167it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    168it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    169it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    170it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    171it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    172it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    173it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    174it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    175it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    176it [00:03, 52.08it/s, failures=0, objective=-14.3]
-
-
-
-    177it [00:04, 52.81it/s, failures=0, objective=-14.3]
-
-
-
-    177it [00:04, 52.81it/s, failures=0, objective=-14.3]
-
-
-
-    178it [00:04, 52.81it/s, failures=0, objective=-14.3]
-
-
-
-    179it [00:04, 52.81it/s, failures=0, objective=-14.3]
-
-
-
-    180it [00:04, 52.81it/s, failures=0, objective=-14.3]
-
-
-
-    181it [00:04, 52.81it/s, failures=0, objective=-14.3]
-
-
-
-    182it [00:04, 52.81it/s, failures=0, objective=-14.3]
-
-
-
-    183it [00:04, 52.81it/s, failures=0, objective=-14.3]
-
-
-
-    184it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    184it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    185it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    186it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    187it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    188it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    189it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    190it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    191it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    192it [00:04, 42.54it/s, failures=0, objective=-14.3]
-
-
-
-    193it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    193it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    194it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    195it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    196it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    197it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    198it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    199it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    200it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    201it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    202it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    203it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    204it [00:04, 41.36it/s, failures=0, objective=-14.3]
-
-
-
-    205it [00:04, 42.16it/s, failures=0, objective=-14.3]
-
-
-
-    205it [00:04, 42.16it/s, failures=0, objective=-14.3]
-
-
-
-    206it [00:04, 42.16it/s, failures=0, objective=-13.1]
-
-
-
-    207it [00:04, 42.16it/s, failures=0, objective=-13.1]
-
-
-
-    208it [00:04, 42.16it/s, failures=0, objective=-13.1]
-
-
-
-    209it [00:04, 42.16it/s, failures=0, objective=-13.1]
-
-
-
-    210it [00:04, 42.16it/s, failures=0, objective=-13.1]
-
-
-
-    211it [00:04, 42.16it/s, failures=0, objective=-13.1]
-
-
-
-    212it [00:04, 42.16it/s, failures=0, objective=-13.1]
-
-
-
-    213it [00:04, 42.16it/s, failures=0, objective=-12.8]
-
-
-
-    214it [00:04, 42.16it/s, failures=0, objective=-12.8]
-
-
-
-    215it [00:04, 42.16it/s, failures=0, objective=-12.8]
-
-
-
-    216it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    216it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    217it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    218it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    219it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    220it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    221it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    222it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    223it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    224it [00:05, 38.36it/s, failures=0, objective=-12.8]
-
-
-
-    225it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    225it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    226it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    227it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    228it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    229it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    230it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    231it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    232it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    233it [00:05, 39.18it/s, failures=0, objective=-12.8]
-
-
-
-    234it [00:05, 40.77it/s, failures=0, objective=-12.8]
-
-
-
-    234it [00:05, 40.77it/s, failures=0, objective=-12.8]
-
-
-
-    235it [00:05, 40.77it/s, failures=0, objective=-12.8]
-
-
-
-    236it [00:05, 40.77it/s, failures=0, objective=-12.8]
-
-
-
-    237it [00:05, 40.77it/s, failures=0, objective=-12.8]
-
-
-
-    238it [00:05, 40.77it/s, failures=0, objective=-12.8]
-
-
-
-    239it [00:05, 40.77it/s, failures=0, objective=-12.8]
-
-
-
-    240it [00:05, 40.77it/s, failures=0, objective=-12.8]
-
-
-
-    241it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    241it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    242it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    243it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    244it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    245it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    246it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    247it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    248it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    249it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    250it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    251it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    252it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    253it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    254it [00:05, 38.20it/s, failures=0, objective=-12.8]
-
-
-
-    255it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    255it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    256it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    257it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    258it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    259it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    260it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    261it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    262it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    263it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    264it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    265it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    266it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    267it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    268it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    269it [00:06, 44.52it/s, failures=0, objective=-12.8]
-
-
-
-    270it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    270it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    271it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    272it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    273it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    274it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    275it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    276it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    277it [00:06, 46.75it/s, failures=0, objective=-12.8]
-
-
-
-    278it [00:06, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-    279it [00:06, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-    280it [00:06, 46.75it/s, failures=0, objective=-12.2]
-
-
-
-    281it [00:06, 46.75it/s, failures=0, objective=-12.2]
-
-
-
-    282it [00:06, 49.49it/s, failures=0, objective=-12.2]
-
-
-
-    282it [00:06, 49.49it/s, failures=0, objective=-12.2]
-
-
-
-    283it [00:06, 49.49it/s, failures=0, objective=-12.2]
-
-
-
-    284it [00:06, 49.49it/s, failures=0, objective=-12.2]
-
-
-
-    285it [00:06, 49.49it/s, failures=0, objective=-12.2]
-
-
-
-    286it [00:06, 49.49it/s, failures=0, objective=-12.2]
-
-
-
-    287it [00:06, 41.93it/s, failures=0, objective=-12.2]
-
-
-
-    287it [00:06, 41.93it/s, failures=0, objective=-12.2]
-
-
-
-    288it [00:06, 41.93it/s, failures=0, objective=-12.2]
-
-
-
-    289it [00:06, 41.93it/s, failures=0, objective=-12.2]
-
-
-
-    290it [00:06, 41.93it/s, failures=0, objective=-12.2]
-
-
-
-    291it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    292it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    293it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    294it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    295it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    296it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    297it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    298it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    299it [00:06, 41.93it/s, failures=0, objective=-11.2]
-
-
-
-    300it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    300it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    301it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    302it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    303it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    304it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    305it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    306it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    307it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    308it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    309it [00:07, 43.72it/s, failures=0, objective=-11.2]
-
-
-
-    310it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    310it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    311it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    312it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    313it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    314it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    315it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    316it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    317it [00:07, 42.94it/s, failures=0, objective=-11.2]
-
-
-
-    318it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    318it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    319it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    320it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    321it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    322it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    323it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    324it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    325it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    326it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    327it [00:07, 38.16it/s, failures=0, objective=-11.2]
-
-
-
-    328it [00:07, 39.20it/s, failures=0, objective=-11.2]
-
-
-
-    328it [00:07, 39.20it/s, failures=0, objective=-11.2]
-
-
-
-    329it [00:07, 39.20it/s, failures=0, objective=-11.2]
-
-
-
-    330it [00:07, 39.20it/s, failures=0, objective=-11.2]
-
-
-
-    331it [00:07, 39.20it/s, failures=0, objective=-11.2]
-
-
-
-    332it [00:07, 39.20it/s, failures=0, objective=-10]  
-
-
-
-    333it [00:07, 39.20it/s, failures=0, objective=-10]
-
-
-
-    334it [00:07, 39.20it/s, failures=0, objective=-10]
-
-
-
-    335it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    335it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    336it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    337it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    338it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    339it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    340it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    341it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    342it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    343it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    344it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    345it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    346it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    347it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    348it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    349it [00:08, 36.25it/s, failures=0, objective=-10]
-
-
-
-    350it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    350it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    351it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    352it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    353it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    354it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    355it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    356it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    357it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    358it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    359it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    360it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    361it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    362it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    363it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    364it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    365it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    366it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    367it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    368it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    369it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    370it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    371it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    372it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    373it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    374it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    375it [00:08, 37.31it/s, failures=0, objective=-10]
-
-
-
-    376it [00:08, 55.25it/s, failures=0, objective=-10]
-
-
-
-    376it [00:08, 55.25it/s, failures=0, objective=-10]
-
-
-
-    377it [00:08, 55.25it/s, failures=0, objective=-10]
-
-
-
-    378it [00:08, 55.25it/s, failures=0, objective=-10]
-
-
-
-    379it [00:08, 55.25it/s, failures=0, objective=-10]
-
-
-
-    380it [00:08, 55.25it/s, failures=0, objective=-10]
-
-
-
-    381it [00:08, 55.25it/s, failures=0, objective=-10]
-
-
-
-    382it [00:09, 47.72it/s, failures=0, objective=-10]
-
-
-
-    382it [00:09, 47.72it/s, failures=0, objective=-10]
-
-
-
-    383it [00:09, 47.72it/s, failures=0, objective=-10]
-
-
-
-    384it [00:09, 47.72it/s, failures=0, objective=-10]
-
-
-
-    385it [00:09, 47.72it/s, failures=0, objective=-10]
-
-
-
-    386it [00:09, 47.72it/s, failures=0, objective=-10]
-
-
-
-    387it [00:09, 47.72it/s, failures=0, objective=-10]
-
-
-
-    388it [00:09, 47.72it/s, failures=0, objective=-10]
-
-
-
-    389it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    389it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    390it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    391it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    392it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    393it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    394it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    395it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    396it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    397it [00:09, 41.98it/s, failures=0, objective=-10]
-
-
-
-    398it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    398it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    399it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    400it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    401it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    402it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    403it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    404it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    405it [00:09, 41.56it/s, failures=0, objective=-10]
-
-
-
-    406it [00:09, 40.98it/s, failures=0, objective=-10]
-
-
-
-    406it [00:09, 40.98it/s, failures=0, objective=-10]
-
-
-
-    407it [00:09, 40.98it/s, failures=0, objective=-10]
-
-
-
-    408it [00:09, 40.98it/s, failures=0, objective=-10]
-
-
-
-    409it [00:09, 40.98it/s, failures=0, objective=-10]
-
-
-
-    410it [00:09, 40.98it/s, failures=0, objective=-10]
-
-
-
-    411it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    411it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    412it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    413it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    414it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    415it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    416it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    417it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    418it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    419it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    420it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    421it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    422it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    423it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    424it [00:09, 34.99it/s, failures=0, objective=-10]
-
-
-
-    425it [00:10, 40.81it/s, failures=0, objective=-10]
-
-
-
-    425it [00:10, 40.81it/s, failures=0, objective=-10]
-
-
-
-    426it [00:10, 40.81it/s, failures=0, objective=-10]
-
-
-
-    427it [00:10, 40.81it/s, failures=0, objective=-10]
-
-
-
-    428it [00:10, 40.81it/s, failures=0, objective=-10]
-
-
-
-    429it [00:10, 40.81it/s, failures=0, objective=-10]
-
-
-
-    430it [00:10, 40.81it/s, failures=0, objective=-10]
-
-
-
-    431it [00:10, 40.81it/s, failures=0, objective=-10]
-
-
-
-    432it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    432it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    433it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    434it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    435it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    436it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    437it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    438it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    439it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    440it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    441it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    442it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    443it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    444it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    445it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    446it [00:10, 34.47it/s, failures=0, objective=-10]
-
-
-
-    447it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    447it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    448it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    449it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    450it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    451it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    452it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    453it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    454it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    455it [00:10, 40.62it/s, failures=0, objective=-10]
-
-
-
-    456it [00:10, 40.62it/s, failures=0, objective=-7.14]
-
-
-
-    457it [00:10, 40.62it/s, failures=0, objective=-7.14]
-
-
-
-    458it [00:10, 40.62it/s, failures=0, objective=-7.14]
-
-
-
-    459it [00:10, 40.62it/s, failures=0, objective=-7.14]
-
-
-
-    460it [00:10, 40.62it/s, failures=0, objective=-7.14]
-
-
-
-    461it [00:10, 40.62it/s, failures=0, objective=-7.14]
-
-
-
-    462it [00:10, 40.62it/s, failures=0, objective=-7.14]
-
-
-
-    463it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    463it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    464it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    465it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    466it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    467it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    468it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    469it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    470it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    471it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    472it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    473it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    474it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    475it [00:11, 46.83it/s, failures=0, objective=-7.14]
-
-
-
-    476it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    476it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    477it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    478it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    479it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    480it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    481it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    482it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    483it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    484it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    485it [00:11, 46.04it/s, failures=0, objective=-7.14]
-
-
-
-    486it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    486it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    487it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    488it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    489it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    490it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    491it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    492it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    493it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    494it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    495it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    496it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    497it [00:11, 43.92it/s, failures=0, objective=-7.14]
-
-
-
-    498it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    498it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    499it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    500it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    501it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    502it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    503it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    504it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    505it [00:11, 39.06it/s, failures=0, objective=-7.14]
-
-
-
-    506it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    506it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    507it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    508it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    509it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    510it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    511it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    512it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    513it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    514it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    515it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    516it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    517it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    518it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    519it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    520it [00:12, 34.14it/s, failures=0, objective=-7.14]
-
-
-
-    521it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    521it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    522it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    523it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    524it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    525it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    526it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    527it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    528it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    529it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    530it [00:12, 39.42it/s, failures=0, objective=-7.14]
-
-
-
-    531it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    531it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    532it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    533it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    534it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    535it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    536it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    537it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    538it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    539it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    540it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    541it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    542it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    543it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    544it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    545it [00:12, 36.40it/s, failures=0, objective=-7.14]
-
-
-
-    546it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    546it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    547it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    548it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    549it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    550it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    551it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    552it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    553it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    554it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    555it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    556it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    557it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    558it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    559it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    560it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    561it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    562it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    563it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    564it [00:13, 41.22it/s, failures=0, objective=-7.14]
-
-
-
-    565it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    565it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    566it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    567it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    568it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    569it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    570it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    571it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    572it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    573it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    574it [00:13, 47.13it/s, failures=0, objective=-7.14]
-
-
-
-    575it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    575it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    576it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    577it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    578it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    579it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    580it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    581it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    582it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    583it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    584it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    585it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    586it [00:13, 39.30it/s, failures=0, objective=-7.14]
-
-
-
-    587it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    587it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    588it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    589it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    590it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    591it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    592it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    593it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    594it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    595it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    596it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    597it [00:14, 40.08it/s, failures=0, objective=-7.14]
-
-
-
-    598it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    598it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    599it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    600it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    601it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    602it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    603it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    604it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    605it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    606it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    607it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    608it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    609it [00:14, 39.34it/s, failures=0, objective=-7.14]
-
-
-
-    610it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    610it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    611it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    612it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    613it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    614it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    615it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    616it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    617it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    618it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    619it [00:14, 42.50it/s, failures=0, objective=-7.14]
-
-
-
-    620it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    620it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    621it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    622it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    623it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    624it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    625it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    626it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    627it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    628it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    629it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    630it [00:15, 38.77it/s, failures=0, objective=-7.14]
-
-
-
-    631it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    631it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    632it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    633it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    634it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    635it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    636it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    637it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    638it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    639it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    640it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    641it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    642it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    643it [00:15, 39.12it/s, failures=0, objective=-7.14]
-
-
-
-    644it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    644it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    645it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    646it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    647it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    648it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    649it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    650it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    651it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    652it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    653it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    654it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    655it [00:15, 38.06it/s, failures=0, objective=-7.14]
-
-
-
-    656it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    656it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    657it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    658it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    659it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    660it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    661it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    662it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    663it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    664it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    665it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    666it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    667it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    668it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    669it [00:15, 39.93it/s, failures=0, objective=-7.14]
-
-
-
-    670it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    670it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    671it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    672it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    673it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    674it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    675it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    676it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    677it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    678it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    679it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    680it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    681it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    682it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    683it [00:16, 44.04it/s, failures=0, objective=-7.14]
-
-
-
-    684it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    684it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    685it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    686it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    687it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    688it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    689it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    690it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    691it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    692it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    693it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    694it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    695it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    696it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    697it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    698it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    699it [00:16, 44.00it/s, failures=0, objective=-7.14]
-
-
-
-    700it [00:16, 50.07it/s, failures=0, objective=-7.14]
-
-
-
-    700it [00:16, 50.07it/s, failures=0, objective=-7.14]
-
-
-
-    701it [00:16, 50.07it/s, failures=0, objective=-7.14]
-
-
-
-    702it [00:16, 50.07it/s, failures=0, objective=-7.14]
-
-
-
-    703it [00:16, 50.07it/s, failures=0, objective=-7.14]
-
-
-
-    704it [00:16, 50.07it/s, failures=0, objective=-7.14]
-
-
-
-    705it [00:16, 50.07it/s, failures=0, objective=-7.14]
-
-
-
-    706it [00:16, 50.07it/s, failures=0, objective=-7.14]
-
-
-
-    707it [00:17, 42.24it/s, failures=0, objective=-7.14]
-
-
-
-    707it [00:17, 42.24it/s, failures=0, objective=-5.56]
-
-
-
-    708it [00:17, 42.24it/s, failures=0, objective=-5.56]
-
-
-
-    709it [00:17, 42.24it/s, failures=0, objective=-5.56]
-
-
-
-    710it [00:17, 42.24it/s, failures=0, objective=-5.56]
-
-
-
-    711it [00:17, 42.24it/s, failures=0, objective=-5.56]
-
-
-
-    712it [00:17, 42.24it/s, failures=0, objective=-5.56]
-
-
-
-    713it [00:17, 42.24it/s, failures=0, objective=-5.56]
-
-
-
-    714it [00:17, 42.24it/s, failures=0, objective=-5.56]
-
-
-
-    715it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    715it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    716it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    717it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    718it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    719it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    720it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    721it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    722it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    723it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    724it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    725it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    726it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    727it [00:17, 37.97it/s, failures=0, objective=-5.56]
-
-
-
-    728it [00:17, 39.41it/s, failures=0, objective=-5.56]
-
-
-
-    728it [00:17, 39.41it/s, failures=0, objective=-5.56]
-
-
-
-    729it [00:17, 39.41it/s, failures=0, objective=-5.56]
-
-
-
-    730it [00:17, 39.41it/s, failures=0, objective=-5.56]
-
-
-
-    731it [00:17, 39.41it/s, failures=0, objective=-5.56]
-
-
-
-    732it [00:17, 39.41it/s, failures=0, objective=-5.56]
-
-
-
-    733it [00:17, 39.41it/s, failures=0, objective=-5.56]
-
-
-
-    734it [00:17, 39.41it/s, failures=0, objective=-5.56]
-
-
-
-    735it [00:17, 37.03it/s, failures=0, objective=-5.56]
-
-
-
-    735it [00:17, 37.03it/s, failures=0, objective=-5.56]
-
-
-
-    736it [00:17, 37.03it/s, failures=0, objective=-5.56]
-
-
-
-    737it [00:17, 37.03it/s, failures=0, objective=-5.56]
-
-
-
-    738it [00:17, 37.03it/s, failures=0, objective=-5.56]
-
-
-
-    739it [00:17, 37.03it/s, failures=0, objective=-5.56]
-
-
-
-    740it [00:17, 37.03it/s, failures=0, objective=-5.56]
-
-
-
-    741it [00:17, 37.03it/s, failures=0, objective=-5.56]
-
-
-
-    742it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    742it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    743it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    744it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    745it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    746it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    747it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    748it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    749it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    750it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    751it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    752it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    753it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    754it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    755it [00:18, 35.49it/s, failures=0, objective=-5.56]
-
-
-
-    756it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    756it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    757it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    758it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    759it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    760it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    761it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    762it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    763it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    764it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    765it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    766it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    767it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    768it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    769it [00:18, 40.61it/s, failures=0, objective=-5.56]
-
-
-
-    770it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    770it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    771it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    772it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    773it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    774it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    775it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    776it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    777it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    778it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    779it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    780it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    781it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    782it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    783it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    784it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    785it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    786it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    787it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    788it [00:18, 41.92it/s, failures=0, objective=-5.56]
-
-
-
-    789it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    789it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    790it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    791it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    792it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    793it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    794it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    795it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    796it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    797it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    798it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    799it [00:19, 42.88it/s, failures=0, objective=-5.56]
-
-
-
-    800it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    800it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    801it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    802it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    803it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    804it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    805it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    806it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    807it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    808it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    809it [00:19, 41.65it/s, failures=0, objective=-5.56]
-
-
-
-    810it [00:19, 39.65it/s, failures=0, objective=-5.56]
-
-
-
-    810it [00:19, 39.65it/s, failures=0, objective=-5.56]
-
-
-
-    811it [00:19, 39.65it/s, failures=0, objective=-5.56]
-
-
-
-    812it [00:19, 39.65it/s, failures=0, objective=-5.56]
-
-
-
-    813it [00:19, 39.65it/s, failures=0, objective=-5.56]
-
-
-
-    814it [00:19, 39.65it/s, failures=0, objective=-5.56]
-
-
-
-    815it [00:19, 39.65it/s, failures=0, objective=-5.56]
-
-
-
-    816it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    816it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    817it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    818it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    819it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    820it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    821it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    822it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    823it [00:19, 35.69it/s, failures=0, objective=-5.56]
-
-
-
-    824it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    824it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    825it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    826it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    827it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    828it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    829it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    830it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    831it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    832it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    833it [00:20, 35.47it/s, failures=0, objective=-5.56]
-
-
-
-    834it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    834it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    835it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    836it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    837it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    838it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    839it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    840it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    841it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    842it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    843it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    844it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    845it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    846it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    847it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    848it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    849it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    850it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    851it [00:20, 36.28it/s, failures=0, objective=-5.56]
-
-
-
-    852it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    852it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    853it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    854it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    855it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    856it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    857it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    858it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    859it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    860it [00:20, 45.21it/s, failures=0, objective=-5.56]
-
-
-
-    861it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    861it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    862it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    863it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    864it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    865it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    866it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    867it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    868it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    869it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    870it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    871it [00:20, 43.22it/s, failures=0, objective=-5.56]
-
-
-
-    872it [00:21, 42.29it/s, failures=0, objective=-5.56]
-
-
-
-    872it [00:21, 42.29it/s, failures=0, objective=-5.56]
-
-
-
-    873it [00:21, 42.29it/s, failures=0, objective=-5.56]
-
-
-
-    874it [00:21, 42.29it/s, failures=0, objective=-5.56]
-
-
-
-    875it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    876it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    877it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    878it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    879it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    880it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    881it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    882it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    883it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    884it [00:21, 42.29it/s, failures=0, objective=-5.52]
-
-
-
-    885it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    885it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    886it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    887it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    888it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    889it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    890it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    891it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    892it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    893it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    894it [00:21, 45.59it/s, failures=0, objective=-5.52]
-
-
-
-    895it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    895it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    896it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    897it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    898it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    899it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    900it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    901it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    902it [00:21, 44.56it/s, failures=0, objective=-5.52]
-
-
-
-    903it [00:21, 40.80it/s, failures=0, objective=-5.52]
-
-
-
-    903it [00:21, 40.80it/s, failures=0, objective=-5.52]
-
-
-
-    904it [00:21, 40.80it/s, failures=0, objective=-5.52]
-
-
-
-    905it [00:21, 40.80it/s, failures=0, objective=-5.52]
-
-
-
-    906it [00:21, 40.80it/s, failures=0, objective=-5.52]
-
-
-
-    907it [00:21, 40.80it/s, failures=0, objective=-5.52]
-
-
-
-    908it [00:21, 40.80it/s, failures=0, objective=-5.52]
-
-
-
-    909it [00:21, 40.80it/s, failures=0, objective=-5.52]
-
-
-
-    910it [00:21, 40.80it/s, failures=0, objective=-5.07]
-
-
-
-    911it [00:21, 40.80it/s, failures=0, objective=-5.07]
-
-
-
-    912it [00:21, 40.80it/s, failures=0, objective=-5.07]
-
-
-
-    913it [00:21, 40.80it/s, failures=0, objective=-5.07]
-
-
-
-    914it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    914it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    915it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    916it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    917it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    918it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    919it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    920it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    921it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    922it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    923it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    924it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    925it [00:22, 36.56it/s, failures=0, objective=-5.07]
-
-
-
-    926it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    926it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    927it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    928it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    929it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    930it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    931it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    932it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    933it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    934it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    935it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    936it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    937it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    938it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    939it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    940it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    941it [00:22, 37.07it/s, failures=0, objective=-5.07]
-
-
-
-    942it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    942it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    943it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    944it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    945it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    946it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    947it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    948it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    949it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    950it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    951it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    952it [00:22, 41.23it/s, failures=0, objective=-5.07]
-
-
-
-    953it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    953it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    954it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    955it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    956it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    957it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    958it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    959it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    960it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    961it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    962it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    963it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    964it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    965it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    966it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    967it [00:23, 38.39it/s, failures=0, objective=-5.07]
-
-
-
-    968it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    968it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    969it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    970it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    971it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    972it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    973it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    974it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    975it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    976it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    977it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    978it [00:23, 45.20it/s, failures=0, objective=-5.07]
-
-
-
-    979it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    979it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    980it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    981it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    982it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    983it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    984it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    985it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    986it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    987it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    988it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    989it [00:23, 41.86it/s, failures=0, objective=-5.07]
-
-
-
-    990it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    990it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    991it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    992it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    993it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    994it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    995it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    996it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    997it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    998it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    999it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    1000it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    1001it [00:24, 38.30it/s, failures=0, objective=-5.07]
-
-
-
-    1002it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1002it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1003it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1004it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1005it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1006it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1007it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1008it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1009it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1010it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1011it [00:24, 39.77it/s, failures=0, objective=-5.07]
-
-
-
-    1012it [00:24, 39.32it/s, failures=0, objective=-5.07]
-
-
-
-    1012it [00:24, 39.32it/s, failures=0, objective=-5.07]
-
-
-
-    1013it [00:24, 39.32it/s, failures=0, objective=-5.07]
-
-
-
-    1014it [00:24, 39.32it/s, failures=0, objective=-5.07]
-
-
-
-    1015it [00:24, 39.32it/s, failures=0, objective=-5.07]
-
-
-
-    1016it [00:24, 39.32it/s, failures=0, objective=-5.07]
-
-
-
-    1017it [00:24, 39.32it/s, failures=0, objective=-5.07]
-
-
-
-    1018it [00:24, 39.32it/s, failures=0, objective=-5.06]
-
-
-
-    1019it [00:24, 39.32it/s, failures=0, objective=-5.06]
-
-
-
-    1020it [00:24, 39.32it/s, failures=0, objective=-5.06]
-
-
-
-    1021it [00:24, 39.32it/s, failures=0, objective=-5.06]
-
-
-
-    1022it [00:24, 39.32it/s, failures=0, objective=-5.06]
-
-
-
-    1023it [00:24, 39.32it/s, failures=0, objective=-5.06]
-
-
-
-    1024it [00:24, 39.32it/s, failures=0, objective=-5.06]
-
-
-
-    1025it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1025it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1026it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1027it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1028it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1029it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1030it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1031it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1032it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1033it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1034it [00:25, 38.74it/s, failures=0, objective=-5.06]
-
-
-
-    1035it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1036it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1037it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1038it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1039it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1040it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1041it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1042it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1043it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1044it [00:25, 38.74it/s, failures=0, objective=-3.99]
-
-
-
-    1045it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1045it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1046it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1047it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1048it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1049it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1050it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1051it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1052it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1053it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1054it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1055it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1056it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1057it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1058it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1059it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1060it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1061it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1062it [00:25, 43.96it/s, failures=0, objective=-3.99]
-
-
-
-    1063it [00:25, 50.96it/s, failures=0, objective=-3.99]
-
-
-
-    1063it [00:25, 50.96it/s, failures=0, objective=-3.99]
-
-
-
-    1064it [00:25, 50.96it/s, failures=0, objective=-3.99]
-
-
-
-    1065it [00:25, 50.96it/s, failures=0, objective=-3.99]
-
-
-
-    1066it [00:25, 50.96it/s, failures=0, objective=-3.99]
-
-
-
-    1067it [00:25, 50.96it/s, failures=0, objective=-3.99]
-
-
-
-    1068it [00:25, 50.96it/s, failures=0, objective=-3.99]
-
-
-
-    1069it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1069it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1070it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1071it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1072it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1073it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1074it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1075it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1076it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1077it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1078it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1079it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1080it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1081it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1082it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1083it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1084it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1085it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1086it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1087it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1088it [00:26, 38.54it/s, failures=0, objective=-3.99]
-
-
-
-    1089it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1089it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1090it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1091it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1092it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1093it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1094it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1095it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1096it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1097it [00:26, 46.30it/s, failures=0, objective=-3.99]
-
-
-
-    1098it [00:26, 44.70it/s, failures=0, objective=-3.99]
-
-
-
-    1098it [00:26, 44.70it/s, failures=0, objective=-3.99]
-
-
-
-    1099it [00:26, 44.70it/s, failures=0, objective=-3.99]
-
-
-
-    1100it [00:26, 44.70it/s, failures=0, objective=-3.99]
-
-
-
-    1101it [00:26, 44.70it/s, failures=0, objective=-3.99]
-
-
-
-    1102it [00:26, 44.70it/s, failures=0, objective=-3.99]
-
-
-
-    1103it [00:26, 36.62it/s, failures=0, objective=-3.99]
-
-
-
-    1103it [00:26, 36.62it/s, failures=0, objective=-3.99]
-
-
-
-    1104it [00:26, 36.62it/s, failures=0, objective=-3.99]
-
-
-
-    1105it [00:26, 36.62it/s, failures=0, objective=-3.99]
-
-
-
-    1106it [00:26, 36.62it/s, failures=0, objective=-3.79]
-
-
-
-    1107it [00:26, 36.62it/s, failures=0, objective=-3.79]
-
-
-
-    1108it [00:26, 36.62it/s, failures=0, objective=-3.79]
-
-
-
-    1109it [00:26, 36.62it/s, failures=0, objective=-3.79]
-
-
-
-    1110it [00:26, 36.62it/s, failures=0, objective=-3.79]
-
-
-
-    1111it [00:26, 36.62it/s, failures=0, objective=-3.79]
-
-
-
-    1112it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1112it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1113it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1114it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1115it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1116it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1117it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1118it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1119it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1120it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1121it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1122it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1123it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1124it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1125it [00:27, 33.26it/s, failures=0, objective=-3.79]
-
-
-
-    1126it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1126it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1127it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1128it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1129it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1130it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1131it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1132it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1133it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1134it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1135it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1136it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1137it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1138it [00:27, 38.38it/s, failures=0, objective=-3.79]
-
-
-
-    1139it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1139it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1140it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1141it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1142it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1143it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1144it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1145it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1146it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1147it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1148it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1149it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1150it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1151it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1152it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1153it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1154it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1155it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1156it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1157it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1158it [00:27, 37.12it/s, failures=0, objective=-3.79]
-
-
-
-    1159it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1159it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1160it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1161it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1162it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1163it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1164it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1165it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1166it [00:28, 48.37it/s, failures=0, objective=-3.79]
-
-
-
-    1167it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1167it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1168it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1169it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1170it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1171it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1172it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1173it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1174it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1175it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1176it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1177it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1178it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1179it [00:28, 43.88it/s, failures=0, objective=-3.79]
-
-
-
-    1180it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1180it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1181it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1182it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1183it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1184it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1185it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1186it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1187it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1188it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1189it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1190it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1191it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1192it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1193it [00:28, 42.90it/s, failures=0, objective=-3.79]
-
-
-
-    1194it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1194it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1195it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1196it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1197it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1198it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1199it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1200it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1201it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1202it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1203it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1204it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1205it [00:28, 43.75it/s, failures=0, objective=-3.79]
-
-
-
-    1206it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1206it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1207it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1208it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1209it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1210it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1211it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1212it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1213it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1214it [00:29, 36.76it/s, failures=0, objective=-3.79]
-
-
-
-    1215it [00:29, 36.76it/s, failures=0, objective=-3.53]
-
-
-
-    1216it [00:29, 36.76it/s, failures=0, objective=-3.53]
-
-
-
-    1217it [00:29, 36.76it/s, failures=0, objective=-3.53]
-
-
-
-    1218it [00:29, 39.16it/s, failures=0, objective=-3.53]
-
-
-
-    1218it [00:29, 39.16it/s, failures=0, objective=-3.53]
-
-
-
-    1219it [00:29, 39.16it/s, failures=0, objective=-3.53]
-
-
-
-    1220it [00:29, 39.16it/s, failures=0, objective=-3.53]
-
-
-
-    1221it [00:29, 39.16it/s, failures=0, objective=-3.53]
-
-
-
-    1222it [00:29, 39.16it/s, failures=0, objective=-3.53]
-
-
-
-    1223it [00:29, 39.16it/s, failures=0, objective=-3.53]
-
-
-
-    1224it [00:29, 39.16it/s, failures=0, objective=-3.53]
-
-
-
-    1225it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1225it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1226it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1227it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1228it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1229it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1230it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1231it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1232it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1233it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1234it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1235it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1236it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1237it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1238it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1239it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1240it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1241it [00:29, 35.55it/s, failures=0, objective=-3.53]
-
-
-
-    1242it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1242it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1243it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1244it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1245it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1246it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1247it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1248it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1249it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1250it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1251it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1252it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1253it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1254it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1255it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1256it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1257it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1258it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1259it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1260it [00:30, 38.85it/s, failures=0, objective=-3.53]
-
-
-
-    1261it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1261it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1262it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1263it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1264it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1265it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1266it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1267it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1268it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1269it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1270it [00:30, 47.24it/s, failures=0, objective=-3.53]
-
-
-
-    1271it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1271it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1272it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1273it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1274it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1275it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1276it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1277it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1278it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1279it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1280it [00:30, 45.33it/s, failures=0, objective=-3.53]
-
-
-
-    1281it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1281it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1282it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1283it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1284it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1285it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1286it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1287it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1288it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1289it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1290it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1291it [00:31, 43.01it/s, failures=0, objective=-3.53]
-
-
-
-    1292it [00:31, 42.83it/s, failures=0, objective=-3.53]
-
-
-
-    1292it [00:31, 42.83it/s, failures=0, objective=-3.53]
-
-
-
-    1293it [00:31, 42.83it/s, failures=0, objective=-3.53]
-
-
-
-    1294it [00:31, 42.83it/s, failures=0, objective=-3.53]
-
-
-
-    1295it [00:31, 42.83it/s, failures=0, objective=-3.53]
-
-
-
-    1296it [00:31, 42.83it/s, failures=0, objective=-3.53]
-
-
-
-    1297it [00:31, 42.83it/s, failures=0, objective=-3.53]
-
-
-
-    1298it [00:31, 42.83it/s, failures=0, objective=-3.53]
-
-
-
-    1299it [00:31, 42.83it/s, failures=0, objective=-3.14]
-
-
-
-    1300it [00:31, 42.83it/s, failures=0, objective=-3.14]
-
-
-
-    1301it [00:31, 42.83it/s, failures=0, objective=-3.14]
-
-
-
-    1302it [00:31, 41.53it/s, failures=0, objective=-3.14]
-
-
-
-    1302it [00:31, 41.53it/s, failures=0, objective=-3.14]
-
-
-
-    1303it [00:31, 41.53it/s, failures=0, objective=-3.14]
-
-
-
-    1304it [00:31, 41.53it/s, failures=0, objective=-3.14]
-
-
-
-    1305it [00:31, 41.53it/s, failures=0, objective=-3.14]
-
-
-
-    1306it [00:31, 41.53it/s, failures=0, objective=-3.14]
-
-
-
-    1307it [00:31, 41.53it/s, failures=0, objective=-3.14]
-
-
-
-    1308it [00:31, 41.53it/s, failures=0, objective=-3.14]
-
-
-
-    1309it [00:31, 37.53it/s, failures=0, objective=-3.14]
-
-
-
-    1309it [00:31, 37.53it/s, failures=0, objective=-3.14]
-
-
-
-    1310it [00:31, 37.53it/s, failures=0, objective=-3.14]
-
-
-
-    1311it [00:31, 37.53it/s, failures=0, objective=-3.14]
-
-
-
-    1312it [00:31, 37.53it/s, failures=0, objective=-3.14]
-
-
-
-    1313it [00:31, 37.53it/s, failures=0, objective=-3.14]
-
-
-
-    1314it [00:31, 37.53it/s, failures=0, objective=-3.14]
-
-
-
-    1315it [00:31, 37.53it/s, failures=0, objective=-3.14]
-
-
-
-    1316it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1316it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1317it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1318it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1319it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1320it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1321it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1322it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1323it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1324it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1325it [00:32, 33.64it/s, failures=0, objective=-3.14]
-
-
-
-    1326it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1326it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1327it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1328it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1329it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1330it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1331it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1332it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1333it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1334it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1335it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1336it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1337it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1338it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1339it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1340it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1341it [00:32, 34.11it/s, failures=0, objective=-3.14]
-
-
-
-    1342it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1342it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1343it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1344it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1345it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1346it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1347it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1348it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1349it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1350it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1351it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1352it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1353it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1354it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1355it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1356it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1357it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1358it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1359it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1360it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1361it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1362it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1363it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1364it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1365it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1366it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1367it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1368it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1369it [00:32, 33.17it/s, failures=0, objective=-3.14]
-
-
-
-    1370it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1370it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1371it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1372it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1373it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1374it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1375it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1376it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1377it [00:33, 52.05it/s, failures=0, objective=-3.14]
-
-
-
-    1378it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1378it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1379it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1380it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1381it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1382it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1383it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1384it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1385it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1386it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1387it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1388it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1389it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1390it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1391it [00:33, 44.53it/s, failures=0, objective=-3.14]
-
-
-
-    1392it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1392it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1393it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1394it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1395it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1396it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1397it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1398it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1399it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1400it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1401it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1402it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1403it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1404it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1405it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1406it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1407it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1408it [00:33, 44.76it/s, failures=0, objective=-3.14]
-
-
-
-    1409it [00:34, 48.18it/s, failures=0, objective=-3.14]
-
-
-
-    1409it [00:34, 48.18it/s, failures=0, objective=-3.14]
-
-
-
-    1410it [00:34, 48.18it/s, failures=0, objective=-3.14]
-
-
-
-    1411it [00:34, 48.18it/s, failures=0, objective=-3.14]
-
-
-
-    1412it [00:34, 48.18it/s, failures=0, objective=-3.14]
-
-
-
-    1413it [00:34, 48.18it/s, failures=0, objective=-3.14]
-
-
-
-    1414it [00:34, 48.18it/s, failures=0, objective=-3.14]
-
-
-
-    1415it [00:34, 38.92it/s, failures=0, objective=-3.14]
-
-
-
-    1415it [00:34, 38.92it/s, failures=0, objective=-3.14]
-
-
-
-    1416it [00:34, 38.92it/s, failures=0, objective=-3.14]
-
-
-
-    1417it [00:34, 38.92it/s, failures=0, objective=-3.14]
-
-
-
-    1418it [00:34, 38.92it/s, failures=0, objective=-3.14]
-
-
-
-    1419it [00:34, 38.92it/s, failures=0, objective=-3.14]
-
-
-
-    1420it [00:34, 38.92it/s, failures=0, objective=-3.14]
-
-
-
-    1421it [00:34, 38.92it/s, failures=0, objective=-3.14]
-
-
-
-    1422it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1422it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1423it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1424it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1425it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1426it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1427it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1428it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1429it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1430it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1431it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1432it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1433it [00:34, 34.49it/s, failures=0, objective=-3.14]
-
-
-
-    1434it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1434it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1435it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1436it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1437it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1438it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1439it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1440it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1441it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1442it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1443it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1444it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1445it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1446it [00:35, 35.65it/s, failures=0, objective=-3.14]
-
-
-
-    1447it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1447it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1448it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1449it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1450it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1451it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1452it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1453it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1454it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1455it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1456it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1457it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1458it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1459it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1460it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1461it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1462it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1463it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1464it [00:35, 37.52it/s, failures=0, objective=-3.14]
-
-
-
-    1465it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1465it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1466it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1467it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1468it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1469it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1470it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1471it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1472it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1473it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1474it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1475it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1476it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1477it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1478it [00:35, 43.12it/s, failures=0, objective=-3.14]
-
-
-
-    1479it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1479it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1480it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1481it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1482it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1483it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1484it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1485it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1486it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1487it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1488it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1489it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1490it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1491it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1492it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1493it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1494it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1495it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1496it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1497it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1498it [00:36, 41.28it/s, failures=0, objective=-3.14]
-
-
-
-    1499it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1499it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1500it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1501it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1502it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1503it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1504it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1505it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1506it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1507it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1508it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1509it [00:36, 42.76it/s, failures=0, objective=-3.14]
-
-
-
-    1510it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1510it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1511it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1512it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1513it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1514it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1515it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1516it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1517it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1518it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1519it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1520it [00:36, 40.12it/s, failures=0, objective=-3.14]
-
-
-
-    1521it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1521it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1522it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1523it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1524it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1525it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1526it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1527it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1528it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1529it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1530it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1531it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1532it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1533it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1534it [00:37, 38.94it/s, failures=0, objective=-3.14]
-
-
-
-    1535it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1535it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1536it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1537it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1538it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1539it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1540it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1541it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1542it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1543it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1544it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1545it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1546it [00:37, 39.51it/s, failures=0, objective=-3.14]
-
-
-
-    1547it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1547it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1548it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1549it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1550it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1551it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1552it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1553it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1554it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1555it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1556it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1557it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1558it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1559it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1560it [00:37, 37.63it/s, failures=0, objective=-3.14]
-
-
-
-    1561it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1561it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1562it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1563it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1564it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1565it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1566it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1567it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1568it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1569it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1570it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1571it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1572it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1573it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1574it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1575it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1576it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1577it [00:38, 39.59it/s, failures=0, objective=-3.14]
-
-
-
-    1578it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1578it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1579it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1580it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1581it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1582it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1583it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1584it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1585it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1586it [00:38, 44.37it/s, failures=0, objective=-3.14]
-
-
-
-    1587it [00:38, 38.80it/s, failures=0, objective=-3.14]
-
-
-
-    1587it [00:38, 38.80it/s, failures=0, objective=-3.14]
-
-
-
-    1588it [00:38, 38.80it/s, failures=0, objective=-3.14]
-
-
-
-    1589it [00:38, 38.80it/s, failures=0, objective=-3.14]
-
-
-
-    1590it [00:38, 38.80it/s, failures=0, objective=-3.14]
-
-
-
-    1591it [00:38, 38.80it/s, failures=0, objective=-3.14]
-
-
-
-    1592it [00:38, 38.80it/s, failures=0, objective=-3.14]
-
-
-
-    1593it [00:38, 38.80it/s, failures=0, objective=-2.59]
-
-
-
-    1594it [00:38, 38.80it/s, failures=0, objective=-2.59]
-
-
-
-    1595it [00:38, 38.80it/s, failures=0, objective=-2.59]
-
-
-
-    1596it [00:38, 38.80it/s, failures=0, objective=-2.59]
-
-
-
-    1597it [00:38, 38.80it/s, failures=0, objective=-2.59]
-
-
-
-    1598it [00:38, 38.80it/s, failures=0, objective=-2.59]
-
-
-
-    1599it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1599it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1600it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1601it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1602it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1603it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1604it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1605it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1606it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1607it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1608it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1609it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1610it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1611it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1612it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1613it [00:39, 37.21it/s, failures=0, objective=-2.59]
-
-
-
-    1614it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1614it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1615it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1616it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1617it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1618it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1619it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1620it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1621it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1622it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1623it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1624it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1625it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1626it [00:39, 39.90it/s, failures=0, objective=-2.59]
-
-
-
-    1627it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1627it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1628it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1629it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1630it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1631it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1632it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1633it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1634it [00:39, 42.57it/s, failures=0, objective=-2.59]
-
-
-
-    1635it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1635it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1636it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1637it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1638it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1639it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1640it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1641it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1642it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1643it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1644it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1645it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1646it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1647it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1648it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1649it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1650it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1651it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1652it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1653it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1654it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1655it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1656it [00:40, 34.87it/s, failures=0, objective=-2.59]
-
-
-
-    1657it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1657it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1658it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1659it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1660it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1661it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1662it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1663it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1664it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1665it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1666it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1667it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1668it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1669it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1670it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1671it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1672it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1673it [00:40, 40.10it/s, failures=0, objective=-2.59]
-
-
-
-    1674it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1674it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1675it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1676it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1677it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1678it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1679it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1680it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1681it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1682it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1683it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1684it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1685it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1686it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1687it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1688it [00:40, 41.18it/s, failures=0, objective=-2.59]
-
-
-
-    1689it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1689it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1690it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1691it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1692it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1693it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1694it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1695it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1696it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1697it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1698it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1699it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1700it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1701it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1702it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1703it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1704it [00:41, 43.15it/s, failures=0, objective=-2.59]
-
-
-
-    1705it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1705it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1706it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1707it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1708it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1709it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1710it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1711it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1712it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1713it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1714it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1715it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1716it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1717it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1718it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1719it [00:41, 41.67it/s, failures=0, objective=-2.59]
-
-
-
-    1720it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1720it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1721it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1722it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1723it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1724it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1725it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1726it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1727it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1728it [00:42, 40.71it/s, failures=0, objective=-2.59]
-
-
-
-    1729it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1729it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1730it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1731it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1732it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1733it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1734it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1735it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1736it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1737it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1738it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1739it [00:42, 38.77it/s, failures=0, objective=-2.59]
-
-
-
-    1740it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1740it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1741it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1742it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1743it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1744it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1745it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1746it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1747it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1748it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1749it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1750it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1751it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1752it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1753it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1754it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1755it [00:42, 33.61it/s, failures=0, objective=-2.59]
-
-
-
-    1756it [00:43, 35.78it/s, failures=0, objective=-2.59]
-
-
-
-    1756it [00:43, 35.78it/s, failures=0, objective=-2.59]
-
-
-
-    1757it [00:43, 35.78it/s, failures=0, objective=-2.59]
-
-
-
-    1758it [00:43, 35.78it/s, failures=0, objective=-2.5] 
-
-
-
-    1759it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1760it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1761it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1762it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1763it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1764it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1765it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1766it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1767it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1768it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1769it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1770it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1771it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1772it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1773it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1774it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1775it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1776it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1777it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1778it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1779it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1780it [00:43, 35.78it/s, failures=0, objective=-2.5]
-
-
-
-    1781it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1781it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1782it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1783it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1784it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1785it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1786it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1787it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1788it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1789it [00:43, 45.40it/s, failures=0, objective=-2.5]
-
-
-
-    1790it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1790it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1791it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1792it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1793it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1794it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1795it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1796it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1797it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1798it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1799it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1800it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1801it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1802it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1803it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1804it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1805it [00:43, 41.30it/s, failures=0, objective=-2.5]
-
-
-
-    1806it [00:44, 40.04it/s, failures=0, objective=-2.5]
-
-
-
-    1806it [00:44, 40.04it/s, failures=0, objective=-2.5]
-
-
-
-    1807it [00:44, 40.04it/s, failures=0, objective=-2.5]
-
-
-
-    1808it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1809it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1810it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1811it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1812it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1813it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1814it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1815it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1816it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1817it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1818it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1819it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1820it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1821it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1822it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1823it [00:44, 40.04it/s, failures=0, objective=-2.16]
-
-
-
-    1824it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1824it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1825it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1826it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1827it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1828it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1829it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1830it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1831it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1832it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1833it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1834it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1835it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1836it [00:44, 39.31it/s, failures=0, objective=-2.16]
-
-
-
-    1837it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1837it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1838it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1839it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1840it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1841it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1842it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1843it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1844it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1845it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1846it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1847it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1848it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1849it [00:45, 40.78it/s, failures=0, objective=-2.16]
-
-
-
-    1850it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1850it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1851it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1852it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1853it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1854it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1855it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1856it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1857it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1858it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1859it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1860it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1861it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1862it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1863it [00:45, 41.57it/s, failures=0, objective=-2.16]
-
-
-
-    1864it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1864it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1865it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1866it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1867it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1868it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1869it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1870it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1871it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1872it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1873it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1874it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1875it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1876it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1877it [00:45, 41.89it/s, failures=0, objective=-2.16]
-
-
-
-    1878it [00:45, 43.46it/s, failures=0, objective=-2.16]
-
-
-
-    1878it [00:45, 43.46it/s, failures=0, objective=-2.16]
-
-
-
-    1879it [00:45, 43.46it/s, failures=0, objective=-2.16]
-
-
-
-    1880it [00:45, 43.46it/s, failures=0, objective=-2.16]
-
-
-
-    1881it [00:45, 43.46it/s, failures=0, objective=-2.16]
-
-
-
-    1882it [00:45, 43.46it/s, failures=0, objective=-2.16]
-
-
-
-    1883it [00:45, 43.46it/s, failures=0, objective=-2.16]
-
-
-
-    1884it [00:45, 43.46it/s, failures=0, objective=-2.16]
-
-
-
-    1885it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1885it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1886it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1887it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1888it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1889it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1890it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1891it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1892it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1893it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1894it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1895it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1896it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1897it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1898it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1899it [00:46, 34.08it/s, failures=0, objective=-2.16]
-
-
-
-    1900it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1900it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1901it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1902it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1903it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1904it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1905it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1906it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1907it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1908it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1909it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1910it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1911it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1912it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1913it [00:46, 38.27it/s, failures=0, objective=-2.16]
-
-
-
-    1914it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1914it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1915it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1916it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1917it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1918it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1919it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1920it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1921it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1922it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1923it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1924it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1925it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1926it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1927it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1928it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1929it [00:47, 36.87it/s, failures=0, objective=-2.16]
-
-
-
-    1930it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1930it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1931it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1932it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1933it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1934it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1935it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1936it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1937it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1938it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1939it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1940it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1941it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1942it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1943it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1944it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1945it [00:47, 35.83it/s, failures=0, objective=-2.16]
-
-
-
-    1946it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1946it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1947it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1948it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1949it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1950it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1951it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1952it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1953it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1954it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1955it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1956it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1957it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1958it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1959it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1960it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1961it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1962it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1963it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1964it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1965it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1966it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1967it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1968it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1969it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1970it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1971it [00:48, 35.74it/s, failures=0, objective=-2.16]
-
-
-
-    1972it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1972it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1973it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1974it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1975it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1976it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1977it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1978it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1979it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1980it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1981it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1982it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1983it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1984it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1985it [00:48, 46.05it/s, failures=0, objective=-2.16]
-
-
-
-    1986it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1986it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1987it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1988it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1989it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1990it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1991it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1992it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1993it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1994it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1995it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1996it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1997it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1998it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    1999it [00:48, 37.42it/s, failures=0, objective=-2.16]
-
-
-
-    2000it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2000it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2001it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2002it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2003it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2004it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2005it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2006it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2007it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2008it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2009it [00:49, 38.51it/s, failures=0, objective=-2.16]
-
-
-
-    2010it [00:49, 36.05it/s, failures=0, objective=-2.16]
-
-
-
-    2010it [00:49, 36.05it/s, failures=0, objective=-2.16]
-
-
-
-    2011it [00:49, 36.05it/s, failures=0, objective=-2.16]
-
-
-
-    2012it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2013it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2014it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2015it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2016it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2017it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2018it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2019it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2020it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2021it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2022it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2023it [00:49, 36.05it/s, failures=0, objective=-2.08]
-
-
-
-    2024it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2024it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2025it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2026it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2027it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2028it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2029it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2030it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2031it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2032it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2033it [00:49, 38.47it/s, failures=0, objective=-2.08]
-
-
-
-    2034it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2034it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2035it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2036it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2037it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2038it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2039it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2040it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2041it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2042it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2043it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2044it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2045it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2046it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2047it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2048it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2049it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2050it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2051it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2052it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2053it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2054it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2055it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2056it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2057it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2058it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2059it [00:50, 32.03it/s, failures=0, objective=-2.08]
-
-
-
-    2060it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2060it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2061it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2062it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2063it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2064it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2065it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2066it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2067it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2068it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2069it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2070it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2071it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2072it [00:50, 44.75it/s, failures=0, objective=-2.08]
-
-
-
-    2073it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2073it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2074it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2075it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2076it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2077it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2078it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2079it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2080it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2081it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2082it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2083it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2084it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2085it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2086it [00:51, 42.66it/s, failures=0, objective=-2.08]
-
-
-
-    2087it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2087it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2088it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2089it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2090it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2091it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2092it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2093it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2094it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2095it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2096it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2097it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2098it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2099it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2100it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2101it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2102it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2103it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2104it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2105it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2106it [00:51, 37.65it/s, failures=0, objective=-2.08]
-
-
-
-    2107it [00:51, 43.90it/s, failures=0, objective=-2.08]
-
-
-
-    2107it [00:51, 43.90it/s, failures=0, objective=-2.08]
-
-
-
-    2108it [00:51, 43.90it/s, failures=0, objective=-2.08]
-
-
-
-    2109it [00:51, 43.90it/s, failures=0, objective=-2.08]
-
-
-
-    2110it [00:51, 43.90it/s, failures=0, objective=-2.08]
-
-
-
-    2111it [00:51, 43.90it/s, failures=0, objective=-2.08]
-
-
-
-    2112it [00:51, 43.90it/s, failures=0, objective=-2.08]
-
-
-
-    2113it [00:51, 43.90it/s, failures=0, objective=-2.08]
-
-
-
-    2114it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2114it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2115it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2116it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2117it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2118it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2119it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2120it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2121it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2122it [00:52, 38.64it/s, failures=0, objective=-2.08]
-
-
-
-    2123it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2123it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2124it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2125it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2126it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2127it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2128it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2129it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2130it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2131it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2132it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2133it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2134it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2135it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2136it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2137it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2138it [00:52, 32.30it/s, failures=0, objective=-2.08]
-
-
-
-    2139it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2139it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2140it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2141it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2142it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2143it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2144it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2145it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2146it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2147it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2148it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2149it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2150it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2151it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2152it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2153it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2154it [00:53, 33.63it/s, failures=0, objective=-2.08]
-
-
-
-    2155it [00:53, 38.03it/s, failures=0, objective=-2.08]
-
-
-
-    2155it [00:53, 38.03it/s, failures=0, objective=-2.08]
-
-
-
-    2156it [00:53, 38.03it/s, failures=0, objective=-2.08]
-
-
-
-    2157it [00:53, 38.03it/s, failures=0, objective=-2.08]
-
-
-
-    2158it [00:53, 38.03it/s, failures=0, objective=-2.08]
-
-
-
-    2159it [00:53, 38.03it/s, failures=0, objective=-2.08]
-
-
-
-    2160it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2161it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2162it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2163it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2164it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2165it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2166it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2167it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2168it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2169it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2170it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2171it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2172it [00:53, 38.03it/s, failures=0, objective=-1.95]
-
-
-
-    2173it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2173it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2174it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2175it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2176it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2177it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2178it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2179it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2180it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2181it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2182it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2183it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2184it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2185it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2186it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2187it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2188it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2189it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2190it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2191it [00:53, 42.62it/s, failures=0, objective=-1.95]
-
-
-
-    2192it [00:54, 46.52it/s, failures=0, objective=-1.95]
-
-
-
-    2192it [00:54, 46.52it/s, failures=0, objective=-1.95]
-
-
-
-    2193it [00:54, 46.52it/s, failures=0, objective=-1.95]
-
-
-
-    2194it [00:54, 46.52it/s, failures=0, objective=-1.95]
-
-
-
-    2195it [00:54, 46.52it/s, failures=0, objective=-1.95]
-
-
-
-    2196it [00:54, 46.52it/s, failures=0, objective=-1.95]
-
-
-
-    2197it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2197it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2198it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2199it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2200it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2201it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2202it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2203it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2204it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2205it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2206it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2207it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2208it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2209it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2210it [00:54, 36.78it/s, failures=0, objective=-1.95]
-
-
-
-    2211it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2211it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2212it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2213it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2214it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2215it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2216it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2217it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2218it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2219it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2220it [00:54, 37.15it/s, failures=0, objective=-1.95]
-
-
-
-    2221it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2221it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2222it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2223it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2224it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2225it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2226it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2227it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2228it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2229it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2230it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2231it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2232it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2233it [00:55, 34.58it/s, failures=0, objective=-1.95]
-
-
-
-    2234it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2234it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2235it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2236it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2237it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2238it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2239it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2240it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2241it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2242it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2243it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2244it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2245it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2246it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2247it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2248it [00:55, 34.93it/s, failures=0, objective=-1.95]
-
-
-
-    2249it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2249it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2250it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2251it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2252it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2253it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2254it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2255it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2256it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2257it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2258it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2259it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2260it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2261it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2262it [00:55, 38.26it/s, failures=0, objective=-1.95]
-
-
-
-    2263it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2263it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2264it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2265it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2266it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2267it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2268it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2269it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2270it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2271it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2272it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2273it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2274it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2275it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2276it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2277it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2278it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2279it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2280it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2281it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2282it [00:56, 38.61it/s, failures=0, objective=-1.95]
-
-
-
-    2283it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2283it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2284it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2285it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2286it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2287it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2288it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2289it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2290it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2291it [00:56, 45.40it/s, failures=0, objective=-1.95]
-
-
-
-    2292it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2292it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2293it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2294it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2295it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2296it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2297it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2298it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2299it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2300it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2301it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2302it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2303it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2304it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2305it [00:56, 35.97it/s, failures=0, objective=-1.95]
-
-
-
-    2306it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2306it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2307it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2308it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2309it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2310it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2311it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2312it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2313it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2314it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2315it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2316it [00:57, 36.42it/s, failures=0, objective=-1.95]
-
-
-
-    2317it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2317it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2318it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2319it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2320it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2321it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2322it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2323it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2324it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2325it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2326it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2327it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2328it [00:57, 35.78it/s, failures=0, objective=-1.95]
-
-
-
-    2329it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2329it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2330it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2331it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2332it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2333it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2334it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2335it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2336it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2337it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2338it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2339it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2340it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2341it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2342it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2343it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2344it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2345it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2346it [00:58, 33.18it/s, failures=0, objective=-1.95]
-
-
-
-    2347it [00:58, 36.96it/s, failures=0, objective=-1.95]
-
-
-
-    2347it [00:58, 36.96it/s, failures=0, objective=-1.95]
-
-
-
-    2348it [00:58, 36.96it/s, failures=0, objective=-1.95]
-
-
-
-    2349it [00:58, 36.96it/s, failures=0, objective=-1.95]
-
-
-
-    2350it [00:58, 36.96it/s, failures=0, objective=-1.95]
-
-
-
-    2351it [00:58, 36.96it/s, failures=0, objective=-1.95]
-
-
-
-    2352it [00:58, 36.96it/s, failures=0, objective=-1.95]
-
-
-
-    2353it [00:58, 36.96it/s, failures=0, objective=-1.95]
-
-
-
-    2354it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2355it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2356it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2357it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2358it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2359it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2360it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2361it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2362it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2363it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2364it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2365it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2366it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2367it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2368it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2369it [00:58, 36.96it/s, failures=0, objective=-1.26]
-
-
-
-    2370it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2370it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2371it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2372it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2373it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2374it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2375it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2376it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2377it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2378it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2379it [00:58, 43.94it/s, failures=0, objective=-1.26]
-
-
-
-    2380it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2380it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2381it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2382it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2383it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2384it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2385it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2386it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2387it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2388it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2389it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2390it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2391it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2392it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2393it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2394it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2395it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2396it [00:59, 39.41it/s, failures=0, objective=-1.26]
-
-
-
-    2397it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2397it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2398it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2399it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2400it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2401it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2402it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2403it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2404it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2405it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2406it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2407it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2408it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2409it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2410it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2411it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2412it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2413it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2414it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2415it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2416it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2417it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2418it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2419it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2420it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2421it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2422it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2423it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2424it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2425it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2426it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2427it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2428it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2429it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2430it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2431it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2432it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2433it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2434it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2435it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2436it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2437it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2438it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2439it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2440it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2441it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2442it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2443it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2444it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2445it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2446it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2447it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2448it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2449it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2450it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2451it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2452it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2453it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2454it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2455it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2456it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2457it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2458it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2459it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2460it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2461it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2462it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2463it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2464it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2465it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2466it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2467it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2468it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2469it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2470it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2471it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2472it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2473it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2474it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2475it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2476it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2477it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2478it [01:01, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-    2479it [01:01, 14.11it/s, failures=0, objective=-1.26]
+    Parallel BO:: : 0it [00:00, ?it/s]
+    Parallel BO:: : 1it [00:00, 1968.23it/s, failures=0, objective=-21.2]
+    Parallel BO:: : 2it [00:00, 10.84it/s, failures=0, objective=-21.2]  
+    Parallel BO:: : 2it [00:00, 10.84it/s, failures=0, objective=-21.2]
+    Parallel BO:: : 3it [00:00, 10.84it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 4it [00:00, 10.84it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 5it [00:00, 14.73it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 5it [00:00, 14.73it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 6it [00:00, 14.73it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 7it [00:00, 14.73it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 8it [00:00, 14.73it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 9it [00:00, 14.73it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 10it [00:00, 24.01it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 10it [00:00, 24.01it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 11it [00:00, 24.01it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 12it [00:00, 24.01it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 13it [00:00, 23.56it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 13it [00:00, 23.56it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 14it [00:00, 23.56it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 15it [00:00, 23.56it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 16it [00:00, 23.79it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 16it [00:00, 23.79it/s, failures=0, objective=-17.7]
+    Parallel BO:: : 17it [00:00, 23.79it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 18it [00:00, 23.79it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 19it [00:00, 22.96it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 19it [00:00, 22.96it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 20it [00:00, 22.96it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 21it [00:00, 22.96it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 22it [00:00, 22.96it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 23it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 23it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 24it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 25it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 26it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 27it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 28it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 29it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 30it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 31it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 32it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 33it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 34it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 35it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 36it [00:01, 24.04it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 37it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 37it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 38it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 39it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 40it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 41it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 42it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 43it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 44it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 45it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 46it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 47it [00:01, 42.14it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 48it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 48it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 49it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 50it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 51it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 52it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 53it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 54it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 55it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 56it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 57it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 58it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 59it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 60it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 61it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 62it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 63it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 64it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 65it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 66it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 67it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 68it [00:01, 43.75it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 69it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 69it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 70it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 71it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 72it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 73it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 74it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 75it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 76it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 77it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 78it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 79it [00:01, 67.55it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 80it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 80it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 81it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 82it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 83it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 84it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 85it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 86it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 87it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 88it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 89it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 90it [00:01, 63.80it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 91it [00:02, 62.51it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 91it [00:02, 62.51it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 92it [00:02, 62.51it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 93it [00:02, 62.51it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 94it [00:02, 62.51it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 95it [00:02, 62.51it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 96it [00:02, 62.51it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 97it [00:02, 62.51it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 98it [00:02, 56.24it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 98it [00:02, 56.24it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 99it [00:02, 56.24it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 100it [00:02, 56.24it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 101it [00:02, 56.24it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 102it [00:02, 56.24it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 103it [00:02, 56.24it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 104it [00:02, 48.32it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 104it [00:02, 48.32it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 105it [00:02, 48.32it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 106it [00:02, 48.32it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 107it [00:02, 48.32it/s, failures=0, objective=-16.8]
+    Parallel BO:: : 108it [00:02, 48.32it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 109it [00:02, 30.94it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 109it [00:02, 30.94it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 110it [00:02, 30.94it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 111it [00:02, 30.94it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 112it [00:02, 30.94it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 113it [00:02, 30.94it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 114it [00:02, 30.94it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 115it [00:02, 31.65it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 115it [00:02, 31.65it/s, failures=0, objective=-16.2]
+    Parallel BO:: : 116it [00:02, 31.65it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 117it [00:02, 31.65it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 118it [00:02, 31.65it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 119it [00:02, 31.65it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 120it [00:02, 31.65it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 121it [00:02, 31.65it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 122it [00:02, 31.65it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 123it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 123it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 124it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 125it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 126it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 127it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 128it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 129it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 130it [00:03, 31.95it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 131it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 131it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 132it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 133it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 134it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 135it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 136it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 137it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 138it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 139it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 140it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 141it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 142it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 143it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 144it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 145it [00:03, 33.02it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 146it [00:03, 40.96it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 146it [00:03, 40.96it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 147it [00:03, 40.96it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 148it [00:03, 40.96it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 149it [00:03, 40.96it/s, failures=0, objective=-12.2]
+    Parallel BO:: : 150it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 151it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 152it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 153it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 154it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 155it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 156it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 157it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 158it [00:03, 40.96it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 159it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 159it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 160it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 161it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 162it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 163it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 164it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 165it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 166it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 167it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 168it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 169it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 170it [00:03, 46.04it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 171it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 171it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 172it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 173it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 174it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 175it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 176it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 177it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 178it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 179it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 180it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 181it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 182it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 183it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 184it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 185it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 186it [00:04, 47.30it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 187it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 187it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 188it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 189it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 190it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 191it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 192it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 193it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 194it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 195it [00:04, 56.76it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 196it [00:04, 53.75it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 196it [00:04, 53.75it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 197it [00:04, 53.75it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 198it [00:04, 53.75it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 199it [00:04, 53.75it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 200it [00:04, 53.75it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 201it [00:04, 53.75it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 202it [00:04, 45.94it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 202it [00:04, 45.94it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 203it [00:04, 45.94it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 204it [00:04, 45.94it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 205it [00:04, 45.94it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 206it [00:04, 45.94it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 207it [00:04, 45.94it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 208it [00:04, 45.94it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 209it [00:05, 37.45it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 209it [00:05, 37.45it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 210it [00:05, 37.45it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 211it [00:05, 37.45it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 212it [00:05, 37.45it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 213it [00:05, 37.45it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 214it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 214it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 215it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 216it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 217it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 218it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 219it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 220it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 221it [00:05, 34.88it/s, failures=0, objective=-12.1]
+    Parallel BO:: : 222it [00:05, 34.88it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 223it [00:05, 34.88it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 224it [00:05, 33.59it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 224it [00:05, 33.59it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 225it [00:05, 33.59it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 226it [00:05, 33.59it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 227it [00:05, 33.59it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 228it [00:05, 33.59it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 229it [00:05, 33.59it/s, failures=0, objective=-11.9]
+    Parallel BO:: : 230it [00:05, 33.59it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 231it [00:05, 33.59it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 232it [00:05, 33.59it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 233it [00:05, 33.59it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 234it [00:05, 33.59it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 235it [00:05, 33.59it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 236it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 236it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 237it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 238it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 239it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 240it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 241it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 242it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 243it [00:05, 40.02it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 244it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 244it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 245it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 246it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 247it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 248it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 249it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 250it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 251it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 252it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 253it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 254it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 255it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 256it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 257it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 258it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 259it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 260it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 261it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 262it [00:06, 35.20it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 263it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 263it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 264it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 265it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 266it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 267it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 268it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 269it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 270it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 271it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 272it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 273it [00:06, 46.94it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 274it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 274it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 275it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 276it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 277it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 278it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 279it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 280it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 281it [00:06, 47.74it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 282it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 282it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 283it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 284it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 285it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 286it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 287it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 288it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 289it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 290it [00:06, 44.39it/s, failures=0, objective=-10.7]
+    Parallel BO:: : 291it [00:06, 44.39it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 292it [00:06, 44.39it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 293it [00:06, 44.39it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 294it [00:06, 44.39it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 295it [00:06, 44.39it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 296it [00:06, 44.39it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 297it [00:06, 44.39it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 298it [00:06, 44.39it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 299it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 299it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 300it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 301it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 302it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 303it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 304it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 305it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 306it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 307it [00:07, 49.69it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 308it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 308it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 309it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 310it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 311it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 312it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 313it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 314it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 315it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 316it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 317it [00:07, 46.27it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 318it [00:07, 44.50it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 318it [00:07, 44.50it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 319it [00:07, 44.50it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 320it [00:07, 44.50it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 321it [00:07, 44.50it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 322it [00:07, 44.50it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 323it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 323it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 324it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 325it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 326it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 327it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 328it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 329it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 330it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 331it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 332it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 333it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 334it [00:07, 35.76it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 335it [00:08, 41.57it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 335it [00:08, 41.57it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 336it [00:08, 41.57it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 337it [00:08, 41.57it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 338it [00:08, 41.57it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 339it [00:08, 41.57it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 340it [00:08, 41.57it/s, failures=0, objective=-10.2]
+    Parallel BO:: : 341it [00:08, 41.57it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 342it [00:08, 41.57it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 343it [00:08, 41.57it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 344it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 344it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 345it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 346it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 347it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 348it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 349it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 350it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 351it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 352it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 353it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 354it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 355it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 356it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 357it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 358it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 359it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 360it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 361it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 362it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 363it [00:08, 33.36it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 364it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 364it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 365it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 366it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 367it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 368it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 369it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 370it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 371it [00:08, 44.38it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 372it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 372it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 373it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 374it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 375it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 376it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 377it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 378it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 379it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 380it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 381it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 382it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 383it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 384it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 385it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 386it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 387it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 388it [00:09, 37.81it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 389it [00:09, 44.99it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 389it [00:09, 44.99it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 390it [00:09, 44.99it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 391it [00:09, 44.99it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 392it [00:09, 44.99it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 393it [00:09, 44.99it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 394it [00:09, 44.99it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 395it [00:09, 44.99it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 396it [00:09, 39.82it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 396it [00:09, 39.82it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 397it [00:09, 39.82it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 398it [00:09, 39.82it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 399it [00:09, 39.82it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 400it [00:09, 39.82it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 401it [00:09, 39.82it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 402it [00:09, 39.82it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 403it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 403it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 404it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 405it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 406it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 407it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 408it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 409it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 410it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 411it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 412it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 413it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 414it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 415it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 416it [00:09, 36.17it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 417it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 417it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 418it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 419it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 420it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 421it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 422it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 423it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 424it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 425it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 426it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 427it [00:10, 40.66it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 428it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 428it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 429it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 430it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 431it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 432it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 433it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 434it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 435it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 436it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 437it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 438it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 439it [00:10, 40.63it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 440it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 440it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 441it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 442it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 443it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 444it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 445it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 446it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 447it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 448it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 449it [00:10, 42.89it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 450it [00:10, 41.93it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 450it [00:10, 41.93it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 451it [00:10, 41.93it/s, failures=0, objective=-7.94]
+    Parallel BO:: : 452it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 453it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 454it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 455it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 456it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 457it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 458it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 459it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 460it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 461it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 462it [00:10, 41.93it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 463it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 463it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 464it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 465it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 466it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 467it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 468it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 469it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 470it [00:11, 42.01it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 471it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 471it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 472it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 473it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 474it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 475it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 476it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 477it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 478it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 479it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 480it [00:11, 36.49it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 481it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 481it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 482it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 483it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 484it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 485it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 486it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 487it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 488it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 489it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 490it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 491it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 492it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 493it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 494it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 495it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 496it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 497it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 498it [00:11, 35.73it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 499it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 499it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 500it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 501it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 502it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 503it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 504it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 505it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 506it [00:12, 43.63it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 507it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 507it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 508it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 509it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 510it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 511it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 512it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 513it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 514it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 515it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 516it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 517it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 518it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 519it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 520it [00:12, 37.91it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 521it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 521it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 522it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 523it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 524it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 525it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 526it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 527it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 528it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 529it [00:12, 42.22it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 530it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 530it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 531it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 532it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 533it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 534it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 535it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 536it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 537it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 538it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 539it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 540it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 541it [00:12, 38.50it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 542it [00:13, 40.15it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 542it [00:13, 40.15it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 543it [00:13, 40.15it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 544it [00:13, 40.15it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 545it [00:13, 40.15it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 546it [00:13, 40.15it/s, failures=0, objective=-7.26]
+    Parallel BO:: : 547it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 548it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 549it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 550it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 551it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 552it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 553it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 554it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 555it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 556it [00:13, 40.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 557it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 557it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 558it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 559it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 560it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 561it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 562it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 563it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 564it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 565it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 566it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 567it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 568it [00:13, 47.15it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 569it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 569it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 570it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 571it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 572it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 573it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 574it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 575it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 576it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 577it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 578it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 579it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 580it [00:13, 42.84it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 581it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 581it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 582it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 583it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 584it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 585it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 586it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 587it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 588it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 589it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 590it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 591it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 592it [00:14, 40.89it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 593it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 593it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 594it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 595it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 596it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 597it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 598it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 599it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 600it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 601it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 602it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 603it [00:14, 38.46it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 604it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 604it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 605it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 606it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 607it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 608it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 609it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 610it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 611it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 612it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 613it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 614it [00:14, 38.07it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 615it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 615it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 616it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 617it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 618it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 619it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 620it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 621it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 622it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 623it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 624it [00:15, 38.68it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 625it [00:15, 38.23it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 625it [00:15, 38.23it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 626it [00:15, 38.23it/s, failures=0, objective=-6.16]
+    Parallel BO:: : 627it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 628it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 629it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 630it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 631it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 632it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 633it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 634it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 635it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 636it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 637it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 638it [00:15, 38.23it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 639it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 639it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 640it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 641it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 642it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 643it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 644it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 645it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 646it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 647it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 648it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 649it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 650it [00:15, 44.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 651it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 651it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 652it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 653it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 654it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 655it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 656it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 657it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 658it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 659it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 660it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 661it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 662it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 663it [00:15, 46.09it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 664it [00:16, 46.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 664it [00:16, 46.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 665it [00:16, 46.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 666it [00:16, 46.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 667it [00:16, 46.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 668it [00:16, 46.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 669it [00:16, 46.43it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 670it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 670it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 671it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 672it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 673it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 674it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 675it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 676it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 677it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 678it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 679it [00:16, 37.63it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 680it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 680it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 681it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 682it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 683it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 684it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 685it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 686it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 687it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 688it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 689it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 690it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 691it [00:16, 37.75it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 692it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 692it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 693it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 694it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 695it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 696it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 697it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 698it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 699it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 700it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 701it [00:16, 40.95it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 702it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 702it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 703it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 704it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 705it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 706it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 707it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 708it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 709it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 710it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 711it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 712it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 713it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 714it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 715it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 716it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 717it [00:17, 35.90it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 718it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 718it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 719it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 720it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 721it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 722it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 723it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 724it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 725it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 726it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 727it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 728it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 729it [00:17, 43.36it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 730it [00:17, 38.89it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 730it [00:17, 38.89it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 731it [00:17, 38.89it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 732it [00:17, 38.89it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 733it [00:17, 38.89it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 734it [00:17, 38.89it/s, failures=0, objective=-5.06]
+    Parallel BO:: : 735it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 736it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 737it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 738it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 739it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 740it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 741it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 742it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 743it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 744it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 745it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 746it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 747it [00:17, 38.89it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 748it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 748it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 749it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 750it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 751it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 752it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 753it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 754it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 755it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 756it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 757it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 758it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 759it [00:18, 46.86it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 760it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 760it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 761it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 762it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 763it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 764it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 765it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 766it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 767it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 768it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 769it [00:18, 43.85it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 770it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 770it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 771it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 772it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 773it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 774it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 775it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 776it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 777it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 778it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 779it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 780it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 781it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 782it [00:18, 41.34it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 783it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 783it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 784it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 785it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 786it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 787it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 788it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 789it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 790it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 791it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 792it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 793it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 794it [00:19, 42.44it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 795it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 795it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 796it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 797it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 798it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 799it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 800it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 801it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 802it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 803it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 804it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 805it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 806it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 807it [00:19, 43.26it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 808it [00:19, 46.06it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 808it [00:19, 46.06it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 809it [00:19, 46.06it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 810it [00:19, 46.06it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 811it [00:19, 46.06it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 812it [00:19, 46.06it/s, failures=0, objective=-4.96]
+    Parallel BO:: : 813it [00:19, 46.06it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 814it [00:19, 46.06it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 815it [00:19, 46.06it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 816it [00:19, 46.06it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 817it [00:19, 46.06it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 818it [00:19, 44.83it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 818it [00:19, 44.83it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 819it [00:19, 44.83it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 820it [00:19, 44.83it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 821it [00:19, 44.83it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 822it [00:19, 44.83it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 823it [00:19, 44.83it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 824it [00:19, 44.83it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 825it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 825it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 826it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 827it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 828it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 829it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 830it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 831it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 832it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 833it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 834it [00:20, 37.81it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 835it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 835it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 836it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 837it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 838it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 839it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 840it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 841it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 842it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 843it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 844it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 845it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 846it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 847it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 848it [00:20, 34.85it/s, failures=0, objective=-4.58]
+    Parallel BO:: : 849it [00:20, 34.85it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 850it [00:20, 34.85it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 851it [00:20, 34.85it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 852it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 852it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 853it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 854it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 855it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 856it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 857it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 858it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 859it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 860it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 861it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 862it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 863it [00:20, 43.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 864it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 864it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 865it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 866it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 867it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 868it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 869it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 870it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 871it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 872it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 873it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 874it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 875it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 876it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 877it [00:20, 45.06it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 878it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 878it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 879it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 880it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 881it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 882it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 883it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 884it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 885it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 886it [00:21, 45.00it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 887it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 887it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 888it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 889it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 890it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 891it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 892it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 893it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 894it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 895it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 896it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 897it [00:21, 41.23it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 898it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 898it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 899it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 900it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 901it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 902it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 903it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 904it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 905it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 906it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 907it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 908it [00:21, 39.94it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 909it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 909it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 910it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 911it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 912it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 913it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 914it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 915it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 916it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 917it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 918it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 919it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 920it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 921it [00:22, 39.25it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 922it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 922it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 923it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 924it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 925it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 926it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 927it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 928it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 929it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 930it [00:22, 40.44it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 931it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 931it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 932it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 933it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 934it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 935it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 936it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 937it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 938it [00:22, 38.47it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 939it [00:22, 36.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 939it [00:22, 36.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 940it [00:22, 36.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 941it [00:22, 36.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 942it [00:22, 36.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 943it [00:22, 36.75it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 944it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 944it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 945it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 946it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 947it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 948it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 949it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 950it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 951it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 952it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 953it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 954it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 955it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 956it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 957it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 958it [00:23, 31.24it/s, failures=0, objective=-3.52]
+    Parallel BO:: : 959it [00:23, 31.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 960it [00:23, 31.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 961it [00:23, 31.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 962it [00:23, 31.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 963it [00:23, 31.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 964it [00:23, 31.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 965it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 965it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 966it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 967it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 968it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 969it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 970it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 971it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 972it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 973it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 974it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 975it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 976it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 977it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 978it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 979it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 980it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 981it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 982it [00:23, 38.76it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 983it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 983it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 984it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 985it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 986it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 987it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 988it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 989it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 990it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 991it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 992it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 993it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 994it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 995it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 996it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 997it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 998it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 999it [00:23, 47.68it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1000it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1000it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1001it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1002it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1003it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1004it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1005it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1006it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1007it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1008it [00:24, 49.83it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1009it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1009it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1010it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1011it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1012it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1013it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1014it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1015it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1016it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1017it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1018it [00:24, 44.16it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1019it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1019it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1020it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1021it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1022it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1023it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1024it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1025it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1026it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1027it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1028it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1029it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1030it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1031it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1032it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1033it [00:24, 39.79it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1034it [00:25, 43.37it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1034it [00:25, 43.37it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1035it [00:25, 43.37it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1036it [00:25, 43.37it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1037it [00:25, 43.37it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1038it [00:25, 43.37it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1039it [00:25, 43.37it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1040it [00:25, 43.37it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1041it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1041it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1042it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1043it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1044it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1045it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1046it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1047it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1048it [00:25, 37.24it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1049it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1049it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1050it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1051it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1052it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1053it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1054it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1055it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1056it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1057it [00:25, 33.32it/s, failures=0, objective=-2.82]
+    Parallel BO:: : 1058it [00:25, 33.32it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1059it [00:25, 33.32it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1060it [00:25, 33.32it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1061it [00:25, 33.32it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1062it [00:25, 33.32it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1063it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1063it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1064it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1065it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1066it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1067it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1068it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1069it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1070it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1071it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1072it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1073it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1074it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1075it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1076it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1077it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1078it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1079it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1080it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1081it [00:25, 36.13it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1082it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1082it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1083it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1084it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1085it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1086it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1087it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1088it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1089it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1090it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1091it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1092it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1093it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1094it [00:26, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1095it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1095it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1096it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1097it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1098it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1099it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1100it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1101it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1102it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1103it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1104it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1105it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1106it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1107it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1108it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1109it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1110it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1111it [00:26, 41.15it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1112it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1112it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1113it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1114it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1115it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1116it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1117it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1118it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1119it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1120it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1121it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1122it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1123it [00:26, 46.11it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1124it [00:27, 45.40it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1124it [00:27, 45.40it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1125it [00:27, 45.40it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1126it [00:27, 45.40it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1127it [00:27, 45.40it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1128it [00:27, 45.40it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1129it [00:27, 45.40it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1130it [00:27, 45.40it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1131it [00:27, 40.81it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1131it [00:27, 40.81it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1132it [00:27, 40.81it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1133it [00:27, 40.81it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1134it [00:27, 40.81it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1135it [00:27, 40.81it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1136it [00:27, 40.81it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1137it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1137it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1138it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1139it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1140it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1141it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1142it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1143it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1144it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1145it [00:27, 34.29it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1146it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1146it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1147it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1148it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1149it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1150it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1151it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1152it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1153it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1154it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1155it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1156it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1157it [00:28, 30.87it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1158it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1158it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1159it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1160it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1161it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1162it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1163it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1164it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1165it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1166it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1167it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1168it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1169it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1170it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1171it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1172it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1173it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1174it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1175it [00:28, 33.57it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1176it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1176it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1177it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1178it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1179it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1180it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1181it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1182it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1183it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1184it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1185it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1186it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1187it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1188it [00:28, 41.12it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1189it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1189it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1190it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1191it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1192it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1193it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1194it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1195it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1196it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1197it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1198it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1199it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1200it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1201it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1202it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1203it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1204it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1205it [00:29, 41.22it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1206it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1206it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1207it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1208it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1209it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1210it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1211it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1212it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1213it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1214it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1215it [00:29, 45.36it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1216it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1216it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1217it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1218it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1219it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1220it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1221it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1222it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1223it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1224it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1225it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1226it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1227it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1228it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1229it [00:29, 38.28it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1230it [00:30, 41.39it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1230it [00:30, 41.39it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1231it [00:30, 41.39it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1232it [00:30, 41.39it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1233it [00:30, 41.39it/s, failures=0, objective=-2.79]
+    Parallel BO:: : 1234it [00:30, 41.39it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1235it [00:30, 41.39it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1236it [00:30, 41.39it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1237it [00:30, 41.39it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1238it [00:30, 41.39it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1239it [00:30, 41.39it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1240it [00:30, 39.90it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1240it [00:30, 39.90it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1241it [00:30, 39.90it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1242it [00:30, 39.90it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1243it [00:30, 39.90it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1244it [00:30, 39.90it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1245it [00:30, 33.57it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1245it [00:30, 33.57it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1246it [00:30, 33.57it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1247it [00:30, 33.57it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1248it [00:30, 33.57it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1249it [00:30, 33.57it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1250it [00:30, 33.57it/s, failures=0, objective=-2.67]
+    Parallel BO:: : 1251it [00:30, 33.57it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1252it [00:30, 33.57it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1253it [00:30, 33.57it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1254it [00:30, 33.57it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1255it [00:30, 33.57it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1256it [00:30, 33.57it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1257it [00:30, 33.57it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1258it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1258it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1259it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1260it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1261it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1262it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1263it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1264it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1265it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1266it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1267it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1268it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1269it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1270it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1271it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1272it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1273it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1274it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1275it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1276it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1277it [00:31, 32.85it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1278it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1278it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1279it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1280it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1281it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1282it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1283it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1284it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1285it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1286it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1287it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1288it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1289it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1290it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1291it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1292it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1293it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1294it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1295it [00:31, 39.10it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1296it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1296it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1297it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1298it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1299it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1300it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1301it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1302it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1303it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1304it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1305it [00:31, 44.00it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1306it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1306it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1307it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1308it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1309it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1310it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1311it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1312it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1313it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1314it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1315it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1316it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1317it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1318it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1319it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1320it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1321it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1322it [00:32, 38.08it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1323it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1323it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1324it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1325it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1326it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1327it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1328it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1329it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1330it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1331it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1332it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1333it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1334it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1335it [00:32, 43.69it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1336it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1336it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1337it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1338it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1339it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1340it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1341it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1342it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1343it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1344it [00:32, 36.17it/s, failures=0, objective=-2.57]
+    Parallel BO:: : 1345it [00:32, 36.17it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1346it [00:32, 36.17it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1347it [00:32, 36.17it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1348it [00:32, 36.17it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1349it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1349it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1350it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1351it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1352it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1353it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1354it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1355it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1356it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1357it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1358it [00:33, 36.09it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1359it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1359it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1360it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1361it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1362it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1363it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1364it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1365it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1366it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1367it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1368it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1369it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1370it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1371it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1372it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1373it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1374it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1375it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1376it [00:33, 34.28it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1377it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1377it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1378it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1379it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1380it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1381it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1382it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1383it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1384it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1385it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1386it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1387it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1388it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1389it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1390it [00:33, 40.72it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1391it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1391it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1392it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1393it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1394it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1395it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1396it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1397it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1398it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1399it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1400it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1401it [00:34, 42.45it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1402it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1402it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1403it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1404it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1405it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1406it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1407it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1408it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1409it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1410it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1411it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1412it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1413it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1414it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1415it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1416it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1417it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1418it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1419it [00:34, 40.38it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1420it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1420it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1421it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1422it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1423it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1424it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1425it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1426it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1427it [00:34, 45.24it/s, failures=0, objective=-1.59]
+    Parallel BO:: : 1428it [00:34, 45.24it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1429it [00:34, 45.24it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1430it [00:35, 38.84it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1430it [00:35, 38.84it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1431it [00:35, 38.84it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1432it [00:35, 38.84it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1433it [00:35, 38.84it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1434it [00:35, 38.84it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1435it [00:35, 38.84it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1436it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1436it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1437it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1438it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1439it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1440it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1441it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1442it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1443it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1444it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1445it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1446it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1447it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1448it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1449it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1450it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1451it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1452it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1453it [00:35, 31.97it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1454it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1454it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1455it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1456it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1457it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1458it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1459it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1460it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1461it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1462it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1463it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1464it [00:35, 40.78it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1465it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1465it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1466it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1467it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1468it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1469it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1470it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1471it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1472it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1473it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1474it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1475it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1476it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1477it [00:36, 38.64it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1478it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1478it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1479it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1480it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1481it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1482it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1483it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1484it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1485it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1486it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1487it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1488it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1489it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1490it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1491it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1492it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1493it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1494it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1495it [00:36, 37.88it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1496it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1496it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1497it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1498it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1499it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1500it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1501it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1502it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1503it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1504it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1505it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1506it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1507it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1508it [00:36, 44.20it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1509it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1509it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1510it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1511it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1512it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1513it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1514it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1515it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1516it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1517it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1518it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1519it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1520it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1521it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1522it [00:37, 43.71it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1523it [00:37, 44.73it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1523it [00:37, 44.73it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1524it [00:37, 44.73it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1525it [00:37, 44.73it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1526it [00:37, 44.73it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1527it [00:37, 44.73it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1528it [00:37, 44.73it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1529it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1529it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1530it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1531it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1532it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1533it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1534it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1535it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1536it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1537it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1538it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1539it [00:37, 36.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1540it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1540it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1541it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1542it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1543it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1544it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1545it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1546it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1547it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1548it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1549it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1550it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1551it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1552it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1553it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1554it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1555it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1556it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1557it [00:38, 35.01it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1558it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1558it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1559it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1560it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1561it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1562it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1563it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1564it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1565it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1566it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1567it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1568it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1569it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1570it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1571it [00:38, 42.91it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1572it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1572it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1573it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1574it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1575it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1576it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1577it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1578it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1579it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1580it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1581it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1582it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1583it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1584it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1585it [00:38, 42.11it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1586it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1586it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1587it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1588it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1589it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1590it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1591it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1592it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1593it [00:38, 44.46it/s, failures=0, objective=-1.46]
+    Parallel BO:: : 1594it [00:38, 44.46it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1595it [00:38, 44.46it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1596it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1596it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1597it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1598it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1599it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1600it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1601it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1602it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1603it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1604it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1605it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1606it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1607it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1608it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1609it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1610it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1611it [00:39, 37.53it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1612it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1612it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1613it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1614it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1615it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1616it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1617it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1618it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1619it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1620it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1621it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1622it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1623it [00:39, 40.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1624it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1624it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1625it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1626it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1627it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1628it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1629it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1630it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1631it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1632it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1633it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1634it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1635it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1636it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1637it [00:40, 40.57it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1638it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1638it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1639it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1640it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1641it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1642it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1643it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1644it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1645it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1646it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1647it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1648it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1649it [00:40, 41.00it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1650it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1650it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1651it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1652it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1653it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1654it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1655it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1656it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1657it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1658it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1659it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1660it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1661it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1662it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1663it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1664it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1665it [00:40, 39.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1666it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1666it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1667it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1668it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1669it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1670it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1671it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1672it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1673it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1674it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1675it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1676it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1677it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1678it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1679it [00:41, 42.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1680it [00:41, 44.95it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1680it [00:41, 44.95it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1681it [00:41, 44.95it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1682it [00:41, 44.95it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1683it [00:41, 44.95it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1684it [00:41, 44.95it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1685it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1685it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1686it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1687it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1688it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1689it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1690it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1691it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1692it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1693it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1694it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1695it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1696it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1697it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1698it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1699it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1700it [00:41, 34.33it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1701it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1701it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1702it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1703it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1704it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1705it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1706it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1707it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1708it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1709it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1710it [00:42, 37.45it/s, failures=0, objective=-1.06]
+    Parallel BO:: : 1711it [00:42, 37.45it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1712it [00:42, 37.45it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1713it [00:42, 37.45it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1714it [00:42, 35.30it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1714it [00:42, 35.30it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1715it [00:42, 35.30it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1716it [00:42, 35.30it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1717it [00:42, 35.30it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1718it [00:42, 35.30it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1719it [00:42, 35.30it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1720it [00:42, 35.30it/s, failures=0, objective=-1.03]
+    Parallel BO:: : 1721it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1722it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1723it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1724it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1725it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1726it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1727it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1728it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1729it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1730it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1731it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1732it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1733it [00:42, 35.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1734it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1734it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1735it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1736it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1737it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1738it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1739it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1740it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1741it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1742it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1743it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1744it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1745it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1746it [00:42, 42.04it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1747it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1747it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1748it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1749it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1750it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1751it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1752it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1753it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1754it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1755it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1756it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1757it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1758it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1759it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1760it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1761it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1762it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1763it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1764it [00:43, 41.98it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1765it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1765it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1766it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1767it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1768it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1769it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1770it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1771it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1772it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1773it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1774it [00:43, 45.64it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1775it [00:43, 42.24it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1775it [00:43, 42.24it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1776it [00:43, 42.24it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1777it [00:43, 42.24it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1778it [00:43, 42.24it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1779it [00:43, 42.24it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1780it [00:43, 42.24it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1781it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1781it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1782it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1783it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1784it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1785it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1786it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1787it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1788it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1789it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1790it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1791it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1792it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1793it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1794it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1795it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1796it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1797it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1798it [00:44, 34.44it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1799it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1799it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1800it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1801it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1802it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1803it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1804it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1805it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1806it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1807it [00:44, 40.91it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1808it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1808it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1809it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1810it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1811it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1812it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1813it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1814it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1815it [00:44, 33.30it/s, failures=0, objective=-0.899]
+    Parallel BO:: : 1816it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1817it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1818it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1819it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1820it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1821it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1822it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1823it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1824it [00:44, 33.30it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1825it [00:45, 36.45it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1825it [00:45, 36.45it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1826it [00:45, 36.45it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1827it [00:45, 36.45it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1828it [00:45, 36.45it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1829it [00:45, 36.45it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1830it [00:45, 36.45it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1831it [00:45, 36.45it/s, failures=0, objective=-0.755]
+    Parallel BO:: : 1832it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1833it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1834it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1835it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1836it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1837it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1838it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1839it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1840it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1841it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1842it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1843it [00:45, 36.45it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1844it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1844it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1845it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1846it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1847it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1848it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1849it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1850it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1851it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1852it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1853it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1854it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1855it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1856it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1857it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1858it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1859it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1860it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1861it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1862it [00:45, 38.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1863it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1863it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1864it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1865it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1866it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1867it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1868it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1869it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1870it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1871it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1872it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1873it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1874it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1875it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1876it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1877it [00:46, 42.63it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1878it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1878it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1879it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1880it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1881it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1882it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1883it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1884it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1885it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1886it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1887it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1888it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1889it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1890it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1891it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1892it [00:46, 44.16it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1893it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1893it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1894it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1895it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1896it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1897it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1898it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1899it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1900it [00:46, 44.39it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1901it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1901it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1902it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1903it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1904it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1905it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1906it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1907it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1908it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1909it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1910it [00:47, 37.95it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1911it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1911it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1912it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1913it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1914it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1915it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1916it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1917it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1918it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1919it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1920it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1921it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1922it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1923it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1924it [00:47, 33.94it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1925it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1925it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1926it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1927it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1928it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1929it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1930it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1931it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1932it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1933it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1934it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1935it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1936it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1937it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1938it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1939it [00:47, 35.71it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1940it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1940it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1941it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1942it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1943it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1944it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1945it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1946it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1947it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1948it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1949it [00:48, 38.29it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1950it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1950it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1951it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1952it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1953it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1954it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1955it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1956it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1957it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1958it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1959it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1960it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1961it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1962it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1963it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1964it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1965it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1966it [00:48, 35.06it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1967it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1967it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1968it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1969it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1970it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1971it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1972it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1973it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1974it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1975it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1976it [00:48, 35.35it/s, failures=0, objective=-0.718]
+    Parallel BO:: : 1977it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1978it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1979it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1980it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1981it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1982it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1983it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1984it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1985it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1986it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1987it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1988it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1989it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1990it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1991it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1992it [00:48, 35.35it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1993it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1993it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1994it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1995it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1996it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1997it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1998it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 1999it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2000it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2001it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2002it [00:49, 48.87it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2003it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2003it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2004it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2005it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2006it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2007it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2008it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2009it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2010it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2011it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2012it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2013it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2014it [00:49, 43.74it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2015it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2015it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2016it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2017it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2018it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2019it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2020it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2021it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2022it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2023it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2024it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2025it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2026it [00:49, 41.04it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2027it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2027it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2028it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2029it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2030it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2031it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2032it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2033it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2034it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2035it [00:50, 38.93it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2036it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2036it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2037it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2038it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2039it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2040it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2041it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2042it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2043it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2044it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2045it [00:50, 36.71it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2046it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2046it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2047it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2048it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2049it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2050it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2051it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2052it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2053it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2054it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2055it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2056it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2057it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2058it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2059it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2060it [00:50, 33.57it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2061it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2061it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2062it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2063it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2064it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2065it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2066it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2067it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2068it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2069it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2070it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2071it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2072it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2073it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2074it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2075it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2076it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2077it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2078it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2079it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2080it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2081it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2082it [00:51, 33.60it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2083it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2083it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2084it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2085it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2086it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2087it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2088it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2089it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2090it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2091it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2092it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2093it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2094it [00:51, 41.58it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2095it [00:52, 39.95it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2095it [00:52, 39.95it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2096it [00:52, 39.95it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2097it [00:52, 39.95it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2098it [00:52, 39.95it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2099it [00:52, 39.95it/s, failures=0, objective=-0.606]
+    Parallel BO:: : 2100it [00:52, 39.95it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2101it [00:52, 39.95it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2102it [00:52, 39.95it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2103it [00:52, 39.95it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2104it [00:52, 39.95it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2105it [00:52, 39.95it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2106it [00:52, 39.95it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2107it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2107it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2108it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2109it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2110it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2111it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2112it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2113it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2114it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2115it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2116it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2117it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2118it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2119it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2120it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2121it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2122it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2123it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2124it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2125it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2126it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2127it [00:52, 34.51it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2128it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2128it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2129it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2130it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2131it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2132it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2133it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2134it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2135it [00:52, 42.40it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2136it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2136it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2137it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2138it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2139it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2140it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2141it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2142it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2143it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2144it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2145it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2146it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2147it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2148it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2149it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2150it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2151it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2152it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2153it [00:53, 34.26it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2154it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2154it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2155it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2156it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2157it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2158it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2159it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2160it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2161it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2162it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2163it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2164it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2165it [00:53, 40.03it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2166it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2166it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2167it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2168it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2169it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2170it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2171it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2172it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2173it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2174it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2175it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2176it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2177it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2178it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2179it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2180it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2181it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2182it [00:54, 36.37it/s, failures=0, objective=-0.456]
+    Parallel BO:: : 2183it [00:54, 36.37it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2184it [00:54, 36.37it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2185it [00:54, 36.37it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2186it [00:54, 36.37it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2187it [00:54, 36.37it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2188it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2188it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2189it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2190it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2191it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2192it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2193it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2194it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2195it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2196it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2197it [00:54, 45.07it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2198it [00:54, 39.79it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2198it [00:54, 39.79it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2199it [00:54, 39.79it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2200it [00:54, 39.79it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2201it [00:54, 39.79it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2202it [00:54, 39.79it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2203it [00:54, 39.79it/s, failures=0, objective=-0.399]
+    Parallel BO:: : 2204it [00:54, 39.79it/s, failures=0, objective=-0.35] 
+    Parallel BO:: : 2205it [00:54, 39.79it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2206it [00:54, 39.79it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2207it [00:54, 39.79it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2208it [00:54, 39.79it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2209it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2209it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2210it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2211it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2212it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2213it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2214it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2215it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2216it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2217it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2218it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2219it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2220it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2221it [00:55, 36.80it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2222it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2222it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2223it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2224it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2225it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2226it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2227it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2228it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2229it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2230it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2231it [00:55, 36.34it/s, failures=0, objective=-0.35]
+    Parallel BO:: : 2232it [00:55, 36.34it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2233it [00:55, 36.34it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2234it [00:55, 36.34it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2235it [00:55, 36.34it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2236it [00:55, 36.34it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2237it [00:55, 36.34it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2238it [00:55, 36.34it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2239it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2239it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2240it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2241it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2242it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2243it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2244it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2245it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2246it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2247it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2248it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2249it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2250it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2251it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2252it [00:55, 37.06it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2253it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2253it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2254it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2255it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2256it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2257it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2258it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2259it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2260it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2261it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2262it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2263it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2264it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2265it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2266it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2267it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2268it [00:56, 37.48it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2269it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2269it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2270it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2271it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2272it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2273it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2274it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2275it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2276it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2277it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2278it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2279it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2280it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2281it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2282it [00:56, 40.49it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2283it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2283it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2284it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2285it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2286it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2287it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2288it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2289it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2290it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2291it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2292it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2293it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2294it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2295it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2296it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2297it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2298it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2299it [00:56, 38.39it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2300it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2300it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2301it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2302it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2303it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2304it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2305it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2306it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2307it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2308it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2309it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2310it [00:57, 42.63it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2311it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2311it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2312it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2313it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2314it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2315it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2316it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2317it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2318it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2319it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2320it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2321it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2322it [00:57, 37.77it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2323it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2323it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2324it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2325it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2326it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2327it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2328it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2329it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2330it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2331it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2332it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2333it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2334it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2335it [00:58, 37.07it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2336it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2336it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2337it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2338it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2339it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2340it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2341it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2342it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2343it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2344it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2345it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2346it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2347it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2348it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2349it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2350it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2351it [00:58, 35.64it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2352it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2352it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2353it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2354it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2355it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2356it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2357it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2358it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2359it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2360it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2361it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2362it [00:58, 39.94it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2363it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2363it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2364it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2365it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2366it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2367it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2368it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2369it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2370it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2371it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2372it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2373it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2374it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2375it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2376it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2377it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2378it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2379it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2380it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2381it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2382it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2383it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2384it [00:59, 33.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2385it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2385it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2386it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2387it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2388it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2389it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2390it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2391it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2392it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2393it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2394it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2395it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2396it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2397it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2398it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2399it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2400it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2401it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2402it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2403it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2404it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2405it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2406it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2407it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2408it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2409it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2410it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2411it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2412it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2413it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2414it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2415it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2416it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2417it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2418it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2419it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2420it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2421it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2422it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2423it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2424it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2425it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2426it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2427it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2428it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2429it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2430it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2431it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2432it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2433it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2434it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2435it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2436it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2437it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2438it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2439it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2440it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2441it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2442it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2443it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2444it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2445it [01:01, 15.28it/s, failures=0, objective=-0.196]
+    Parallel BO:: : 2446it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2447it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2448it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2449it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2450it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2451it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2452it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2453it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2454it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2455it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2456it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2457it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2458it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2459it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2460it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2461it [01:01, 15.28it/s, failures=0, objective=-0.167]
+    Parallel BO:: : 2462it [01:01, 15.28it/s, failures=0, objective=-0.167]
 
 .. raw:: html
 
@@ -11728,10 +3586,10 @@ The parallel search is executed for 1 minute.
           <td>-21.214059</td>
           <td>96</td>
           <td>DONE</td>
-          <td>0.010042</td>
-          <td>0.005559</td>
-          <td>0.754683</td>
-          <td>0.765869</td>
+          <td>0.010551</td>
+          <td>0.023971</td>
+          <td>0.769960</td>
+          <td>0.782112</td>
         </tr>
         <tr>
           <th>1</th>
@@ -11743,10 +3601,10 @@ The parallel search is executed for 1 minute.
           <td>-21.433475</td>
           <td>71</td>
           <td>DONE</td>
-          <td>0.009880</td>
-          <td>0.004287</td>
-          <td>0.939559</td>
-          <td>0.950496</td>
+          <td>0.010010</td>
+          <td>0.020515</td>
+          <td>0.955999</td>
+          <td>0.967863</td>
         </tr>
         <tr>
           <th>2</th>
@@ -11758,10 +3616,10 @@ The parallel search is executed for 1 minute.
           <td>-17.661057</td>
           <td>68</td>
           <td>DONE</td>
-          <td>0.009860</td>
-          <td>0.004162</td>
-          <td>0.975885</td>
-          <td>0.986577</td>
+          <td>0.009953</td>
+          <td>0.020175</td>
+          <td>0.996244</td>
+          <td>1.007526</td>
         </tr>
         <tr>
           <th>3</th>
@@ -11773,10 +3631,10 @@ The parallel search is executed for 1 minute.
           <td>-20.986528</td>
           <td>94</td>
           <td>DONE</td>
-          <td>0.010031</td>
-          <td>0.005430</td>
-          <td>0.995295</td>
-          <td>1.005948</td>
+          <td>0.010515</td>
+          <td>0.023684</td>
+          <td>1.010577</td>
+          <td>1.021703</td>
         </tr>
         <tr>
           <th>4</th>
@@ -11788,10 +3646,10 @@ The parallel search is executed for 1 minute.
           <td>-20.801696</td>
           <td>60</td>
           <td>DONE</td>
-          <td>0.009817</td>
-          <td>0.003788</td>
-          <td>1.109321</td>
-          <td>1.120271</td>
+          <td>0.009792</td>
+          <td>0.019055</td>
+          <td>1.125667</td>
+          <td>1.137470</td>
         </tr>
         <tr>
           <th>...</th>
@@ -11809,89 +3667,89 @@ The parallel search is executed for 1 minute.
           <td>...</td>
         </tr>
         <tr>
-          <th>2474</th>
-          <td>2.708087</td>
-          <td>-3.303979</td>
-          <td>-1.960080</td>
-          <td>-0.915953</td>
-          <td>-0.658802</td>
-          <td>-8.588874</td>
-          <td>2418</td>
+          <th>2457</th>
+          <td>0.656742</td>
+          <td>2.065641</td>
+          <td>-0.404203</td>
+          <td>-2.123742</td>
+          <td>-1.701890</td>
+          <td>-7.106603</td>
+          <td>2411</td>
           <td>CANCELLED</td>
-          <td>58.817763</td>
-          <td>58.808061</td>
-          <td>60.802940</td>
-          <td>62.753939</td>
+          <td>58.816676</td>
+          <td>58.806128</td>
+          <td>60.631736</td>
+          <td>62.558991</td>
         </tr>
         <tr>
-          <th>2475</th>
-          <td>-4.448405</td>
-          <td>4.589569</td>
-          <td>1.776042</td>
-          <td>-6.154920</td>
-          <td>2.380562</td>
-          <td>-13.359819</td>
-          <td>2439</td>
+          <th>2458</th>
+          <td>0.656742</td>
+          <td>2.065641</td>
+          <td>-0.404203</td>
+          <td>-2.123742</td>
+          <td>-1.701890</td>
+          <td>-7.106603</td>
+          <td>2416</td>
           <td>CANCELLED</td>
-          <td>59.214261</td>
-          <td>59.204967</td>
-          <td>61.376228</td>
-          <td>62.754035</td>
+          <td>58.816702</td>
+          <td>58.806262</td>
+          <td>61.306336</td>
+          <td>62.559069</td>
         </tr>
         <tr>
-          <th>2476</th>
-          <td>-1.665623</td>
-          <td>1.864610</td>
-          <td>1.790163</td>
-          <td>-3.461229</td>
-          <td>-2.195235</td>
-          <td>-9.116023</td>
-          <td>2388</td>
+          <th>2459</th>
+          <td>-0.182741</td>
+          <td>-0.123024</td>
+          <td>-2.724177</td>
+          <td>-1.757943</td>
+          <td>-0.293630</td>
+          <td>-6.620161</td>
+          <td>2436</td>
           <td>CANCELLED</td>
-          <td>57.694120</td>
-          <td>57.684418</td>
-          <td>60.140551</td>
-          <td>62.754131</td>
+          <td>59.521998</td>
+          <td>59.511554</td>
+          <td>61.058415</td>
+          <td>62.559148</td>
         </tr>
         <tr>
-          <th>2477</th>
-          <td>-0.614271</td>
-          <td>0.027781</td>
-          <td>0.019726</td>
-          <td>0.020583</td>
-          <td>0.018458</td>
-          <td>-1.890260</td>
-          <td>2446</td>
+          <th>2460</th>
+          <td>-0.002521</td>
+          <td>0.040876</td>
+          <td>0.052959</td>
+          <td>0.020924</td>
+          <td>-0.038748</td>
+          <td>-0.210422</td>
+          <td>2451</td>
           <td>CANCELLED</td>
-          <td>59.595124</td>
-          <td>59.585519</td>
-          <td>62.531512</td>
-          <td>62.754314</td>
+          <td>60.016845</td>
+          <td>60.006573</td>
+          <td>61.708732</td>
+          <td>62.559227</td>
         </tr>
         <tr>
-          <th>2478</th>
-          <td>-4.448405</td>
-          <td>4.589569</td>
-          <td>1.776042</td>
-          <td>-6.154920</td>
-          <td>2.380562</td>
-          <td>-13.359819</td>
-          <td>2430</td>
+          <th>2461</th>
+          <td>-0.182741</td>
+          <td>-0.123024</td>
+          <td>-2.724177</td>
+          <td>-1.757943</td>
+          <td>-0.293630</td>
+          <td>-6.620161</td>
+          <td>2443</td>
           <td>CANCELLED</td>
-          <td>59.214208</td>
-          <td>59.204636</td>
-          <td>60.824201</td>
-          <td>62.754449</td>
+          <td>59.522033</td>
+          <td>59.511695</td>
+          <td>62.137451</td>
+          <td>62.559308</td>
         </tr>
       </tbody>
     </table>
-    <p>2479 rows × 12 columns</p>
+    <p>2462 rows × 12 columns</p>
     </div>
     </div>
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 157-166
+.. GENERATED FROM PYTHON SOURCE LINES 189-198
 
 It can be surprising to see in the results that the last lines have ``"job_status"`` set to "CANCELLED" but
 still have an objective value. This is due to the fact that the cancellation of a job is asynchronous and already scheduled Asyncio tasks are therefore executed. When the timeout is reached the jobs created by the "thread" method jobs cannot be directly killed but rather their ``job.status`` is updated to ``"CANCELLING"`` and the user-code is responsible for checking the status of the job and interrupting the execution. This is why the objective value is still present in the results. This behavior is different from the "process" method where the jobs are killed directly.
@@ -11903,27 +3761,28 @@ We can see that the parallel search is able to evaluate a lot more points in the
 allows the algorithm to explore more of the search space and potentially find better solutions.
 The utilization plot shows that the workers are used efficiently in the parallel search (above 80%).
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-184
+.. GENERATED FROM PYTHON SOURCE LINES 198-216
 
-.. code-block:: Python
+.. dropdown:: Code (Plot search trajectory and worker utilization)
 
-    fig, axes = plt.subplots(
-            nrows=2,
-            ncols=1,
-            sharex=True,
-            figsize=figure_size(width=600),
+    .. code-block:: Python
+
+
+        fig, axes = plt.subplots(
+                nrows=2,
+                ncols=1,
+                sharex=True,
+                figsize=figure_size(width=600),
+                tight_layout=True,
+            )
+
+        _ = plot_search_trajectory_single_objective_hpo(
+            results["parallel"], mode="min", x_units="seconds", ax=axes[0]
         )
 
-    plot_search_trajectory_single_objective_hpo(
-        results["parallel"], mode="min", x_units="seconds", ax=axes[0]
-    )
-
-    plot_worker_utilization(
-        results["parallel"], num_workers=1, profile_type="start/end", ax=axes[1]
-    )
-
-    plt.tight_layout()
-    plt.show()
+        _ = plot_worker_utilization(
+            results["parallel"], num_workers=1, profile_type="start/end", ax=axes[1]
+        )
 
 
 
@@ -11937,37 +3796,38 @@ The utilization plot shows that the workers are used efficiently in the parallel
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 185-187
+.. GENERATED FROM PYTHON SOURCE LINES 217-219
 
 Finally, we compare both search with the execution time is used as the x-axis.
 The advantage of parallelism is clearly visible by the difference in the number of evaluations and in objective.
 
-.. GENERATED FROM PYTHON SOURCE LINES 187-212
+.. GENERATED FROM PYTHON SOURCE LINES 219-244
 
-.. code-block:: Python
+.. dropdown:: Code (Plot search trajectories)
+
+    .. code-block:: Python
 
 
-    fig, ax = plt.subplots(figsize=figure_size(width=600))
+        fig, ax = plt.subplots(figsize=figure_size(width=600), tight_layout=True)
 
-    for i, (strategy, df) in enumerate(results.items()):
-        plot_search_trajectory_single_objective_hpo(
-            df,
-            show_failures=False,
-            mode="min",
-            x_units="seconds",
-            ax=ax,
-            label=strategy,
-            plot_kwargs={"color": f"C{i}"},
-            scatter_success_kwargs={"color": f"C{i}"},
-        )
+        for i, (strategy, df) in enumerate(results.items()):
+            plot_search_trajectory_single_objective_hpo(
+                df,
+                show_failures=False,
+                mode="min",
+                x_units="seconds",
+                ax=ax,
+                label=strategy,
+                plot_kwargs={"color": f"C{i}"},
+                scatter_success_kwargs={"color": f"C{i}"},
+            )
 
-    plt.xlabel("Time (sec.)")
-    plt.ylabel("Objective")
-    plt.yscale("log")
-    plt.grid(visible=True, which="minor", linestyle=":")
-    plt.grid(visible=True, which="major", linestyle="-")
-    plt.legend()
-    plt.show()
+        _ = ax.set_xlabel("Time (sec.)")
+        _ = ax.set_ylabel("Objective")
+        _ = ax.set_yscale("log")
+        _ = ax.grid(visible=True, which="minor", linestyle=":")
+        _ = ax.grid(visible=True, which="major", linestyle="-")
+        _ = ax.legend()
 
 
 
@@ -11983,28 +3843,26 @@ The advantage of parallelism is clearly visible by the difference in the number 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 213-215
+.. GENERATED FROM PYTHON SOURCE LINES 245-247
 
 Finally, one could compare to a random search to see if the overheads of the parallel Bayesian optimization are worth it (i.e., the cost of fitting and optimizing the surrogate model).
 The evaluator is defined similarly to the one used for the parallel Bayesian optimization search:
 
-.. GENERATED FROM PYTHON SOURCE LINES 215-231
+.. GENERATED FROM PYTHON SOURCE LINES 247-261
 
 .. code-block:: Python
 
+
     parallel_evaluator = Evaluator.create(
-        black_box.run_ackley,
+        run_ackley,
         method="thread",
         method_kwargs={
             "num_workers": 100, # For the parallel evaluations
-            "callbacks": [TqdmCallback()]
+            "callbacks": [TqdmCallback("Random Search:")]
         },
     )
     random_search = RandomSearch(problem, parallel_evaluator, random_state=search_kwargs["random_state"])
-    results["random"] = random_search.search(timeout=timeout)
-    offset = results["random"]["m:timestamp_start"].min()
-    results["random"]["m:timestamp_start"] -= offset 
-    results["random"]["m:timestamp_end"] -= offset 
+    results["random"] = preprocess_results(random_search.search(timeout=timeout))
     results["random"]
 
 
@@ -12016,17481 +3874,6925 @@ The evaluator is defined similarly to the one used for the parallel Bayesian opt
 
  .. code-block:: none
 
-
-
-
+    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_parallelism/results_20250312-102207.csv
 
 
     0it [00:00, ?it/s]
 
+    Random Search:: : 0it [00:00, ?it/s]
 
+    Random Search:: : 1it [00:00, 1739.65it/s, failures=0, objective=-21.2]
 
+    Random Search:: : 2it [00:00, 13.72it/s, failures=0, objective=-21.2]  
 
-    1it [00:00, 1574.44it/s, failures=0, objective=-21.1]
+    Random Search:: : 2it [00:00, 13.72it/s, failures=0, objective=-21.2]
 
+    Random Search:: : 3it [00:00, 13.72it/s, failures=0, objective=-21.2]
 
+    Random Search:: : 4it [00:00,  7.34it/s, failures=0, objective=-21.2]
 
+    Random Search:: : 4it [00:00,  7.34it/s, failures=0, objective=-20.5]
 
-    2it [00:00, 11.54it/s, failures=0, objective=-21.1]  
+    Random Search:: : 5it [00:00,  7.34it/s, failures=0, objective=-19.7]
 
+    Random Search:: : 6it [00:00,  7.34it/s, failures=0, objective=-19.7]
 
+    Random Search:: : 7it [00:00,  7.34it/s, failures=0, objective=-19.7]
 
+    Random Search:: : 8it [00:00,  7.34it/s, failures=0, objective=-19.7]
 
-    2it [00:00, 11.54it/s, failures=0, objective=-21.1]
+    Random Search:: : 9it [00:00, 14.38it/s, failures=0, objective=-19.7]
 
+    Random Search:: : 9it [00:00, 14.38it/s, failures=0, objective=-19.7]
 
+    Random Search:: : 10it [00:00, 14.38it/s, failures=0, objective=-19.7]
 
+    Random Search:: : 11it [00:00, 14.38it/s, failures=0, objective=-19.7]
 
-    3it [00:00, 11.54it/s, failures=0, objective=-21.1]
+    Random Search:: : 12it [00:00, 14.38it/s, failures=0, objective=-19.7]
 
+    Random Search:: : 13it [00:00, 14.38it/s, failures=0, objective=-19.7]
 
+    Random Search:: : 14it [00:00, 14.38it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 15it [00:00, 14.38it/s, failures=0, objective=-16.7]
 
-    4it [00:00, 12.38it/s, failures=0, objective=-21.1]
+    Random Search:: : 16it [00:00, 25.11it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 16it [00:00, 25.11it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 17it [00:00, 25.11it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 18it [00:00, 25.11it/s, failures=0, objective=-16.7]
 
-    4it [00:00, 12.38it/s, failures=0, objective=-20.9]
+    Random Search:: : 19it [00:00, 25.11it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 20it [00:00, 25.11it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 21it [00:00, 25.11it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 22it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
-    5it [00:00, 12.38it/s, failures=0, objective=-20.8]
+    Random Search:: : 22it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 23it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 24it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 25it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
-    6it [00:00, 12.38it/s, failures=0, objective=-20.8]
+    Random Search:: : 26it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 27it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 28it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 29it [00:00, 31.81it/s, failures=0, objective=-16.7]
 
-    7it [00:00, 18.17it/s, failures=0, objective=-20.8]
+    Random Search:: : 30it [00:01, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 31it [00:01, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 32it [00:01, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 33it [00:01, 31.81it/s, failures=0, objective=-16.7]
 
-    7it [00:00, 18.17it/s, failures=0, objective=-16.7]
+    Random Search:: : 34it [00:01, 31.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 35it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 35it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 36it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
-    8it [00:00, 18.17it/s, failures=0, objective=-16.7]
+    Random Search:: : 37it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 38it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 39it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 40it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
-    9it [00:00, 18.17it/s, failures=0, objective=-16.7]
+    Random Search:: : 41it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 42it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 43it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 44it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
-    10it [00:00, 19.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 45it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 46it [00:01, 53.93it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 47it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 47it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
-    10it [00:00, 19.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 48it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 49it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 50it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 51it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
-    11it [00:00, 19.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 52it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 53it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 54it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 55it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
-    12it [00:00, 19.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 56it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 57it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 58it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 59it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
-    13it [00:00, 19.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 60it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 61it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 62it [00:01, 65.19it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 63it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
-    14it [00:00, 24.91it/s, failures=0, objective=-16.7]
+    Random Search:: : 63it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 64it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 65it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 66it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
-    14it [00:00, 24.91it/s, failures=0, objective=-16.7]
+    Random Search:: : 67it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 68it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 69it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 70it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
-    15it [00:00, 24.91it/s, failures=0, objective=-16.7]
+    Random Search:: : 71it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 72it [00:01, 87.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 73it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 73it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
-    16it [00:00, 24.91it/s, failures=0, objective=-16.7]
+    Random Search:: : 74it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 75it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 76it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 77it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
-    17it [00:00, 24.91it/s, failures=0, objective=-16.7]
+    Random Search:: : 78it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 79it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 80it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 81it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
-    18it [00:00, 24.91it/s, failures=0, objective=-16.7]
+    Random Search:: : 82it [00:01, 88.08it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 83it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 83it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 84it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
-    19it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 85it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 86it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 87it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 88it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
-    19it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 89it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 90it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 91it [00:01, 82.89it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 92it [00:01, 70.15it/s, failures=0, objective=-16.7]
 
-    20it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 92it [00:01, 70.15it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 93it [00:01, 70.15it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 94it [00:01, 70.15it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 95it [00:01, 70.15it/s, failures=0, objective=-16.7]
 
-    21it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 96it [00:01, 70.15it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 97it [00:01, 70.15it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 98it [00:02, 70.15it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 99it [00:02, 70.15it/s, failures=0, objective=-16.7]
 
-    22it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 100it [00:02, 45.74it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 100it [00:02, 45.74it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 101it [00:02, 45.74it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 102it [00:02, 45.74it/s, failures=0, objective=-16.7]
 
-    23it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 103it [00:02, 45.74it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 104it [00:02, 45.74it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 105it [00:02, 45.74it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 106it [00:02, 45.74it/s, failures=0, objective=-16.7]
 
-    24it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 107it [00:02, 36.05it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 107it [00:02, 36.05it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 108it [00:02, 36.05it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 109it [00:02, 36.05it/s, failures=0, objective=-16.7]
 
-    25it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 110it [00:02, 36.05it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 111it [00:02, 36.05it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 112it [00:02, 33.45it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 112it [00:02, 33.45it/s, failures=0, objective=-16.7]
 
-    26it [00:00, 31.26it/s, failures=0, objective=-16.7]
+    Random Search:: : 113it [00:02, 33.45it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 114it [00:02, 33.45it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 115it [00:02, 33.45it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 116it [00:02, 33.45it/s, failures=0, objective=-16.7]
 
-    27it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 117it [00:02, 34.70it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 117it [00:02, 34.70it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 118it [00:02, 34.70it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 119it [00:02, 34.70it/s, failures=0, objective=-16.7]
 
-    27it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 120it [00:02, 34.70it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 121it [00:02, 34.70it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 122it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 122it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
-    28it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 123it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 124it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 125it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 126it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
-    29it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 127it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 128it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 129it [00:02, 35.03it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 130it [00:02, 42.26it/s, failures=0, objective=-16.7]
 
-    30it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 130it [00:02, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 131it [00:02, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 132it [00:02, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 133it [00:02, 42.26it/s, failures=0, objective=-16.7]
 
-    31it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 134it [00:03, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 135it [00:03, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 136it [00:03, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 137it [00:03, 42.26it/s, failures=0, objective=-16.7]
 
-    32it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 138it [00:03, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 139it [00:03, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 140it [00:03, 42.26it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 141it [00:03, 42.26it/s, failures=0, objective=-16.7]
 
-    33it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 142it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 142it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 143it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 144it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
-    34it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 145it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 146it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 147it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 148it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
-    35it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 149it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 150it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 151it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 152it [00:03, 57.33it/s, failures=0, objective=-16.7]
 
-    36it [00:00, 44.59it/s, failures=0, objective=-16.7]
+    Random Search:: : 153it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 153it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 154it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 155it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
-    37it [00:00, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 156it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 157it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 158it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 159it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
-    37it [00:00, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 160it [00:03, 63.88it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 161it [00:03, 59.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 161it [00:03, 59.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 162it [00:03, 59.57it/s, failures=0, objective=-16.7]
 
-    38it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 163it [00:03, 59.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 164it [00:03, 59.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 165it [00:03, 59.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 166it [00:03, 59.57it/s, failures=0, objective=-16.7]
 
-    39it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 167it [00:03, 59.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 168it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 168it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 169it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
-    40it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 170it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 171it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 172it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 173it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
-    41it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 174it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 175it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 176it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 177it [00:03, 60.12it/s, failures=0, objective=-16.7]
 
-    42it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 178it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 178it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 179it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 180it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
-    43it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 181it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 182it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 183it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 184it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
-    44it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 185it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 186it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 187it [00:03, 67.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 188it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
-    45it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 188it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 189it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 190it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 191it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
-    46it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 192it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 193it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 194it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 195it [00:03, 74.94it/s, failures=0, objective=-16.7]
 
-    47it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 196it [00:03, 65.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 196it [00:03, 65.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 197it [00:03, 65.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 198it [00:03, 65.54it/s, failures=0, objective=-16.7]
 
-    48it [00:01, 60.27it/s, failures=0, objective=-16.7]
+    Random Search:: : 199it [00:03, 65.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 200it [00:04, 65.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 201it [00:04, 65.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 202it [00:04, 65.54it/s, failures=0, objective=-16.7]
 
-    49it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 203it [00:04, 50.90it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 203it [00:04, 50.90it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 204it [00:04, 50.90it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 205it [00:04, 50.90it/s, failures=0, objective=-16.7]
 
-    49it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 206it [00:04, 50.90it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 207it [00:04, 50.90it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 208it [00:04, 50.90it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 209it [00:04, 50.90it/s, failures=0, objective=-16.7]
 
-    50it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 210it [00:04, 51.41it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 210it [00:04, 51.41it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 211it [00:04, 51.41it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 212it [00:04, 51.41it/s, failures=0, objective=-16.7]
 
-    51it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 213it [00:04, 51.41it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 214it [00:04, 51.41it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 215it [00:04, 51.41it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 216it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
-    52it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 216it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 217it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 218it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 219it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
-    53it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 220it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 221it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 222it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 223it [00:04, 39.30it/s, failures=0, objective=-16.7]
 
-    54it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 224it [00:04, 43.67it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 224it [00:04, 43.67it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 225it [00:04, 43.67it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 226it [00:04, 43.67it/s, failures=0, objective=-16.7]
 
-    55it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 227it [00:04, 43.67it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 228it [00:04, 43.67it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 229it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 229it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
-    56it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 230it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 231it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 232it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 233it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
-    57it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 234it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 235it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 236it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 237it [00:04, 44.59it/s, failures=0, objective=-16.7]
 
-    58it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 238it [00:04, 51.85it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 238it [00:04, 51.85it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 239it [00:04, 51.85it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 240it [00:04, 51.85it/s, failures=0, objective=-16.7]
 
-    59it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 241it [00:04, 51.85it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 242it [00:04, 51.85it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 243it [00:04, 51.85it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 244it [00:05, 48.58it/s, failures=0, objective=-16.7]
 
-    60it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 244it [00:05, 48.58it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 245it [00:05, 48.58it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 246it [00:05, 48.58it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 247it [00:05, 48.58it/s, failures=0, objective=-16.7]
 
-    61it [00:01, 74.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 248it [00:05, 48.58it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 249it [00:05, 48.58it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 250it [00:05, 49.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 250it [00:05, 49.87it/s, failures=0, objective=-16.7]
 
-    62it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 251it [00:05, 49.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 252it [00:05, 49.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 253it [00:05, 49.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 254it [00:05, 49.87it/s, failures=0, objective=-16.7]
 
-    62it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 255it [00:05, 49.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 256it [00:05, 42.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 256it [00:05, 42.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 257it [00:05, 42.33it/s, failures=0, objective=-16.7]
 
-    63it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 258it [00:05, 42.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 259it [00:05, 42.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 260it [00:05, 42.33it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 261it [00:05, 42.33it/s, failures=0, objective=-16.7]
 
-    64it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 262it [00:05, 45.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 262it [00:05, 45.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 263it [00:05, 45.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 264it [00:05, 45.81it/s, failures=0, objective=-16.7]
 
-    65it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 265it [00:05, 45.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 266it [00:05, 45.81it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 267it [00:05, 43.78it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 267it [00:05, 43.78it/s, failures=0, objective=-16.7]
 
-    66it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 268it [00:05, 43.78it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 269it [00:05, 43.78it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 270it [00:05, 43.78it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 271it [00:05, 43.78it/s, failures=0, objective=-16.7]
 
-    67it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 272it [00:05, 43.78it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 273it [00:05, 47.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 273it [00:05, 47.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 274it [00:05, 47.37it/s, failures=0, objective=-16.7]
 
-    68it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 275it [00:05, 47.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 276it [00:05, 47.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 277it [00:05, 47.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 278it [00:05, 47.37it/s, failures=0, objective=-16.7]
 
-    69it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 279it [00:05, 47.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 280it [00:05, 50.36it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 280it [00:05, 50.36it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 281it [00:05, 50.36it/s, failures=0, objective=-16.7]
 
-    70it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 282it [00:05, 50.36it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 283it [00:05, 50.36it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 284it [00:05, 50.36it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 285it [00:05, 50.36it/s, failures=0, objective=-16.7]
 
-    71it [00:01, 89.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 286it [00:05, 50.36it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 287it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 287it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 288it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
-    72it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 289it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 290it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 291it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 292it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
-    72it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 293it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 294it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 295it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 296it [00:05, 55.37it/s, failures=0, objective=-16.7]
 
-    73it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 297it [00:06, 59.44it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 297it [00:06, 59.44it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 298it [00:06, 59.44it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 299it [00:06, 59.44it/s, failures=0, objective=-16.7]
 
-    74it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 300it [00:06, 59.44it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 301it [00:06, 59.44it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 302it [00:06, 59.44it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 303it [00:06, 59.44it/s, failures=0, objective=-16.7]
 
-    75it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 304it [00:06, 56.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 304it [00:06, 56.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 305it [00:06, 56.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 306it [00:06, 56.87it/s, failures=0, objective=-16.7]
 
-    76it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 307it [00:06, 56.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 308it [00:06, 56.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 309it [00:06, 56.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 310it [00:06, 50.86it/s, failures=0, objective=-16.7]
 
-    77it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 310it [00:06, 50.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 311it [00:06, 50.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 312it [00:06, 50.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 313it [00:06, 50.86it/s, failures=0, objective=-16.7]
 
-    78it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 314it [00:06, 50.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 315it [00:06, 50.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 316it [00:06, 50.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 316it [00:06, 50.28it/s, failures=0, objective=-16.7]
 
-    79it [00:01, 72.47it/s, failures=0, objective=-16.7]
+    Random Search:: : 317it [00:06, 50.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 318it [00:06, 50.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 319it [00:06, 50.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 320it [00:06, 50.28it/s, failures=0, objective=-16.7]
 
-    80it [00:01, 63.94it/s, failures=0, objective=-16.7]
+    Random Search:: : 321it [00:06, 50.28it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 322it [00:06, 48.52it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 322it [00:06, 48.52it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 323it [00:06, 48.52it/s, failures=0, objective=-16.7]
 
-    80it [00:01, 63.94it/s, failures=0, objective=-16.7]
+    Random Search:: : 324it [00:06, 48.52it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 325it [00:06, 48.52it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 326it [00:06, 48.52it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 327it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
-    81it [00:01, 63.94it/s, failures=0, objective=-16.7]
+    Random Search:: : 327it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 328it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 329it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 330it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
-    82it [00:01, 63.94it/s, failures=0, objective=-16.7]
+    Random Search:: : 331it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 332it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 333it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 334it [00:06, 42.80it/s, failures=0, objective=-16.7]
 
-    83it [00:01, 63.94it/s, failures=0, objective=-16.7]
+    Random Search:: : 335it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 335it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 336it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 337it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
-    84it [00:01, 63.94it/s, failures=0, objective=-16.7]
+    Random Search:: : 338it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 339it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 340it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 341it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
-    85it [00:01, 63.94it/s, failures=0, objective=-16.7]
+    Random Search:: : 342it [00:06, 46.95it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 343it [00:06, 51.56it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 343it [00:06, 51.56it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 344it [00:07, 51.56it/s, failures=0, objective=-16.7]
 
-    86it [00:01, 63.94it/s, failures=0, objective=-16.7]
+    Random Search:: : 345it [00:07, 51.56it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 346it [00:07, 51.56it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 347it [00:07, 51.56it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 348it [00:07, 51.56it/s, failures=0, objective=-16.7]
 
-    87it [00:01, 53.28it/s, failures=0, objective=-16.7]
+    Random Search:: : 349it [00:07, 48.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 349it [00:07, 48.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 350it [00:07, 48.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 351it [00:07, 48.57it/s, failures=0, objective=-16.7]
 
-    87it [00:01, 53.28it/s, failures=0, objective=-16.7]
+    Random Search:: : 352it [00:07, 48.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 353it [00:07, 48.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 354it [00:07, 48.57it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 355it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
-    88it [00:01, 53.28it/s, failures=0, objective=-16.7]
+    Random Search:: : 355it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 356it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 357it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 358it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
-    89it [00:01, 53.28it/s, failures=0, objective=-16.7]
+    Random Search:: : 359it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 360it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 361it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 362it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
-    90it [00:01, 53.28it/s, failures=0, objective=-16.7]
+    Random Search:: : 363it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 364it [00:07, 51.25it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 365it [00:07, 62.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 365it [00:07, 62.87it/s, failures=0, objective=-16.7]
 
-    91it [00:01, 53.28it/s, failures=0, objective=-16.7]
+    Random Search:: : 366it [00:07, 62.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 367it [00:07, 62.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 368it [00:07, 62.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 369it [00:07, 62.87it/s, failures=0, objective=-16.7]
 
-    92it [00:01, 53.28it/s, failures=0, objective=-16.7]
+    Random Search:: : 370it [00:07, 62.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 371it [00:07, 62.87it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 372it [00:07, 50.34it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 372it [00:07, 50.34it/s, failures=0, objective=-16.7]
 
-    93it [00:01, 52.44it/s, failures=0, objective=-16.7]
+    Random Search:: : 373it [00:07, 50.34it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 374it [00:07, 50.34it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 375it [00:07, 50.34it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 376it [00:07, 50.34it/s, failures=0, objective=-16.7]
 
-    93it [00:01, 52.44it/s, failures=0, objective=-16.7]
+    Random Search:: : 377it [00:07, 50.34it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 378it [00:07, 51.68it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 378it [00:07, 51.68it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 379it [00:07, 51.68it/s, failures=0, objective=-16.7]
 
-    94it [00:01, 52.44it/s, failures=0, objective=-16.7]
+    Random Search:: : 380it [00:07, 51.68it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 381it [00:07, 51.68it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 382it [00:07, 51.68it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 383it [00:07, 51.68it/s, failures=0, objective=-16.7]
 
-    95it [00:01, 52.44it/s, failures=0, objective=-16.7]
+    Random Search:: : 384it [00:07, 52.40it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 384it [00:07, 52.40it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 385it [00:07, 52.40it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 386it [00:07, 52.40it/s, failures=0, objective=-16.7]
 
-    96it [00:01, 52.44it/s, failures=0, objective=-16.7]
+    Random Search:: : 387it [00:07, 52.40it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 388it [00:07, 52.40it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 389it [00:07, 52.40it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 390it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
-    97it [00:01, 52.44it/s, failures=0, objective=-16.7]
+    Random Search:: : 390it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 391it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 392it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 393it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
-    98it [00:02, 52.44it/s, failures=0, objective=-16.7]
+    Random Search:: : 394it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 395it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 396it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 397it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
-    99it [00:02, 46.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 398it [00:07, 48.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 399it [00:08, 52.72it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 399it [00:08, 52.72it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 400it [00:08, 52.72it/s, failures=0, objective=-16.7]
 
-    99it [00:02, 46.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 401it [00:08, 52.72it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 402it [00:08, 52.72it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 403it [00:08, 52.72it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 404it [00:08, 52.72it/s, failures=0, objective=-16.7]
 
-    100it [00:02, 46.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 405it [00:08, 52.72it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 406it [00:08, 52.10it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 406it [00:08, 52.10it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 407it [00:08, 52.10it/s, failures=0, objective=-16.7]
 
-    101it [00:02, 46.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 408it [00:08, 52.10it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 409it [00:08, 52.10it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 410it [00:08, 52.10it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 411it [00:08, 52.10it/s, failures=0, objective=-16.7]
 
-    102it [00:02, 46.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 412it [00:08, 48.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 412it [00:08, 48.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 413it [00:08, 48.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 414it [00:08, 48.12it/s, failures=0, objective=-16.7]
 
-    103it [00:02, 46.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 415it [00:08, 48.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 416it [00:08, 48.12it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 417it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 417it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
-    104it [00:02, 46.93it/s, failures=0, objective=-16.7]
+    Random Search:: : 418it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 419it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 420it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 421it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
-    105it [00:02, 46.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 422it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 423it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 424it [00:08, 47.54it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 425it [00:08, 43.00it/s, failures=0, objective=-16.7]
 
-    105it [00:02, 46.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 425it [00:08, 43.00it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 426it [00:08, 43.00it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 427it [00:08, 43.00it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 428it [00:08, 43.00it/s, failures=0, objective=-16.7]
 
-    106it [00:02, 46.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 429it [00:08, 43.00it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 430it [00:08, 43.00it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 431it [00:08, 43.00it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 432it [00:08, 46.86it/s, failures=0, objective=-16.7]
 
-    107it [00:02, 46.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 432it [00:08, 46.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 433it [00:08, 46.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 434it [00:08, 46.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 435it [00:08, 46.86it/s, failures=0, objective=-16.7]
 
-    108it [00:02, 46.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 436it [00:08, 46.86it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 437it [00:08, 41.92it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 437it [00:08, 41.92it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 438it [00:08, 41.92it/s, failures=0, objective=-16.7]
 
-    109it [00:02, 46.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 439it [00:08, 41.92it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 440it [00:08, 41.92it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 441it [00:09, 41.92it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 442it [00:09, 41.92it/s, failures=0, objective=-16.7]
 
-    110it [00:02, 46.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 443it [00:09, 41.92it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 444it [00:09, 47.23it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 444it [00:09, 47.23it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 445it [00:09, 47.23it/s, failures=0, objective=-16.7]
 
-    111it [00:02, 43.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 446it [00:09, 47.23it/s, failures=0, objective=-16.7]
 
+    Random Search:: : 447it [00:09, 47.23it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 448it [00:09, 47.23it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 449it [00:09, 46.31it/s, failures=0, objective=-13.8]
 
-    111it [00:02, 43.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 449it [00:09, 46.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 450it [00:09, 46.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 451it [00:09, 46.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 452it [00:09, 46.31it/s, failures=0, objective=-13.8]
 
-    112it [00:02, 43.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 453it [00:09, 46.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 454it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 454it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 455it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
-    113it [00:02, 43.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 456it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 457it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 458it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 459it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
-    114it [00:02, 43.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 460it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 461it [00:09, 39.75it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 462it [00:09, 46.13it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 462it [00:09, 46.13it/s, failures=0, objective=-13.8]
 
-    115it [00:02, 43.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 463it [00:09, 46.13it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 464it [00:09, 46.13it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 465it [00:09, 46.13it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 466it [00:09, 46.13it/s, failures=0, objective=-13.8]
 
-    116it [00:02, 37.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 467it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 467it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 468it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 469it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
-    116it [00:02, 37.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 470it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 471it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 472it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 473it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
-    117it [00:02, 37.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 474it [00:09, 45.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 475it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 475it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 476it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
-    118it [00:02, 37.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 477it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 478it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 479it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 480it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
-    119it [00:02, 37.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 481it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 482it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 483it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 484it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
-    120it [00:02, 37.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 485it [00:09, 51.68it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 486it [00:09, 61.02it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 486it [00:09, 61.02it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 487it [00:09, 61.02it/s, failures=0, objective=-13.8]
 
-    121it [00:02, 37.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 488it [00:09, 61.02it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 489it [00:09, 61.02it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 490it [00:09, 61.02it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 491it [00:09, 61.02it/s, failures=0, objective=-13.8]
 
-    122it [00:02, 37.40it/s, failures=0, objective=-16.7]
+    Random Search:: : 492it [00:09, 61.02it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 493it [00:09, 62.45it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 493it [00:09, 62.45it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 494it [00:09, 62.45it/s, failures=0, objective=-13.8]
 
-    123it [00:02, 42.56it/s, failures=0, objective=-16.7]
+    Random Search:: : 495it [00:09, 62.45it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 496it [00:10, 62.45it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 497it [00:10, 62.45it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 498it [00:10, 62.45it/s, failures=0, objective=-13.8]
 
-    123it [00:02, 42.56it/s, failures=0, objective=-16.7]
+    Random Search:: : 499it [00:10, 62.45it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 500it [00:10, 61.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 500it [00:10, 61.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 501it [00:10, 61.83it/s, failures=0, objective=-13.8]
 
-    124it [00:02, 42.56it/s, failures=0, objective=-16.7]
+    Random Search:: : 502it [00:10, 61.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 503it [00:10, 61.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 504it [00:10, 61.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 505it [00:10, 61.83it/s, failures=0, objective=-13.8]
 
-    125it [00:02, 42.56it/s, failures=0, objective=-16.7]
+    Random Search:: : 506it [00:10, 61.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 507it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 507it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 508it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
-    126it [00:02, 42.56it/s, failures=0, objective=-16.7]
+    Random Search:: : 509it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 510it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 511it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 512it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
-    127it [00:02, 42.56it/s, failures=0, objective=-16.7]
+    Random Search:: : 513it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 514it [00:10, 44.06it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 515it [00:10, 48.72it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 515it [00:10, 48.72it/s, failures=0, objective=-13.8]
 
-    128it [00:02, 43.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 516it [00:10, 48.72it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 517it [00:10, 48.72it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 518it [00:10, 48.72it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 519it [00:10, 48.72it/s, failures=0, objective=-13.8]
 
-    128it [00:02, 43.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 520it [00:10, 48.72it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 521it [00:10, 47.47it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 521it [00:10, 47.47it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 522it [00:10, 47.47it/s, failures=0, objective=-13.8]
 
-    129it [00:02, 43.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 523it [00:10, 47.47it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 524it [00:10, 47.47it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 525it [00:10, 47.47it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 526it [00:10, 47.47it/s, failures=0, objective=-13.8]
 
-    130it [00:02, 43.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 527it [00:10, 42.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 527it [00:10, 42.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 528it [00:10, 42.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 529it [00:10, 42.30it/s, failures=0, objective=-13.8]
 
-    131it [00:02, 43.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 530it [00:10, 42.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 531it [00:10, 42.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 532it [00:10, 42.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 532it [00:10, 42.08it/s, failures=0, objective=-13.8]
 
-    132it [00:02, 43.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 533it [00:10, 42.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 534it [00:10, 42.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 535it [00:10, 42.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 536it [00:10, 42.08it/s, failures=0, objective=-13.8]
 
-    133it [00:02, 43.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 537it [00:11, 42.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 538it [00:11, 45.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 538it [00:11, 45.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 539it [00:11, 45.99it/s, failures=0, objective=-13.8]
 
-    134it [00:02, 45.60it/s, failures=0, objective=-16.7]
+    Random Search:: : 540it [00:11, 45.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 541it [00:11, 45.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 542it [00:11, 45.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 543it [00:11, 45.99it/s, failures=0, objective=-13.8]
 
-    134it [00:02, 45.60it/s, failures=0, objective=-16.7]
+    Random Search:: : 544it [00:11, 45.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 545it [00:11, 48.14it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 545it [00:11, 48.14it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 546it [00:11, 48.14it/s, failures=0, objective=-13.8]
 
-    135it [00:02, 45.60it/s, failures=0, objective=-16.7]
+    Random Search:: : 547it [00:11, 48.14it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 548it [00:11, 48.14it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 549it [00:11, 48.14it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 550it [00:11, 48.14it/s, failures=0, objective=-13.8]
 
-    136it [00:02, 45.60it/s, failures=0, objective=-16.7]
+    Random Search:: : 551it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 551it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 552it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 553it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
-    137it [00:02, 45.60it/s, failures=0, objective=-16.7]
+    Random Search:: : 554it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 555it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 556it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 557it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
-    138it [00:02, 45.60it/s, failures=0, objective=-16.7]
+    Random Search:: : 558it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 559it [00:11, 48.36it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 560it [00:11, 57.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 560it [00:11, 57.73it/s, failures=0, objective=-13.8]
 
-    139it [00:02, 45.96it/s, failures=0, objective=-16.7]
+    Random Search:: : 561it [00:11, 57.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 562it [00:11, 57.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 563it [00:11, 57.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 564it [00:11, 57.73it/s, failures=0, objective=-13.8]
 
-    139it [00:02, 45.96it/s, failures=0, objective=-16.7]
+    Random Search:: : 565it [00:11, 57.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 566it [00:11, 57.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 567it [00:11, 50.84it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 567it [00:11, 50.84it/s, failures=0, objective=-13.8]
 
-    140it [00:02, 45.96it/s, failures=0, objective=-16.7]
+    Random Search:: : 568it [00:11, 50.84it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 569it [00:11, 50.84it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 570it [00:11, 50.84it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 571it [00:11, 50.84it/s, failures=0, objective=-13.8]
 
-    141it [00:03, 45.96it/s, failures=0, objective=-16.7]
+    Random Search:: : 572it [00:11, 50.84it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 573it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 573it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 574it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
-    142it [00:03, 45.96it/s, failures=0, objective=-16.7]
+    Random Search:: : 575it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 576it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 577it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 578it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
-    143it [00:03, 45.96it/s, failures=0, objective=-16.7]
+    Random Search:: : 579it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 580it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 581it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 582it [00:11, 48.50it/s, failures=0, objective=-13.8]
 
-    144it [00:03, 45.96it/s, failures=0, objective=-16.7]
+    Random Search:: : 583it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 583it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 584it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 585it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
-    145it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 586it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 587it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 588it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 589it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
-    145it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 590it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 591it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 592it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 593it [00:11, 55.15it/s, failures=0, objective=-13.8]
 
-    146it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 594it [00:11, 63.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 594it [00:11, 63.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 595it [00:11, 63.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 596it [00:11, 63.29it/s, failures=0, objective=-13.8]
 
-    147it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 597it [00:11, 63.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 598it [00:11, 63.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 599it [00:12, 63.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 600it [00:12, 63.29it/s, failures=0, objective=-13.8]
 
-    148it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 601it [00:12, 63.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 602it [00:12, 63.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 603it [00:12, 67.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 603it [00:12, 67.08it/s, failures=0, objective=-13.8]
 
-    149it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 604it [00:12, 67.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 605it [00:12, 67.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 606it [00:12, 67.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 607it [00:12, 67.08it/s, failures=0, objective=-13.8]
 
-    150it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 608it [00:12, 67.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 609it [00:12, 67.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 610it [00:12, 54.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 610it [00:12, 54.08it/s, failures=0, objective=-13.8]
 
-    151it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 611it [00:12, 54.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 612it [00:12, 54.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 613it [00:12, 54.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 614it [00:12, 54.08it/s, failures=0, objective=-13.8]
 
-    152it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 615it [00:12, 54.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 616it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 616it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 617it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
-    153it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 618it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 619it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 620it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 621it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
-    154it [00:03, 49.57it/s, failures=0, objective=-16.7]
+    Random Search:: : 622it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 623it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 624it [00:12, 51.28it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 625it [00:12, 54.81it/s, failures=0, objective=-13.8]
 
-    155it [00:03, 60.88it/s, failures=0, objective=-16.7]
+    Random Search:: : 625it [00:12, 54.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 626it [00:12, 54.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 627it [00:12, 54.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 628it [00:12, 54.81it/s, failures=0, objective=-13.8]
 
-    155it [00:03, 60.88it/s, failures=0, objective=-16.7]
+    Random Search:: : 629it [00:12, 54.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 630it [00:12, 54.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 631it [00:12, 46.10it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 631it [00:12, 46.10it/s, failures=0, objective=-13.8]
 
-    156it [00:03, 60.88it/s, failures=0, objective=-16.7]
+    Random Search:: : 632it [00:12, 46.10it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 633it [00:12, 46.10it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 634it [00:12, 46.10it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 635it [00:12, 46.10it/s, failures=0, objective=-13.8]
 
-    157it [00:03, 60.88it/s, failures=0, objective=-16.7]
+    Random Search:: : 636it [00:12, 45.92it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 636it [00:12, 45.92it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 637it [00:12, 45.92it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 638it [00:12, 45.92it/s, failures=0, objective=-13.8]
 
-    158it [00:03, 60.88it/s, failures=0, objective=-16.7]
+    Random Search:: : 639it [00:12, 45.92it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 640it [00:12, 45.92it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 641it [00:13, 40.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 641it [00:13, 40.56it/s, failures=0, objective=-13.8]
 
-    159it [00:03, 60.88it/s, failures=0, objective=-16.7]
+    Random Search:: : 642it [00:13, 40.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 643it [00:13, 40.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 644it [00:13, 40.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 645it [00:13, 40.56it/s, failures=0, objective=-13.8]
 
-    160it [00:03, 60.88it/s, failures=0, objective=-16.7]
+    Random Search:: : 646it [00:13, 40.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 647it [00:13, 40.56it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 648it [00:13, 45.46it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 648it [00:13, 45.46it/s, failures=0, objective=-13.8]
 
-    161it [00:03, 60.88it/s, failures=0, objective=-16.7]
+    Random Search:: : 649it [00:13, 45.46it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 650it [00:13, 45.46it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 651it [00:13, 45.46it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 652it [00:13, 45.46it/s, failures=0, objective=-13.8]
 
-    162it [00:03, 59.70it/s, failures=0, objective=-16.7]
+    Random Search:: : 653it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 653it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 654it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 655it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
-    162it [00:03, 59.70it/s, failures=0, objective=-16.7]
+    Random Search:: : 656it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 657it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 658it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 659it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
-    163it [00:03, 59.70it/s, failures=0, objective=-16.7]
+    Random Search:: : 660it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 661it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 662it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 663it [00:13, 44.29it/s, failures=0, objective=-13.8]
 
-    164it [00:03, 59.70it/s, failures=0, objective=-16.7]
+    Random Search:: : 664it [00:13, 56.42it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 664it [00:13, 56.42it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 665it [00:13, 56.42it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 666it [00:13, 56.42it/s, failures=0, objective=-13.8]
 
-    165it [00:03, 59.70it/s, failures=0, objective=-16.7]
+    Random Search:: : 667it [00:13, 56.42it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 668it [00:13, 56.42it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 669it [00:13, 56.42it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 670it [00:13, 57.08it/s, failures=0, objective=-13.8]
 
-    166it [00:03, 59.70it/s, failures=0, objective=-16.7]
+    Random Search:: : 670it [00:13, 57.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 671it [00:13, 57.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 672it [00:13, 57.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 673it [00:13, 57.08it/s, failures=0, objective=-13.8]
 
-    167it [00:03, 59.70it/s, failures=0, objective=-16.7]
+    Random Search:: : 674it [00:13, 57.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 675it [00:13, 57.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 676it [00:13, 57.08it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 677it [00:13, 60.04it/s, failures=0, objective=-13.8]
 
-    168it [00:03, 59.70it/s, failures=0, objective=-16.7]
+    Random Search:: : 677it [00:13, 60.04it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 678it [00:13, 60.04it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 679it [00:13, 60.04it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 680it [00:13, 60.04it/s, failures=0, objective=-13.8]
 
-    169it [00:03, 56.73it/s, failures=0, objective=-16.7]
+    Random Search:: : 681it [00:13, 60.04it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 682it [00:13, 60.04it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 683it [00:13, 60.04it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 684it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
-    169it [00:03, 56.73it/s, failures=0, objective=-16.7]
+    Random Search:: : 684it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 685it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 686it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 687it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
-    170it [00:03, 56.73it/s, failures=0, objective=-16.7]
+    Random Search:: : 688it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 689it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 690it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 691it [00:13, 59.34it/s, failures=0, objective=-13.8]
 
-    171it [00:03, 56.73it/s, failures=0, objective=-16.7]
+    Random Search:: : 692it [00:13, 64.48it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 692it [00:13, 64.48it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 693it [00:13, 64.48it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 694it [00:13, 64.48it/s, failures=0, objective=-13.8]
 
-    172it [00:03, 56.73it/s, failures=0, objective=-16.7]
+    Random Search:: : 695it [00:13, 64.48it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 696it [00:13, 64.48it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 697it [00:14, 64.48it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 698it [00:14, 64.48it/s, failures=0, objective=-13.8]
 
-    173it [00:03, 56.73it/s, failures=0, objective=-16.7]
+    Random Search:: : 699it [00:14, 44.57it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 699it [00:14, 44.57it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 700it [00:14, 44.57it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 701it [00:14, 44.57it/s, failures=0, objective=-13.8]
 
-    174it [00:03, 56.73it/s, failures=0, objective=-16.7]
+    Random Search:: : 702it [00:14, 44.57it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 703it [00:14, 44.57it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 704it [00:14, 44.57it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 705it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
-    175it [00:03, 50.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 705it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 706it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 707it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 708it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
-    175it [00:03, 50.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 709it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 710it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 711it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 712it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
-    176it [00:03, 50.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 713it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 714it [00:14, 40.39it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 715it [00:14, 49.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 715it [00:14, 49.07it/s, failures=0, objective=-13.8]
 
-    177it [00:03, 50.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 716it [00:14, 49.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 717it [00:14, 49.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 718it [00:14, 49.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 719it [00:14, 49.07it/s, failures=0, objective=-13.8]
 
-    178it [00:03, 50.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 720it [00:14, 49.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 721it [00:14, 45.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 721it [00:14, 45.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 722it [00:14, 45.07it/s, failures=0, objective=-13.8]
 
-    179it [00:03, 50.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 723it [00:14, 45.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 724it [00:14, 45.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 725it [00:14, 45.07it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 726it [00:14, 41.69it/s, failures=0, objective=-13.8]
 
-    180it [00:03, 50.43it/s, failures=0, objective=-16.7]
+    Random Search:: : 726it [00:14, 41.69it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 727it [00:14, 41.69it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 728it [00:14, 41.69it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 729it [00:14, 41.69it/s, failures=0, objective=-13.8]
 
-    181it [00:03, 49.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 730it [00:14, 41.69it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 731it [00:14, 41.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 731it [00:14, 41.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 732it [00:14, 41.17it/s, failures=0, objective=-13.8]
 
-    181it [00:03, 49.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 733it [00:14, 41.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 734it [00:14, 41.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 735it [00:14, 41.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 736it [00:14, 41.17it/s, failures=0, objective=-13.8]
 
-    182it [00:03, 49.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 737it [00:14, 41.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 738it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 738it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 739it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
-    183it [00:03, 49.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 740it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 741it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 742it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 743it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
-    184it [00:03, 49.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 744it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 745it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 746it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 747it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
-    185it [00:03, 49.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 748it [00:15, 43.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 749it [00:15, 57.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 749it [00:15, 57.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 750it [00:15, 57.81it/s, failures=0, objective=-13.8]
 
-    186it [00:03, 49.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 751it [00:15, 57.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 752it [00:15, 57.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 753it [00:15, 57.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 754it [00:15, 57.81it/s, failures=0, objective=-13.8]
 
-    187it [00:03, 50.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 755it [00:15, 57.81it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 756it [00:15, 57.49it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 756it [00:15, 57.49it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 757it [00:15, 57.49it/s, failures=0, objective=-13.8]
 
-    187it [00:03, 50.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 758it [00:15, 57.49it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 759it [00:15, 57.49it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 760it [00:15, 57.49it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 761it [00:15, 57.49it/s, failures=0, objective=-13.8]
 
-    188it [00:03, 50.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 762it [00:15, 57.49it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 763it [00:15, 52.11it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 763it [00:15, 52.11it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 764it [00:15, 52.11it/s, failures=0, objective=-13.8]
 
-    189it [00:03, 50.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 765it [00:15, 52.11it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 766it [00:15, 52.11it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 767it [00:15, 52.11it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 768it [00:15, 52.11it/s, failures=0, objective=-13.8]
 
-    190it [00:03, 50.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 769it [00:15, 50.55it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 769it [00:15, 50.55it/s, failures=0, objective=-13.8]
+    Parallel BO:: : 2462it [01:18, 15.28it/s, failures=0, objective=-0.167]
 
+    Random Search:: : 770it [00:15, 50.55it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 771it [00:15, 50.55it/s, failures=0, objective=-13.8]
 
-    191it [00:03, 50.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 772it [00:15, 50.55it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 773it [00:15, 50.55it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 774it [00:15, 50.55it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 775it [00:15, 50.73it/s, failures=0, objective=-13.8]
 
-    192it [00:03, 50.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 775it [00:15, 50.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 776it [00:15, 50.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 777it [00:15, 50.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 778it [00:15, 50.73it/s, failures=0, objective=-13.8]
 
-    193it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 779it [00:15, 50.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 780it [00:15, 50.73it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 781it [00:15, 51.53it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 781it [00:15, 51.53it/s, failures=0, objective=-13.8]
 
-    193it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 782it [00:15, 51.53it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 783it [00:15, 51.53it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 784it [00:15, 51.53it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 785it [00:15, 51.53it/s, failures=0, objective=-13.8]
 
-    194it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 786it [00:15, 51.53it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 787it [00:15, 51.53it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 788it [00:15, 53.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 788it [00:15, 53.83it/s, failures=0, objective=-13.8]
 
-    195it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 789it [00:15, 53.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 790it [00:15, 53.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 791it [00:15, 53.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 792it [00:15, 53.83it/s, failures=0, objective=-13.8]
 
-    196it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 793it [00:15, 53.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 794it [00:15, 53.83it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 795it [00:16, 54.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 795it [00:16, 54.50it/s, failures=0, objective=-13.8]
 
-    197it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 796it [00:16, 54.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 797it [00:16, 54.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 798it [00:16, 54.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 799it [00:16, 54.50it/s, failures=0, objective=-13.8]
 
-    198it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 800it [00:16, 54.50it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 801it [00:16, 55.74it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 801it [00:16, 55.74it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 802it [00:16, 55.74it/s, failures=0, objective=-13.8]
 
-    199it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 803it [00:16, 55.74it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 804it [00:16, 55.74it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 805it [00:16, 55.74it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 806it [00:16, 55.74it/s, failures=0, objective=-13.8]
 
-    200it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 807it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 807it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 808it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 809it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
-    201it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 810it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 811it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 812it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 813it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
-    202it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 814it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 815it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 816it [00:16, 43.58it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 817it [00:16, 56.17it/s, failures=0, objective=-13.8]
 
-    203it [00:04, 47.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 817it [00:16, 56.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 818it [00:16, 56.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 819it [00:16, 56.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 820it [00:16, 56.17it/s, failures=0, objective=-13.8]
 
-    204it [00:04, 62.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 821it [00:16, 56.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 822it [00:16, 56.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 823it [00:16, 56.17it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 824it [00:16, 49.44it/s, failures=0, objective=-13.8]
 
-    204it [00:04, 62.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 824it [00:16, 49.44it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 825it [00:16, 49.44it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 826it [00:16, 49.44it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 827it [00:16, 49.44it/s, failures=0, objective=-13.8]
 
-    205it [00:04, 62.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 828it [00:16, 49.44it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 829it [00:16, 49.44it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 830it [00:16, 47.59it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 830it [00:16, 47.59it/s, failures=0, objective=-13.8]
 
-    206it [00:04, 62.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 831it [00:16, 47.59it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 832it [00:16, 47.59it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 833it [00:16, 47.59it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 834it [00:16, 47.59it/s, failures=0, objective=-13.8]
 
-    207it [00:04, 62.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 835it [00:16, 47.59it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 836it [00:16, 44.54it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 836it [00:16, 44.54it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 837it [00:16, 44.54it/s, failures=0, objective=-13.8]
 
-    208it [00:04, 62.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 838it [00:16, 44.54it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 839it [00:16, 44.54it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 840it [00:16, 44.54it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 841it [00:16, 44.54it/s, failures=0, objective=-13.8]
 
-    209it [00:04, 62.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 842it [00:16, 44.54it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 843it [00:17, 49.20it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 843it [00:17, 49.20it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 844it [00:17, 49.20it/s, failures=0, objective=-13.8]
 
-    210it [00:04, 62.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 845it [00:17, 49.20it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 846it [00:17, 49.20it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 847it [00:17, 49.20it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 848it [00:17, 49.20it/s, failures=0, objective=-13.8]
 
-    211it [00:04, 50.46it/s, failures=0, objective=-16.7]
+    Random Search:: : 849it [00:17, 44.71it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 849it [00:17, 44.71it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 850it [00:17, 44.71it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 851it [00:17, 44.71it/s, failures=0, objective=-13.8]
 
-    211it [00:04, 50.46it/s, failures=0, objective=-16.7]
+    Random Search:: : 852it [00:17, 44.71it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 853it [00:17, 44.71it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 854it [00:17, 42.66it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 854it [00:17, 42.66it/s, failures=0, objective=-13.8]
 
-    212it [00:04, 50.46it/s, failures=0, objective=-16.7]
+    Random Search:: : 855it [00:17, 42.66it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 856it [00:17, 42.66it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 857it [00:17, 42.66it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 858it [00:17, 42.66it/s, failures=0, objective=-13.8]
 
-    213it [00:04, 50.46it/s, failures=0, objective=-16.7]
+    Random Search:: : 859it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 859it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 860it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 861it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
-    214it [00:04, 50.46it/s, failures=0, objective=-16.7]
+    Random Search:: : 862it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 863it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 864it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 865it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
-    215it [00:04, 50.46it/s, failures=0, objective=-16.7]
+    Random Search:: : 866it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 867it [00:17, 44.30it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 868it [00:17, 55.51it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 868it [00:17, 55.51it/s, failures=0, objective=-13.8]
 
-    216it [00:04, 50.46it/s, failures=0, objective=-16.7]
+    Random Search:: : 869it [00:17, 55.51it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 870it [00:17, 55.51it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 871it [00:17, 55.51it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 872it [00:17, 55.51it/s, failures=0, objective=-13.8]
 
-    217it [00:04, 50.46it/s, failures=0, objective=-16.7]
+    Random Search:: : 873it [00:17, 55.51it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 874it [00:17, 55.51it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 875it [00:17, 58.01it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 875it [00:17, 58.01it/s, failures=0, objective=-13.8]
 
-    218it [00:04, 53.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 876it [00:17, 58.01it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 877it [00:17, 58.01it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 878it [00:17, 58.01it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 879it [00:17, 58.01it/s, failures=0, objective=-13.8]
 
-    218it [00:04, 53.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 880it [00:17, 58.01it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 881it [00:17, 58.01it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 882it [00:17, 56.32it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 882it [00:17, 56.32it/s, failures=0, objective=-13.8]
 
-    219it [00:04, 53.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 883it [00:17, 56.32it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 884it [00:17, 56.32it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 885it [00:17, 56.32it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 886it [00:17, 56.32it/s, failures=0, objective=-13.8]
 
-    220it [00:04, 53.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 887it [00:17, 56.32it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 888it [00:17, 48.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 888it [00:17, 48.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 889it [00:17, 48.99it/s, failures=0, objective=-13.8]
 
-    221it [00:04, 53.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 890it [00:17, 48.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 891it [00:17, 48.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 892it [00:17, 48.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 893it [00:18, 48.99it/s, failures=0, objective=-13.8]
 
-    222it [00:04, 53.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 894it [00:18, 48.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 895it [00:18, 48.99it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 896it [00:18, 55.76it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 896it [00:18, 55.76it/s, failures=0, objective=-13.8]
 
-    223it [00:04, 53.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 897it [00:18, 55.76it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 898it [00:18, 55.76it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 899it [00:18, 55.76it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 900it [00:18, 55.76it/s, failures=0, objective=-13.8]
 
-    224it [00:04, 45.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 901it [00:18, 55.76it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 902it [00:18, 56.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 902it [00:18, 56.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 903it [00:18, 56.31it/s, failures=0, objective=-13.8]
 
-    224it [00:04, 45.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 904it [00:18, 56.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 905it [00:18, 56.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 906it [00:18, 56.31it/s, failures=0, objective=-13.8]
 
+    Random Search:: : 907it [00:18, 56.31it/s, failures=0, objective=-13.8]
 
-    225it [00:04, 45.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 908it [00:18, 56.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 909it [00:18, 56.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 909it [00:18, 56.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 910it [00:18, 56.36it/s, failures=0, objective=-12.7]
 
-    226it [00:04, 45.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 911it [00:18, 56.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 912it [00:18, 56.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 913it [00:18, 56.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 914it [00:18, 56.36it/s, failures=0, objective=-12.7]
 
-    227it [00:04, 45.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 915it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 915it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 916it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 917it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
-    228it [00:04, 45.20it/s, failures=0, objective=-16.7]
+    Random Search:: : 918it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 919it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 920it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 921it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
-    229it [00:04, 43.04it/s, failures=0, objective=-16.7]
+    Random Search:: : 922it [00:18, 55.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 923it [00:18, 59.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 923it [00:18, 59.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 924it [00:18, 59.52it/s, failures=0, objective=-12.7]
 
-    229it [00:04, 43.04it/s, failures=0, objective=-16.7]
+    Random Search:: : 925it [00:18, 59.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 926it [00:18, 59.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 927it [00:18, 59.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 928it [00:18, 59.52it/s, failures=0, objective=-12.7]
 
-    230it [00:04, 43.04it/s, failures=0, objective=-16.7]
+    Random Search:: : 929it [00:18, 59.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 930it [00:18, 48.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 930it [00:18, 48.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 931it [00:18, 48.94it/s, failures=0, objective=-12.7]
 
-    231it [00:04, 43.04it/s, failures=0, objective=-16.7]
+    Random Search:: : 932it [00:18, 48.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 933it [00:18, 48.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 934it [00:18, 48.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 935it [00:18, 48.94it/s, failures=0, objective=-12.7]
 
-    232it [00:04, 43.04it/s, failures=0, objective=-16.7]
+    Random Search:: : 936it [00:18, 50.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 936it [00:18, 50.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 937it [00:18, 50.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 938it [00:18, 50.30it/s, failures=0, objective=-12.7]
 
-    233it [00:04, 43.04it/s, failures=0, objective=-16.7]
+    Random Search:: : 939it [00:18, 50.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 940it [00:18, 50.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 941it [00:18, 50.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 942it [00:18, 44.06it/s, failures=0, objective=-12.7]
 
-    234it [00:04, 41.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 942it [00:18, 44.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 943it [00:19, 44.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 944it [00:19, 44.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 945it [00:19, 44.06it/s, failures=0, objective=-12.7]
 
-    234it [00:04, 41.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 946it [00:19, 44.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 947it [00:19, 44.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 947it [00:19, 44.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 948it [00:19, 44.25it/s, failures=0, objective=-12.7]
 
-    235it [00:04, 41.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 949it [00:19, 44.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 950it [00:19, 44.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 951it [00:19, 44.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 952it [00:19, 44.25it/s, failures=0, objective=-12.7]
 
-    236it [00:04, 41.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 953it [00:19, 45.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 953it [00:19, 45.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 954it [00:19, 45.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 955it [00:19, 45.77it/s, failures=0, objective=-12.7]
 
-    237it [00:04, 41.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 956it [00:19, 45.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 957it [00:19, 45.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 958it [00:19, 42.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 958it [00:19, 42.86it/s, failures=0, objective=-12.7]
 
-    238it [00:04, 41.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 959it [00:19, 42.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 960it [00:19, 42.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 961it [00:19, 42.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 962it [00:19, 42.86it/s, failures=0, objective=-12.7]
 
-    239it [00:04, 41.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 963it [00:19, 42.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 963it [00:19, 42.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 964it [00:19, 42.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 965it [00:19, 42.28it/s, failures=0, objective=-12.7]
 
-    240it [00:04, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 966it [00:19, 42.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 967it [00:19, 42.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 968it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 968it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
-    240it [00:04, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 969it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 970it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 971it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 972it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
-    241it [00:05, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 973it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 974it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 975it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 976it [00:19, 39.38it/s, failures=0, objective=-12.7]
 
-    242it [00:05, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 977it [00:19, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 977it [00:19, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 978it [00:19, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 979it [00:19, 50.23it/s, failures=0, objective=-12.7]
 
-    243it [00:05, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 980it [00:19, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 981it [00:19, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 982it [00:19, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 983it [00:19, 50.23it/s, failures=0, objective=-12.7]
 
-    244it [00:05, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 984it [00:19, 53.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 984it [00:19, 53.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 985it [00:19, 53.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 986it [00:19, 53.19it/s, failures=0, objective=-12.7]
 
-    245it [00:05, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 987it [00:19, 53.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 988it [00:19, 53.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 989it [00:19, 53.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 990it [00:19, 51.64it/s, failures=0, objective=-12.7]
 
-    246it [00:05, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 990it [00:19, 51.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 991it [00:19, 51.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 992it [00:20, 51.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 993it [00:20, 51.64it/s, failures=0, objective=-12.7]
 
-    247it [00:05, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 994it [00:20, 51.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 995it [00:20, 51.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 996it [00:20, 51.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 997it [00:20, 51.64it/s, failures=0, objective=-12.7]
 
-    248it [00:05, 45.34it/s, failures=0, objective=-16.7]
+    Random Search:: : 998it [00:20, 51.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 999it [00:20, 61.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 999it [00:20, 61.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1000it [00:20, 61.37it/s, failures=0, objective=-12.7]
 
-    249it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1001it [00:20, 61.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1002it [00:20, 61.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1003it [00:20, 61.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1004it [00:20, 61.37it/s, failures=0, objective=-12.7]
 
-    249it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1005it [00:20, 61.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1006it [00:20, 60.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1006it [00:20, 60.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1007it [00:20, 60.87it/s, failures=0, objective=-12.7]
 
-    250it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1008it [00:20, 60.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1009it [00:20, 60.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1010it [00:20, 60.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1011it [00:20, 60.87it/s, failures=0, objective=-12.7]
 
-    251it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1012it [00:20, 60.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1013it [00:20, 55.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1013it [00:20, 55.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1014it [00:20, 55.70it/s, failures=0, objective=-12.7]
 
-    252it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1015it [00:20, 55.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1016it [00:20, 55.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1017it [00:20, 55.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1018it [00:20, 55.70it/s, failures=0, objective=-12.7]
 
-    253it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1019it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1019it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1020it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1021it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
-    254it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1022it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1023it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1024it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1025it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
-    255it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1026it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1027it [00:20, 55.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1028it [00:20, 63.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1028it [00:20, 63.39it/s, failures=0, objective=-12.7]
 
-    256it [00:05, 56.23it/s, failures=0, objective=-16.7]
+    Random Search:: : 1029it [00:20, 63.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1030it [00:20, 63.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1031it [00:20, 63.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1032it [00:20, 63.39it/s, failures=0, objective=-12.7]
 
-    257it [00:05, 60.61it/s, failures=0, objective=-16.7]
+    Random Search:: : 1033it [00:20, 63.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1034it [00:20, 63.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1035it [00:20, 58.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1035it [00:20, 58.08it/s, failures=0, objective=-12.7]
 
-    257it [00:05, 60.61it/s, failures=0, objective=-16.7]
+    Random Search:: : 1036it [00:20, 58.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1037it [00:20, 58.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1038it [00:20, 58.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1039it [00:20, 58.08it/s, failures=0, objective=-12.7]
 
-    258it [00:05, 60.61it/s, failures=0, objective=-16.7]
+    Random Search:: : 1040it [00:20, 58.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1041it [00:20, 58.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1042it [00:20, 55.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1042it [00:20, 55.61it/s, failures=0, objective=-12.7]
 
-    259it [00:05, 60.61it/s, failures=0, objective=-16.7]
+    Random Search:: : 1043it [00:20, 55.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1044it [00:20, 55.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1045it [00:20, 55.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1046it [00:20, 55.61it/s, failures=0, objective=-12.7]
 
-    260it [00:05, 60.61it/s, failures=0, objective=-16.7]
+    Random Search:: : 1047it [00:20, 55.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1048it [00:20, 55.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1049it [00:21, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1049it [00:21, 48.70it/s, failures=0, objective=-12.7]
 
-    261it [00:05, 60.61it/s, failures=0, objective=-16.7]
+    Random Search:: : 1050it [00:21, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1051it [00:21, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1052it [00:21, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1053it [00:21, 48.70it/s, failures=0, objective=-12.7]
 
-    262it [00:05, 60.61it/s, failures=0, objective=-16.7]
+    Random Search:: : 1054it [00:21, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1055it [00:21, 41.81it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1055it [00:21, 41.81it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1056it [00:21, 41.81it/s, failures=0, objective=-12.7]
 
-    263it [00:05, 60.61it/s, failures=0, objective=-16.7]
+    Random Search:: : 1057it [00:21, 41.81it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1058it [00:21, 41.81it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1059it [00:21, 41.81it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1060it [00:21, 40.08it/s, failures=0, objective=-12.7]
 
-    264it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1060it [00:21, 40.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1061it [00:21, 40.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1062it [00:21, 40.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1063it [00:21, 40.08it/s, failures=0, objective=-12.7]
 
-    264it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1064it [00:21, 40.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1065it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1065it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1066it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
-    265it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1067it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1068it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1069it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1070it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
-    266it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1071it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1072it [00:21, 36.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1073it [00:21, 44.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1073it [00:21, 44.64it/s, failures=0, objective=-12.7]
 
-    267it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1074it [00:21, 44.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1075it [00:21, 44.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1076it [00:21, 44.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1077it [00:21, 44.64it/s, failures=0, objective=-12.7]
 
-    268it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1078it [00:21, 44.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1079it [00:21, 44.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1080it [00:21, 49.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1080it [00:21, 49.34it/s, failures=0, objective=-12.7]
 
-    269it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1081it [00:21, 49.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1082it [00:21, 49.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1083it [00:21, 49.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1084it [00:21, 49.34it/s, failures=0, objective=-12.7]
 
-    270it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1085it [00:21, 49.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1086it [00:21, 50.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1086it [00:21, 50.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1087it [00:21, 50.54it/s, failures=0, objective=-12.7]
 
-    271it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1088it [00:21, 50.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1089it [00:21, 50.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1090it [00:21, 50.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1091it [00:21, 50.54it/s, failures=0, objective=-12.7]
 
-    272it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1092it [00:21, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1092it [00:21, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1093it [00:22, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1094it [00:22, 49.36it/s, failures=0, objective=-12.7]
 
-    273it [00:05, 49.69it/s, failures=0, objective=-16.7]
+    Random Search:: : 1095it [00:22, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1096it [00:22, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1097it [00:22, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1098it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
-    274it [00:05, 59.06it/s, failures=0, objective=-16.7]
+    Random Search:: : 1098it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1099it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1100it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1101it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
-    274it [00:05, 59.06it/s, failures=0, objective=-16.7]
+    Random Search:: : 1102it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1103it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1104it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1105it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
-    275it [00:05, 59.06it/s, failures=0, objective=-16.7]
+    Random Search:: : 1106it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1107it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1108it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1109it [00:22, 51.02it/s, failures=0, objective=-12.7]
 
-    276it [00:05, 59.06it/s, failures=0, objective=-16.7]
+    Random Search:: : 1110it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1110it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1111it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1112it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
-    277it [00:05, 59.06it/s, failures=0, objective=-16.7]
+    Random Search:: : 1113it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1114it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1115it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1116it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
-    278it [00:05, 59.06it/s, failures=0, objective=-16.7]
+    Random Search:: : 1117it [00:22, 68.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1118it [00:22, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1118it [00:22, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1119it [00:22, 56.41it/s, failures=0, objective=-12.7]
 
-    279it [00:05, 59.06it/s, failures=0, objective=-16.7]
+    Random Search:: : 1120it [00:22, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1121it [00:22, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1122it [00:22, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1123it [00:22, 56.41it/s, failures=0, objective=-12.7]
 
-    280it [00:05, 59.06it/s, failures=0, objective=-16.7]
+    Random Search:: : 1124it [00:22, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1125it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1125it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1126it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
-    281it [00:05, 53.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 1127it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1128it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1129it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1130it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
-    281it [00:05, 53.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 1131it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1132it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1133it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1134it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
-    282it [00:05, 53.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 1135it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1136it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1137it [00:22, 49.91it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1138it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
-    283it [00:05, 53.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 1138it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1139it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1140it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1141it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
-    284it [00:05, 53.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 1142it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1143it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1144it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1145it [00:22, 66.82it/s, failures=0, objective=-12.7]
 
-    285it [00:05, 53.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 1146it [00:22, 55.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1146it [00:22, 55.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1147it [00:22, 55.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1148it [00:22, 55.29it/s, failures=0, objective=-12.7]
 
-    286it [00:05, 53.50it/s, failures=0, objective=-16.7]
+    Random Search:: : 1149it [00:22, 55.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1150it [00:22, 55.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1151it [00:22, 55.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1152it [00:23, 55.29it/s, failures=0, objective=-12.7]
 
-    287it [00:05, 48.18it/s, failures=0, objective=-16.7]
+    Random Search:: : 1153it [00:23, 44.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1153it [00:23, 44.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1154it [00:23, 44.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1155it [00:23, 44.75it/s, failures=0, objective=-12.7]
 
-    287it [00:05, 48.18it/s, failures=0, objective=-16.7]
+    Random Search:: : 1156it [00:23, 44.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1157it [00:23, 44.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1158it [00:23, 44.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1159it [00:23, 46.36it/s, failures=0, objective=-12.7]
 
-    288it [00:05, 48.18it/s, failures=0, objective=-16.7]
+    Random Search:: : 1159it [00:23, 46.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1160it [00:23, 46.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1161it [00:23, 46.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1162it [00:23, 46.36it/s, failures=0, objective=-12.7]
 
-    289it [00:05, 48.18it/s, failures=0, objective=-16.7]
+    Random Search:: : 1163it [00:23, 46.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1164it [00:23, 46.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1165it [00:23, 41.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1165it [00:23, 41.95it/s, failures=0, objective=-12.7]
 
-    290it [00:05, 48.18it/s, failures=0, objective=-16.7]
+    Random Search:: : 1166it [00:23, 41.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1167it [00:23, 41.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1168it [00:23, 41.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1169it [00:23, 41.95it/s, failures=0, objective=-12.7]
 
-    291it [00:05, 48.18it/s, failures=0, objective=-16.7]
+    Random Search:: : 1170it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1170it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1171it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1172it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
-    292it [00:05, 48.18it/s, failures=0, objective=-16.7]
+    Random Search:: : 1173it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1174it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1175it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1176it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
-    293it [00:06, 45.29it/s, failures=0, objective=-16.7]
+    Random Search:: : 1177it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1178it [00:23, 40.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1179it [00:23, 50.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1179it [00:23, 50.33it/s, failures=0, objective=-12.7]
 
-    293it [00:06, 45.29it/s, failures=0, objective=-16.7]
+    Random Search:: : 1180it [00:23, 50.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1181it [00:23, 50.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1182it [00:23, 50.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1183it [00:23, 50.33it/s, failures=0, objective=-12.7]
 
-    294it [00:06, 45.29it/s, failures=0, objective=-16.7]
+    Random Search:: : 1184it [00:23, 50.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1185it [00:23, 36.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1185it [00:23, 36.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1186it [00:23, 36.49it/s, failures=0, objective=-12.7]
 
-    295it [00:06, 45.29it/s, failures=0, objective=-16.7]
+    Random Search:: : 1187it [00:23, 36.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1188it [00:23, 36.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1189it [00:24, 36.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1190it [00:24, 36.49it/s, failures=0, objective=-12.7]
 
-    296it [00:06, 45.29it/s, failures=0, objective=-16.7]
+    Random Search:: : 1191it [00:24, 36.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1192it [00:24, 36.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1193it [00:24, 36.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1194it [00:24, 36.49it/s, failures=0, objective=-12.7]
 
-    297it [00:06, 45.29it/s, failures=0, objective=-16.7]
+    Random Search:: : 1195it [00:24, 47.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1195it [00:24, 47.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1196it [00:24, 47.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1197it [00:24, 47.80it/s, failures=0, objective=-12.7]
 
-    298it [00:06, 45.29it/s, failures=0, objective=-16.7]
+    Random Search:: : 1198it [00:24, 47.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1199it [00:24, 47.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1200it [00:24, 47.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1201it [00:24, 47.80it/s, failures=0, objective=-12.7]
 
-    299it [00:06, 45.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 1202it [00:24, 48.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1202it [00:24, 48.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1203it [00:24, 48.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1204it [00:24, 48.64it/s, failures=0, objective=-12.7]
 
-    299it [00:06, 45.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 1205it [00:24, 48.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1206it [00:24, 48.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1207it [00:24, 48.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1208it [00:24, 44.42it/s, failures=0, objective=-12.7]
 
-    300it [00:06, 45.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 1208it [00:24, 44.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1209it [00:24, 44.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1210it [00:24, 44.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1211it [00:24, 44.42it/s, failures=0, objective=-12.7]
 
-    301it [00:06, 45.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 1212it [00:24, 44.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1213it [00:24, 44.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1214it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1214it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
-    302it [00:06, 45.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 1215it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1216it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1217it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1218it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
-    303it [00:06, 45.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 1219it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1220it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1221it [00:24, 42.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1222it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
-    304it [00:06, 45.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 1222it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1223it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1224it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1225it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
-    305it [00:06, 45.21it/s, failures=0, objective=-16.7]
+    Random Search:: : 1226it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1227it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1228it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1229it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
-    306it [00:06, 50.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 1230it [00:24, 50.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1231it [00:24, 54.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1231it [00:24, 54.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1232it [00:24, 54.22it/s, failures=0, objective=-12.7]
 
-    306it [00:06, 50.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 1233it [00:24, 54.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1234it [00:24, 54.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1235it [00:24, 54.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1236it [00:24, 54.22it/s, failures=0, objective=-12.7]
 
-    307it [00:06, 50.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 1237it [00:24, 54.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1238it [00:24, 57.18it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1238it [00:24, 57.18it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1239it [00:24, 57.18it/s, failures=0, objective=-12.7]
 
-    308it [00:06, 50.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 1240it [00:24, 57.18it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1241it [00:24, 57.18it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1242it [00:24, 57.18it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1243it [00:24, 57.18it/s, failures=0, objective=-12.7]
 
-    309it [00:06, 50.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 1244it [00:24, 57.18it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1245it [00:25, 59.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1245it [00:25, 59.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1246it [00:25, 59.46it/s, failures=0, objective=-12.7]
 
-    310it [00:06, 50.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 1247it [00:25, 59.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1248it [00:25, 59.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1249it [00:25, 59.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1250it [00:25, 59.46it/s, failures=0, objective=-12.7]
 
-    311it [00:06, 50.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 1251it [00:25, 59.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1252it [00:25, 54.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1252it [00:25, 54.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1253it [00:25, 54.82it/s, failures=0, objective=-12.7]
 
-    312it [00:06, 50.37it/s, failures=0, objective=-16.7]
+    Random Search:: : 1254it [00:25, 54.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1255it [00:25, 54.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1256it [00:25, 54.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1257it [00:25, 54.82it/s, failures=0, objective=-12.7]
 
-    313it [00:06, 54.85it/s, failures=0, objective=-16.7]
+    Random Search:: : 1258it [00:25, 51.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1258it [00:25, 51.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1259it [00:25, 51.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1260it [00:25, 51.06it/s, failures=0, objective=-12.7]
 
-    313it [00:06, 54.85it/s, failures=0, objective=-16.7]
+    Random Search:: : 1261it [00:25, 51.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1262it [00:25, 51.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1263it [00:25, 51.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1264it [00:25, 51.06it/s, failures=0, objective=-12.7]
 
-    314it [00:06, 54.85it/s, failures=0, objective=-16.7]
+    Random Search:: : 1265it [00:25, 49.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1265it [00:25, 49.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1266it [00:25, 49.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1267it [00:25, 49.37it/s, failures=0, objective=-12.7]
 
-    315it [00:06, 54.85it/s, failures=0, objective=-16.7]
+    Random Search:: : 1268it [00:25, 49.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1269it [00:25, 49.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1270it [00:25, 49.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1271it [00:25, 45.42it/s, failures=0, objective=-12.7]
 
-    316it [00:06, 54.85it/s, failures=0, objective=-16.7]
+    Random Search:: : 1271it [00:25, 45.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1272it [00:25, 45.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1273it [00:25, 45.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1274it [00:25, 45.42it/s, failures=0, objective=-12.7]
 
-    317it [00:06, 54.85it/s, failures=0, objective=-16.7]
+    Random Search:: : 1275it [00:25, 45.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1276it [00:25, 45.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1277it [00:25, 45.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1278it [00:25, 50.39it/s, failures=0, objective=-12.7]
 
-    318it [00:06, 54.85it/s, failures=0, objective=-16.7]
+    Random Search:: : 1278it [00:25, 50.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1279it [00:25, 50.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1280it [00:25, 50.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1281it [00:25, 50.39it/s, failures=0, objective=-12.7]
 
-    319it [00:06, 54.85it/s, failures=0, objective=-16.7]
+    Random Search:: : 1282it [00:25, 50.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1283it [00:25, 50.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1284it [00:25, 50.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1285it [00:25, 54.86it/s, failures=0, objective=-12.7]
 
-    320it [00:06, 54.89it/s, failures=0, objective=-16.7]
+    Random Search:: : 1285it [00:25, 54.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1286it [00:25, 54.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1287it [00:25, 54.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1288it [00:25, 54.86it/s, failures=0, objective=-12.7]
 
-    320it [00:06, 54.89it/s, failures=0, objective=-16.7]
+    Random Search:: : 1289it [00:25, 54.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1290it [00:25, 54.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1291it [00:25, 52.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1291it [00:25, 52.24it/s, failures=0, objective=-12.7]
 
-    321it [00:06, 54.89it/s, failures=0, objective=-16.7]
+    Random Search:: : 1292it [00:25, 52.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1293it [00:25, 52.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1294it [00:25, 52.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1295it [00:26, 52.24it/s, failures=0, objective=-12.7]
 
-    322it [00:06, 54.89it/s, failures=0, objective=-16.7]
+    Random Search:: : 1296it [00:26, 52.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1297it [00:26, 49.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1297it [00:26, 49.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1298it [00:26, 49.99it/s, failures=0, objective=-12.7]
 
-    323it [00:06, 54.89it/s, failures=0, objective=-16.7]
+    Random Search:: : 1299it [00:26, 49.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1300it [00:26, 49.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1301it [00:26, 49.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1302it [00:26, 49.99it/s, failures=0, objective=-12.7]
 
-    324it [00:06, 54.89it/s, failures=0, objective=-16.7]
+    Random Search:: : 1303it [00:26, 47.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1303it [00:26, 47.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1304it [00:26, 47.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1305it [00:26, 47.30it/s, failures=0, objective=-12.7]
 
-    325it [00:06, 54.89it/s, failures=0, objective=-16.7]
+    Random Search:: : 1306it [00:26, 47.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1307it [00:26, 47.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1308it [00:26, 47.30it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1309it [00:26, 47.30it/s, failures=0, objective=-12.7]
 
-    326it [00:06, 51.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 1310it [00:26, 52.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1310it [00:26, 52.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1311it [00:26, 52.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1312it [00:26, 52.02it/s, failures=0, objective=-12.7]
 
-    326it [00:06, 51.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 1313it [00:26, 52.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1314it [00:26, 52.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1315it [00:26, 52.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1316it [00:26, 45.48it/s, failures=0, objective=-12.7]
 
-    327it [00:06, 51.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 1316it [00:26, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1317it [00:26, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1318it [00:26, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1319it [00:26, 45.48it/s, failures=0, objective=-12.7]
 
-    328it [00:06, 51.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 1320it [00:26, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1321it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1321it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1322it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
-    329it [00:06, 51.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 1323it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1324it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1325it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1326it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
-    330it [00:06, 51.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 1327it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1328it [00:26, 43.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1329it [00:26, 52.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1329it [00:26, 52.52it/s, failures=0, objective=-12.7]
 
-    331it [00:06, 51.86it/s, failures=0, objective=-16.7]
+    Random Search:: : 1330it [00:26, 52.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1331it [00:26, 52.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1332it [00:26, 52.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1333it [00:26, 52.52it/s, failures=0, objective=-12.7]
 
-    332it [00:06, 50.97it/s, failures=0, objective=-16.7]
+    Random Search:: : 1334it [00:26, 52.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1335it [00:26, 52.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1336it [00:26, 42.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1336it [00:26, 42.36it/s, failures=0, objective=-12.7]
 
-    332it [00:06, 50.97it/s, failures=0, objective=-16.7]
+    Random Search:: : 1337it [00:27, 42.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1338it [00:27, 42.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1339it [00:27, 42.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1340it [00:27, 42.36it/s, failures=0, objective=-12.7]
 
-    333it [00:06, 50.97it/s, failures=0, objective=-16.7]
+    Random Search:: : 1341it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1341it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1342it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1343it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
-    334it [00:06, 50.97it/s, failures=0, objective=-16.7]
+    Random Search:: : 1344it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1345it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1346it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1347it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
-    335it [00:06, 50.97it/s, failures=0, objective=-16.7]
+    Random Search:: : 1348it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1349it [00:27, 43.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1350it [00:27, 45.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1350it [00:27, 45.25it/s, failures=0, objective=-12.7]
 
-    336it [00:06, 50.97it/s, failures=0, objective=-16.7]
+    Random Search:: : 1351it [00:27, 45.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1352it [00:27, 45.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1353it [00:27, 45.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1354it [00:27, 45.25it/s, failures=0, objective=-12.7]
 
-    337it [00:06, 50.97it/s, failures=0, objective=-16.7]
+    Random Search:: : 1355it [00:27, 43.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1355it [00:27, 43.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1356it [00:27, 43.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1357it [00:27, 43.96it/s, failures=0, objective=-12.7]
 
-    338it [00:06, 53.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 1358it [00:27, 43.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1359it [00:27, 43.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1360it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1360it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
-    338it [00:06, 53.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 1361it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1362it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1363it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1364it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
-    339it [00:06, 53.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 1365it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1366it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1367it [00:27, 45.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1368it [00:27, 50.40it/s, failures=0, objective=-12.7]
 
-    340it [00:06, 53.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 1368it [00:27, 50.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1369it [00:27, 50.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1370it [00:27, 50.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1371it [00:27, 50.40it/s, failures=0, objective=-12.7]
 
-    341it [00:06, 53.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 1372it [00:27, 50.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1373it [00:27, 50.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1374it [00:27, 50.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1375it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
-    342it [00:06, 53.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 1375it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1376it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1377it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1378it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
-    343it [00:06, 53.25it/s, failures=0, objective=-16.7]
+    Random Search:: : 1379it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1380it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1381it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1382it [00:27, 51.57it/s, failures=0, objective=-12.7]
 
-    344it [00:07, 45.78it/s, failures=0, objective=-16.7]
+    Random Search:: : 1383it [00:27, 56.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1383it [00:27, 56.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1384it [00:27, 56.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1385it [00:27, 56.80it/s, failures=0, objective=-12.7]
 
-    344it [00:07, 45.78it/s, failures=0, objective=-16.7]
+    Random Search:: : 1386it [00:27, 56.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1387it [00:27, 56.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1388it [00:27, 56.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1389it [00:27, 56.80it/s, failures=0, objective=-12.7]
 
-    345it [00:07, 45.78it/s, failures=0, objective=-16.7]
+    Random Search:: : 1390it [00:27, 55.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1390it [00:27, 55.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1391it [00:27, 55.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1392it [00:28, 55.31it/s, failures=0, objective=-12.7]
 
-    346it [00:07, 45.78it/s, failures=0, objective=-16.7]
+    Random Search:: : 1393it [00:28, 55.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1394it [00:28, 55.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1395it [00:28, 55.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1396it [00:28, 51.42it/s, failures=0, objective=-12.7]
 
-    347it [00:07, 45.78it/s, failures=0, objective=-16.7]
+    Random Search:: : 1396it [00:28, 51.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1397it [00:28, 51.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1398it [00:28, 51.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1399it [00:28, 51.42it/s, failures=0, objective=-12.7]
 
-    348it [00:07, 45.78it/s, failures=0, objective=-16.7]
+    Random Search:: : 1400it [00:28, 51.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1401it [00:28, 51.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1402it [00:28, 51.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1403it [00:28, 53.57it/s, failures=0, objective=-12.7]
 
-    349it [00:07, 37.64it/s, failures=0, objective=-16.7]
+    Random Search:: : 1403it [00:28, 53.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1404it [00:28, 53.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1405it [00:28, 53.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1406it [00:28, 53.57it/s, failures=0, objective=-12.7]
 
-    349it [00:07, 37.64it/s, failures=0, objective=-16.7]
+    Random Search:: : 1407it [00:28, 53.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1408it [00:28, 53.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1409it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1409it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
-    350it [00:07, 37.64it/s, failures=0, objective=-16.7]
+    Random Search:: : 1410it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1411it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1412it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1413it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
-    351it [00:07, 37.64it/s, failures=0, objective=-16.7]
+    Random Search:: : 1414it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1415it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1416it [00:28, 51.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1417it [00:28, 55.36it/s, failures=0, objective=-12.7]
 
-    352it [00:07, 37.64it/s, failures=0, objective=-16.7]
+    Random Search:: : 1417it [00:28, 55.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1418it [00:28, 55.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1419it [00:28, 55.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1420it [00:28, 55.36it/s, failures=0, objective=-12.7]
 
-    353it [00:07, 37.64it/s, failures=0, objective=-16.7]
+    Random Search:: : 1421it [00:28, 55.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1422it [00:28, 55.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1423it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1423it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
-    354it [00:07, 37.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 1424it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1425it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1426it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1427it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
-    354it [00:07, 37.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 1428it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1429it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1430it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1431it [00:28, 50.15it/s, failures=0, objective=-12.7]
 
-    355it [00:07, 37.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 1432it [00:28, 49.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1432it [00:28, 49.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1433it [00:28, 49.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1434it [00:28, 49.56it/s, failures=0, objective=-12.7]
 
-    356it [00:07, 37.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 1435it [00:28, 49.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1436it [00:28, 49.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1437it [00:28, 49.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1438it [00:28, 49.56it/s, failures=0, objective=-12.7]
 
-    357it [00:07, 37.54it/s, failures=0, objective=-16.7]
+    Random Search:: : 1439it [00:28, 51.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1439it [00:28, 51.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1440it [00:28, 51.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1441it [00:29, 51.45it/s, failures=0, objective=-12.7]
 
-    358it [00:07, 37.54it/s, failures=0, objective=-13.8]
+    Random Search:: : 1442it [00:29, 51.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1443it [00:29, 51.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1444it [00:29, 51.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1445it [00:29, 43.35it/s, failures=0, objective=-12.7]
 
-    359it [00:07, 37.54it/s, failures=0, objective=-13.8]
+    Random Search:: : 1445it [00:29, 43.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1446it [00:29, 43.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1447it [00:29, 43.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1448it [00:29, 43.35it/s, failures=0, objective=-12.7]
 
-    360it [00:07, 40.25it/s, failures=0, objective=-13.8]
+    Random Search:: : 1449it [00:29, 43.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1450it [00:29, 43.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1451it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1451it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
-    360it [00:07, 40.25it/s, failures=0, objective=-13.8]
+    Random Search:: : 1452it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1453it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1454it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1455it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
-    361it [00:07, 40.25it/s, failures=0, objective=-13.8]
+    Random Search:: : 1456it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1457it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1458it [00:29, 42.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1459it [00:29, 42.61it/s, failures=0, objective=-12.7]
 
-    362it [00:07, 40.25it/s, failures=0, objective=-13.8]
+    Random Search:: : 1459it [00:29, 42.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1460it [00:29, 42.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1461it [00:29, 42.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1462it [00:29, 42.61it/s, failures=0, objective=-12.7]
 
-    363it [00:07, 40.25it/s, failures=0, objective=-13.8]
+    Random Search:: : 1463it [00:29, 42.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1464it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1464it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1465it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
-    364it [00:07, 40.25it/s, failures=0, objective=-13.8]
+    Random Search:: : 1466it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1467it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1468it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1469it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
-    365it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1470it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1471it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1472it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1473it [00:29, 40.99it/s, failures=0, objective=-12.7]
 
-    365it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1474it [00:29, 50.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1474it [00:29, 50.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1475it [00:29, 50.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1476it [00:29, 50.72it/s, failures=0, objective=-12.7]
 
-    366it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1477it [00:29, 50.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1478it [00:29, 50.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1479it [00:29, 50.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1480it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
-    367it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1480it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1481it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1482it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1483it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
-    368it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1484it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1485it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1486it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1487it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
-    369it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1488it [00:29, 50.23it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1489it [00:30, 54.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1489it [00:30, 54.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1490it [00:30, 54.90it/s, failures=0, objective=-12.7]
 
-    370it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1491it [00:30, 54.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1492it [00:30, 54.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1493it [00:30, 54.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1494it [00:30, 54.90it/s, failures=0, objective=-12.7]
 
-    371it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1495it [00:30, 51.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1495it [00:30, 51.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1496it [00:30, 51.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1497it [00:30, 51.14it/s, failures=0, objective=-12.7]
 
-    372it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1498it [00:30, 51.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1499it [00:30, 51.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1500it [00:30, 51.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1501it [00:30, 48.42it/s, failures=0, objective=-12.7]
 
-    373it [00:07, 41.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1501it [00:30, 48.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1502it [00:30, 48.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1503it [00:30, 48.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1504it [00:30, 48.42it/s, failures=0, objective=-12.7]
 
-    374it [00:07, 52.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1505it [00:30, 48.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1506it [00:30, 48.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1507it [00:30, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1507it [00:30, 49.11it/s, failures=0, objective=-12.7]
 
-    374it [00:07, 52.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1508it [00:30, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1509it [00:30, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1510it [00:30, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1511it [00:30, 49.11it/s, failures=0, objective=-12.7]
 
-    375it [00:07, 52.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1512it [00:30, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1513it [00:30, 51.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1513it [00:30, 51.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1514it [00:30, 51.55it/s, failures=0, objective=-12.7]
 
-    376it [00:07, 52.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1515it [00:30, 51.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1516it [00:30, 51.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1517it [00:30, 51.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1518it [00:30, 51.55it/s, failures=0, objective=-12.7]
 
-    377it [00:07, 52.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1519it [00:30, 51.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1520it [00:30, 56.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1520it [00:30, 56.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1521it [00:30, 56.06it/s, failures=0, objective=-12.7]
 
-    378it [00:07, 52.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1522it [00:30, 56.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1523it [00:30, 56.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1524it [00:30, 56.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1525it [00:30, 56.06it/s, failures=0, objective=-12.7]
 
-    379it [00:07, 52.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1526it [00:30, 56.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1526it [00:30, 56.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1527it [00:30, 56.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1528it [00:30, 56.98it/s, failures=0, objective=-12.7]
 
-    380it [00:07, 52.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 1529it [00:30, 56.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1530it [00:30, 56.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1531it [00:30, 56.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1532it [00:30, 56.98it/s, failures=0, objective=-12.7]
 
-    381it [00:07, 56.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 1533it [00:30, 59.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1533it [00:30, 59.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1534it [00:30, 59.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1535it [00:30, 59.38it/s, failures=0, objective=-12.7]
 
-    381it [00:07, 56.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 1536it [00:30, 59.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1537it [00:30, 59.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1538it [00:30, 59.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1539it [00:30, 59.38it/s, failures=0, objective=-12.7]
 
-    382it [00:07, 56.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 1540it [00:30, 56.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1540it [00:30, 56.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1541it [00:30, 56.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1542it [00:31, 56.16it/s, failures=0, objective=-12.7]
 
-    383it [00:07, 56.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 1543it [00:31, 56.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1544it [00:31, 56.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1545it [00:31, 56.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1546it [00:31, 55.62it/s, failures=0, objective=-12.7]
 
-    384it [00:07, 56.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 1546it [00:31, 55.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1547it [00:31, 55.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1548it [00:31, 55.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1549it [00:31, 55.62it/s, failures=0, objective=-12.7]
 
-    385it [00:07, 56.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 1550it [00:31, 55.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1551it [00:31, 55.62it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1552it [00:31, 43.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1552it [00:31, 43.94it/s, failures=0, objective=-12.7]
 
-    386it [00:07, 56.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 1553it [00:31, 43.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1554it [00:31, 43.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1555it [00:31, 43.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1556it [00:31, 43.94it/s, failures=0, objective=-12.7]
 
-    387it [00:07, 56.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 1557it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1557it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1558it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1559it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
-    388it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1560it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1561it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1562it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1563it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
-    388it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1564it [00:31, 40.12it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1565it [00:31, 48.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1565it [00:31, 48.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1566it [00:31, 48.98it/s, failures=0, objective=-12.7]
 
-    389it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1567it [00:31, 48.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1568it [00:31, 48.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1569it [00:31, 48.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1570it [00:31, 48.98it/s, failures=0, objective=-12.7]
 
-    390it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1571it [00:31, 48.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1571it [00:31, 48.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1572it [00:31, 48.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1573it [00:31, 48.11it/s, failures=0, objective=-12.7]
 
-    391it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1574it [00:31, 48.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1575it [00:31, 48.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1576it [00:31, 48.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1577it [00:31, 49.07it/s, failures=0, objective=-12.7]
 
-    392it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1577it [00:31, 49.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1578it [00:31, 49.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1579it [00:31, 49.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1580it [00:31, 49.07it/s, failures=0, objective=-12.7]
 
-    393it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1581it [00:31, 49.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1582it [00:31, 49.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1583it [00:31, 48.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1583it [00:31, 48.76it/s, failures=0, objective=-12.7]
 
-    394it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1584it [00:31, 48.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1585it [00:31, 48.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1586it [00:31, 48.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1587it [00:31, 48.76it/s, failures=0, objective=-12.7]
 
-    395it [00:07, 58.19it/s, failures=0, objective=-13.8]
+    Random Search:: : 1588it [00:32, 48.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1589it [00:32, 48.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1590it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1590it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
-    396it [00:08, 60.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 1591it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1592it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1593it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1594it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
-    396it [00:08, 60.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 1595it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1596it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1597it [00:32, 53.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1598it [00:32, 58.86it/s, failures=0, objective=-12.7]
 
-    397it [00:08, 60.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 1598it [00:32, 58.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1599it [00:32, 58.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1600it [00:32, 58.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1601it [00:32, 58.86it/s, failures=0, objective=-12.7]
 
-    398it [00:08, 60.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 1602it [00:32, 58.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1603it [00:32, 58.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1604it [00:32, 58.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1605it [00:32, 50.84it/s, failures=0, objective=-12.7]
 
-    399it [00:08, 60.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 1605it [00:32, 50.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1606it [00:32, 50.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1607it [00:32, 50.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1608it [00:32, 50.84it/s, failures=0, objective=-12.7]
 
-    400it [00:08, 60.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 1609it [00:32, 50.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1610it [00:32, 50.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1611it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1611it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
-    401it [00:08, 60.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 1612it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1613it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1614it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1615it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
-    402it [00:08, 60.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 1616it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1617it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1618it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1619it [00:32, 45.98it/s, failures=0, objective=-12.7]
 
-    403it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1620it [00:32, 55.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1620it [00:32, 55.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1621it [00:32, 55.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1622it [00:32, 55.90it/s, failures=0, objective=-12.7]
 
-    403it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1623it [00:32, 55.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1624it [00:32, 55.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1625it [00:32, 55.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1626it [00:32, 55.90it/s, failures=0, objective=-12.7]
 
-    404it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1627it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1627it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1628it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1629it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
-    405it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1630it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1631it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1632it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1633it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
-    406it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1634it [00:32, 50.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1635it [00:32, 54.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1635it [00:32, 54.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1636it [00:32, 54.77it/s, failures=0, objective=-12.7]
 
-    407it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1637it [00:32, 54.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1638it [00:32, 54.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1639it [00:33, 54.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1640it [00:33, 54.77it/s, failures=0, objective=-12.7]
 
-    408it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1641it [00:33, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1641it [00:33, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1642it [00:33, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1643it [00:33, 44.78it/s, failures=0, objective=-12.7]
 
-    409it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1644it [00:33, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1645it [00:33, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1646it [00:33, 42.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1646it [00:33, 42.97it/s, failures=0, objective=-12.7]
 
-    410it [00:08, 54.38it/s, failures=0, objective=-13.8]
+    Random Search:: : 1647it [00:33, 42.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1648it [00:33, 42.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1649it [00:33, 42.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1650it [00:33, 42.97it/s, failures=0, objective=-12.7]
 
-    411it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1651it [00:33, 42.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1652it [00:33, 42.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1653it [00:33, 47.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1653it [00:33, 47.31it/s, failures=0, objective=-12.7]
 
-    411it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1654it [00:33, 47.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1655it [00:33, 47.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1656it [00:33, 47.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1657it [00:33, 47.31it/s, failures=0, objective=-12.7]
 
-    412it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1658it [00:33, 47.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1659it [00:33, 44.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1659it [00:33, 44.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1660it [00:33, 44.90it/s, failures=0, objective=-12.7]
 
-    413it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1661it [00:33, 44.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1662it [00:33, 44.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1663it [00:33, 44.90it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1664it [00:33, 41.13it/s, failures=0, objective=-12.7]
 
-    414it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1664it [00:33, 41.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1665it [00:33, 41.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1666it [00:33, 41.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1667it [00:33, 41.13it/s, failures=0, objective=-12.7]
 
-    415it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1668it [00:33, 41.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1669it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1669it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1670it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
-    416it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1671it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1672it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1673it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1674it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
-    417it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1675it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1676it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1677it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1678it [00:33, 36.05it/s, failures=0, objective=-12.7]
 
-    418it [00:08, 58.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 1679it [00:33, 49.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1679it [00:33, 49.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1680it [00:33, 49.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1681it [00:33, 49.66it/s, failures=0, objective=-12.7]
 
-    419it [00:08, 58.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 1682it [00:33, 49.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1683it [00:34, 49.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1684it [00:34, 49.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1685it [00:34, 49.70it/s, failures=0, objective=-12.7]
 
-    419it [00:08, 58.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 1685it [00:34, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1686it [00:34, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1687it [00:34, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1688it [00:34, 49.70it/s, failures=0, objective=-12.7]
 
-    420it [00:08, 58.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 1689it [00:34, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1690it [00:34, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1691it [00:34, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1692it [00:34, 54.53it/s, failures=0, objective=-12.7]
 
-    421it [00:08, 58.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 1692it [00:34, 54.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1693it [00:34, 54.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1694it [00:34, 54.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1695it [00:34, 54.53it/s, failures=0, objective=-12.7]
 
-    422it [00:08, 58.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 1696it [00:34, 54.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1697it [00:34, 54.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1698it [00:34, 54.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1698it [00:34, 54.39it/s, failures=0, objective=-12.7]
 
-    423it [00:08, 58.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 1699it [00:34, 54.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1700it [00:34, 54.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1701it [00:34, 54.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1702it [00:34, 54.39it/s, failures=0, objective=-12.7]
 
-    424it [00:08, 58.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 1703it [00:34, 54.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1704it [00:34, 52.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1704it [00:34, 52.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1705it [00:34, 52.96it/s, failures=0, objective=-12.7]
 
-    425it [00:08, 57.02it/s, failures=0, objective=-13.8]
+    Random Search:: : 1706it [00:34, 52.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1707it [00:34, 52.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1708it [00:34, 52.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1709it [00:34, 52.96it/s, failures=0, objective=-12.7]
 
-    425it [00:08, 57.02it/s, failures=0, objective=-13.8]
+    Random Search:: : 1710it [00:34, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1710it [00:34, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1711it [00:34, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1712it [00:34, 47.93it/s, failures=0, objective=-12.7]
 
-    426it [00:08, 57.02it/s, failures=0, objective=-13.8]
+    Random Search:: : 1713it [00:34, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1714it [00:34, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1715it [00:34, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1716it [00:34, 46.92it/s, failures=0, objective=-12.7]
 
-    427it [00:08, 57.02it/s, failures=0, objective=-13.8]
+    Random Search:: : 1716it [00:34, 46.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1717it [00:34, 46.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1718it [00:34, 46.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1719it [00:34, 46.92it/s, failures=0, objective=-12.7]
 
-    428it [00:08, 57.02it/s, failures=0, objective=-13.8]
+    Random Search:: : 1720it [00:34, 46.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1721it [00:34, 46.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1722it [00:34, 46.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1723it [00:34, 50.95it/s, failures=0, objective=-12.7]
 
-    429it [00:08, 57.02it/s, failures=0, objective=-13.8]
+    Random Search:: : 1723it [00:34, 50.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1724it [00:34, 50.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1725it [00:34, 50.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1726it [00:34, 50.95it/s, failures=0, objective=-12.7]
 
-    430it [00:08, 57.02it/s, failures=0, objective=-13.8]
+    Random Search:: : 1727it [00:34, 50.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1728it [00:34, 50.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1729it [00:34, 49.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1729it [00:34, 49.78it/s, failures=0, objective=-12.7]
 
-    431it [00:08, 51.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1730it [00:34, 49.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1731it [00:34, 49.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1732it [00:34, 49.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1733it [00:34, 49.78it/s, failures=0, objective=-12.7]
 
-    431it [00:08, 51.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1734it [00:34, 49.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1735it [00:35, 50.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1735it [00:35, 50.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1736it [00:35, 50.44it/s, failures=0, objective=-12.7]
 
-    432it [00:08, 51.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1737it [00:35, 50.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1738it [00:35, 50.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1739it [00:35, 50.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1740it [00:35, 50.44it/s, failures=0, objective=-12.7]
 
-    433it [00:08, 51.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1741it [00:35, 42.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1741it [00:35, 42.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1742it [00:35, 42.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1743it [00:35, 42.65it/s, failures=0, objective=-12.7]
 
-    434it [00:08, 51.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1744it [00:35, 42.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1745it [00:35, 42.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1746it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1746it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
-    435it [00:08, 51.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1747it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1748it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1749it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1750it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
-    436it [00:08, 51.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1751it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1752it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1753it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1754it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
-    437it [00:08, 36.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1755it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1756it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1757it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1758it [00:35, 39.98it/s, failures=0, objective=-12.7]
 
-    437it [00:08, 36.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1759it [00:35, 60.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1759it [00:35, 60.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1760it [00:35, 60.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1761it [00:35, 60.19it/s, failures=0, objective=-12.7]
 
-    438it [00:09, 36.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1762it [00:35, 60.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1763it [00:35, 60.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1764it [00:35, 60.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1765it [00:35, 60.19it/s, failures=0, objective=-12.7]
 
-    439it [00:09, 36.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1766it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1766it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1767it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1768it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
-    440it [00:09, 36.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1769it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1770it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1771it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1772it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
-    441it [00:09, 36.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 1773it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1774it [00:35, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1775it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1775it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
-    442it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1776it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1777it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1778it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1779it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
-    442it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1780it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1781it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1782it [00:35, 65.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1783it [00:35, 51.77it/s, failures=0, objective=-12.7]
 
-    443it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1783it [00:35, 51.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1784it [00:35, 51.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1785it [00:35, 51.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1786it [00:35, 51.77it/s, failures=0, objective=-12.7]
 
-    444it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1787it [00:35, 51.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1788it [00:36, 51.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1789it [00:36, 51.77it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1790it [00:36, 49.74it/s, failures=0, objective=-12.7]
 
-    445it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1790it [00:36, 49.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1791it [00:36, 49.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1792it [00:36, 49.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1793it [00:36, 49.74it/s, failures=0, objective=-12.7]
 
-    446it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1794it [00:36, 49.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1795it [00:36, 49.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1796it [00:36, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1796it [00:36, 50.22it/s, failures=0, objective=-12.7]
 
-    447it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1797it [00:36, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1798it [00:36, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1799it [00:36, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1800it [00:36, 50.22it/s, failures=0, objective=-12.7]
 
-    448it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1801it [00:36, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1802it [00:36, 42.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1802it [00:36, 42.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1803it [00:36, 42.07it/s, failures=0, objective=-12.7]
 
-    449it [00:09, 36.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 1804it [00:36, 42.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1805it [00:36, 42.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1806it [00:36, 42.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1807it [00:36, 42.07it/s, failures=0, objective=-12.7]
 
-    450it [00:09, 44.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 1808it [00:36, 42.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1809it [00:36, 47.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1809it [00:36, 47.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1810it [00:36, 47.38it/s, failures=0, objective=-12.7]
 
-    450it [00:09, 44.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 1811it [00:36, 47.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1812it [00:36, 47.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1813it [00:36, 47.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1814it [00:36, 47.38it/s, failures=0, objective=-12.7]
 
-    451it [00:09, 44.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 1815it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1815it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1816it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1817it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
-    452it [00:09, 44.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 1818it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1819it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1820it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1821it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
-    453it [00:09, 44.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 1822it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1823it [00:36, 43.45it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1824it [00:36, 52.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1824it [00:36, 52.39it/s, failures=0, objective=-12.7]
 
-    454it [00:09, 44.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 1825it [00:36, 52.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1826it [00:36, 52.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1827it [00:36, 52.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1828it [00:36, 52.39it/s, failures=0, objective=-12.7]
 
-    455it [00:09, 44.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 1829it [00:36, 52.39it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1830it [00:36, 51.68it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1830it [00:36, 51.68it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1831it [00:36, 51.68it/s, failures=0, objective=-12.7]
 
-    456it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1832it [00:36, 51.68it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1833it [00:36, 51.68it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1834it [00:37, 51.68it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1835it [00:37, 51.68it/s, failures=0, objective=-12.7]
 
-    456it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1836it [00:37, 49.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1836it [00:37, 49.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1837it [00:37, 49.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1838it [00:37, 49.72it/s, failures=0, objective=-12.7]
 
-    457it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1839it [00:37, 49.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1840it [00:37, 49.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1841it [00:37, 49.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1842it [00:37, 50.88it/s, failures=0, objective=-12.7]
 
-    458it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1842it [00:37, 50.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1843it [00:37, 50.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1844it [00:37, 50.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1845it [00:37, 50.88it/s, failures=0, objective=-12.7]
 
-    459it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1846it [00:37, 50.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1847it [00:37, 50.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1848it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1848it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
-    460it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1849it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1850it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1851it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1852it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
-    461it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1853it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1854it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1855it [00:37, 52.97it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1856it [00:37, 53.38it/s, failures=0, objective=-12.7]
 
-    462it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1856it [00:37, 53.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1857it [00:37, 53.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1858it [00:37, 53.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1859it [00:37, 53.38it/s, failures=0, objective=-12.7]
 
-    463it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1860it [00:37, 53.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1861it [00:37, 53.38it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1862it [00:37, 48.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1862it [00:37, 48.21it/s, failures=0, objective=-12.7]
 
-    464it [00:09, 47.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 1863it [00:37, 48.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1864it [00:37, 48.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1865it [00:37, 48.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1866it [00:37, 48.21it/s, failures=0, objective=-12.7]
 
-    465it [00:09, 57.78it/s, failures=0, objective=-13.8]
+    Random Search:: : 1867it [00:37, 48.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1868it [00:37, 50.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1868it [00:37, 50.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1869it [00:37, 50.83it/s, failures=0, objective=-12.7]
 
-    465it [00:09, 57.78it/s, failures=0, objective=-13.8]
+    Random Search:: : 1870it [00:37, 50.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1871it [00:37, 50.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1872it [00:37, 50.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1873it [00:37, 50.83it/s, failures=0, objective=-12.7]
 
-    466it [00:09, 57.78it/s, failures=0, objective=-13.8]
+    Random Search:: : 1874it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1874it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1875it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1876it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
-    467it [00:09, 57.78it/s, failures=0, objective=-13.8]
+    Random Search:: : 1877it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1878it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1879it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1880it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
-    468it [00:09, 57.78it/s, failures=0, objective=-13.8]
+    Random Search:: : 1881it [00:37, 45.94it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1882it [00:37, 51.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1882it [00:37, 51.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1883it [00:37, 51.44it/s, failures=0, objective=-12.7]
 
-    469it [00:09, 57.78it/s, failures=0, objective=-13.8]
+    Random Search:: : 1884it [00:37, 51.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1885it [00:38, 51.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1886it [00:38, 51.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1887it [00:38, 51.44it/s, failures=0, objective=-12.7]
 
-    470it [00:09, 57.78it/s, failures=0, objective=-13.8]
+    Random Search:: : 1888it [00:38, 52.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1888it [00:38, 52.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1889it [00:38, 52.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1890it [00:38, 52.87it/s, failures=0, objective=-12.7]
 
-    471it [00:09, 57.78it/s, failures=0, objective=-13.8]
+    Random Search:: : 1891it [00:38, 52.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1892it [00:38, 52.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1893it [00:38, 52.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1894it [00:38, 49.86it/s, failures=0, objective=-12.7]
 
-    472it [00:09, 52.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 1894it [00:38, 49.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1895it [00:38, 49.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1896it [00:38, 49.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1897it [00:38, 49.86it/s, failures=0, objective=-12.7]
 
-    472it [00:09, 52.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 1898it [00:38, 49.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1899it [00:38, 49.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1900it [00:38, 49.86it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1901it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
-    473it [00:09, 52.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 1901it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1902it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1903it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1904it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
-    474it [00:09, 52.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 1905it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1906it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1907it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1908it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
-    475it [00:09, 52.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 1909it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1910it [00:38, 54.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1911it [00:38, 64.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1911it [00:38, 64.52it/s, failures=0, objective=-12.7]
 
-    476it [00:09, 52.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 1912it [00:38, 64.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1913it [00:38, 64.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1914it [00:38, 64.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1915it [00:38, 64.52it/s, failures=0, objective=-12.7]
 
-    477it [00:09, 52.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 1916it [00:38, 64.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1917it [00:38, 64.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1918it [00:38, 52.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1918it [00:38, 52.82it/s, failures=0, objective=-12.7]
 
-    478it [00:09, 49.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 1919it [00:38, 52.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1920it [00:38, 52.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1921it [00:38, 52.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1922it [00:38, 52.82it/s, failures=0, objective=-12.7]
 
-    478it [00:09, 49.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 1923it [00:38, 52.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1924it [00:38, 50.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1924it [00:38, 50.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1925it [00:38, 50.25it/s, failures=0, objective=-12.7]
 
-    479it [00:09, 49.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 1926it [00:38, 50.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1927it [00:38, 50.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1928it [00:38, 50.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1929it [00:38, 50.25it/s, failures=0, objective=-12.7]
 
-    480it [00:09, 49.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 1930it [00:38, 41.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1930it [00:38, 41.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1931it [00:38, 41.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1932it [00:39, 41.53it/s, failures=0, objective=-12.7]
 
-    481it [00:09, 49.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 1933it [00:39, 41.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1934it [00:39, 41.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1935it [00:39, 40.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1935it [00:39, 40.53it/s, failures=0, objective=-12.7]
 
-    482it [00:09, 49.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 1936it [00:39, 40.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1937it [00:39, 40.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1938it [00:39, 40.53it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1939it [00:39, 40.53it/s, failures=0, objective=-12.7]
 
-    483it [00:09, 49.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 1940it [00:39, 42.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1940it [00:39, 42.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1941it [00:39, 42.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1942it [00:39, 42.05it/s, failures=0, objective=-12.7]
 
-    484it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1943it [00:39, 42.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1944it [00:39, 42.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1945it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1945it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
-    484it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1946it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1947it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1948it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1949it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
-    485it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1950it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1951it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1952it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1953it [00:39, 39.21it/s, failures=0, objective=-12.7]
 
-    486it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1954it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1954it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1955it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1956it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
-    487it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1957it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1958it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1959it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1960it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
-    488it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1961it [00:39, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1962it [00:39, 56.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1962it [00:39, 56.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1963it [00:39, 56.76it/s, failures=0, objective=-12.7]
 
-    489it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1964it [00:39, 56.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1965it [00:39, 56.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1966it [00:39, 56.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1967it [00:39, 56.76it/s, failures=0, objective=-12.7]
 
-    490it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1968it [00:39, 56.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1969it [00:39, 55.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1969it [00:39, 55.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1970it [00:39, 55.14it/s, failures=0, objective=-12.7]
 
-    491it [00:09, 50.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 1971it [00:39, 55.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1972it [00:39, 55.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1973it [00:39, 55.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1974it [00:39, 55.14it/s, failures=0, objective=-12.7]
 
-    492it [00:09, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 1975it [00:39, 53.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1975it [00:39, 53.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1976it [00:39, 53.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1977it [00:39, 53.87it/s, failures=0, objective=-12.7]
 
-    492it [00:09, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 1978it [00:39, 53.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1979it [00:39, 53.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1980it [00:39, 53.87it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1981it [00:39, 53.87it/s, failures=0, objective=-12.7]
 
-    493it [00:09, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 1982it [00:39, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1982it [00:39, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1983it [00:39, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1984it [00:39, 56.41it/s, failures=0, objective=-12.7]
 
-    494it [00:09, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 1985it [00:39, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1986it [00:39, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1987it [00:39, 56.41it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1988it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
-    495it [00:09, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 1988it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1989it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1990it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1991it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
-    496it [00:10, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 1992it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1993it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1994it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1995it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
-    497it [00:10, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 1996it [00:40, 56.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1997it [00:40, 60.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1997it [00:40, 60.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 1998it [00:40, 60.15it/s, failures=0, objective=-12.7]
 
-    498it [00:10, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 1999it [00:40, 60.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2000it [00:40, 60.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2001it [00:40, 60.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2002it [00:40, 60.15it/s, failures=0, objective=-12.7]
 
-    499it [00:10, 57.52it/s, failures=0, objective=-13.8]
+    Random Search:: : 2003it [00:40, 60.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2004it [00:40, 59.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2004it [00:40, 59.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2005it [00:40, 59.02it/s, failures=0, objective=-12.7]
 
-    500it [00:10, 61.71it/s, failures=0, objective=-13.8]
+    Random Search:: : 2006it [00:40, 59.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2007it [00:40, 59.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2008it [00:40, 59.02it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2009it [00:40, 59.02it/s, failures=0, objective=-12.7]
 
-    500it [00:10, 61.71it/s, failures=0, objective=-13.8]
+    Random Search:: : 2010it [00:40, 41.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2010it [00:40, 41.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2011it [00:40, 41.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2012it [00:40, 41.04it/s, failures=0, objective=-12.7]
 
-    501it [00:10, 61.71it/s, failures=0, objective=-13.8]
+    Random Search:: : 2013it [00:40, 41.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2014it [00:40, 41.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2015it [00:40, 37.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2015it [00:40, 37.95it/s, failures=0, objective=-12.7]
 
-    502it [00:10, 61.71it/s, failures=0, objective=-13.8]
+    Random Search:: : 2016it [00:40, 37.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2017it [00:40, 37.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2018it [00:40, 37.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2019it [00:40, 37.95it/s, failures=0, objective=-12.7]
 
-    503it [00:10, 61.71it/s, failures=0, objective=-13.8]
+    Random Search:: : 2020it [00:40, 40.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2020it [00:40, 40.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2021it [00:40, 40.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2022it [00:40, 40.28it/s, failures=0, objective=-12.7]
 
-    504it [00:10, 61.71it/s, failures=0, objective=-13.8]
+    Random Search:: : 2023it [00:40, 40.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2024it [00:40, 40.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2025it [00:40, 40.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2026it [00:40, 40.28it/s, failures=0, objective=-12.7]
 
-    505it [00:10, 61.71it/s, failures=0, objective=-13.8]
+    Random Search:: : 2027it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2027it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2028it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2029it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
-    506it [00:10, 61.71it/s, failures=0, objective=-13.8]
+    Random Search:: : 2030it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2031it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2032it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2033it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
-    507it [00:10, 39.80it/s, failures=0, objective=-13.8]
+    Random Search:: : 2034it [00:40, 45.48it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2035it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2035it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2036it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
-    507it [00:10, 39.80it/s, failures=0, objective=-13.8]
+    Random Search:: : 2037it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2038it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2039it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2040it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
-    508it [00:10, 39.80it/s, failures=0, objective=-13.8]
+    Random Search:: : 2041it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2042it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2043it [00:41, 44.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2044it [00:41, 48.40it/s, failures=0, objective=-12.7]
 
-    509it [00:10, 39.80it/s, failures=0, objective=-13.8]
+    Random Search:: : 2044it [00:41, 48.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2045it [00:41, 48.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2046it [00:41, 48.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2047it [00:41, 48.40it/s, failures=0, objective=-12.7]
 
-    510it [00:10, 39.80it/s, failures=0, objective=-13.8]
+    Random Search:: : 2048it [00:41, 48.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2049it [00:41, 48.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2050it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2050it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
-    511it [00:10, 39.80it/s, failures=0, objective=-13.8]
+    Random Search:: : 2051it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2052it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2053it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2054it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
-    512it [00:10, 39.80it/s, failures=0, objective=-13.8]
+    Random Search:: : 2055it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2056it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2057it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2058it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
-    513it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2059it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2060it [00:41, 46.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2061it [00:41, 57.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2061it [00:41, 57.80it/s, failures=0, objective=-12.7]
 
-    513it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2062it [00:41, 57.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2063it [00:41, 57.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2064it [00:41, 57.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2065it [00:41, 57.80it/s, failures=0, objective=-12.7]
 
-    514it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2066it [00:41, 57.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2067it [00:41, 57.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2068it [00:41, 54.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2068it [00:41, 54.10it/s, failures=0, objective=-12.7]
 
-    515it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2069it [00:41, 54.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2070it [00:41, 54.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2071it [00:41, 54.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2072it [00:41, 54.10it/s, failures=0, objective=-12.7]
 
-    516it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2073it [00:41, 54.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2074it [00:41, 55.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2074it [00:41, 55.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2075it [00:41, 55.24it/s, failures=0, objective=-12.7]
 
-    517it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2076it [00:41, 55.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2077it [00:41, 55.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2078it [00:41, 55.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2079it [00:41, 55.24it/s, failures=0, objective=-12.7]
 
-    518it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2080it [00:41, 55.24it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2081it [00:41, 57.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2081it [00:41, 57.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2082it [00:41, 57.63it/s, failures=0, objective=-12.7]
 
-    519it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2083it [00:41, 57.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2084it [00:41, 57.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2085it [00:41, 57.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2086it [00:42, 57.63it/s, failures=0, objective=-12.7]
 
-    520it [00:10, 41.09it/s, failures=0, objective=-13.8]
+    Random Search:: : 2087it [00:42, 54.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2087it [00:42, 54.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2088it [00:42, 54.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2089it [00:42, 54.83it/s, failures=0, objective=-12.7]
 
-    521it [00:10, 49.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2090it [00:42, 54.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2091it [00:42, 54.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2092it [00:42, 54.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2093it [00:42, 54.83it/s, failures=0, objective=-12.7]
 
-    521it [00:10, 49.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2094it [00:42, 54.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2094it [00:42, 54.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2095it [00:42, 54.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2096it [00:42, 54.57it/s, failures=0, objective=-12.7]
 
-    522it [00:10, 49.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2097it [00:42, 54.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2098it [00:42, 54.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2099it [00:42, 54.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2100it [00:42, 54.46it/s, failures=0, objective=-12.7]
 
-    523it [00:10, 49.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2100it [00:42, 54.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2101it [00:42, 54.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2102it [00:42, 54.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2103it [00:42, 54.46it/s, failures=0, objective=-12.7]
 
-    524it [00:10, 49.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2104it [00:42, 54.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2105it [00:42, 54.46it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2106it [00:42, 46.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2106it [00:42, 46.04it/s, failures=0, objective=-12.7]
 
-    525it [00:10, 49.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2107it [00:42, 46.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2108it [00:42, 46.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2109it [00:42, 46.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2110it [00:42, 46.04it/s, failures=0, objective=-12.7]
 
-    526it [00:10, 49.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2111it [00:42, 38.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2111it [00:42, 38.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2112it [00:42, 38.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2113it [00:42, 38.33it/s, failures=0, objective=-12.7]
 
-    527it [00:10, 43.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 2114it [00:42, 38.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2115it [00:42, 38.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2116it [00:42, 38.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2117it [00:42, 42.84it/s, failures=0, objective=-12.7]
 
-    527it [00:10, 43.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 2117it [00:42, 42.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2118it [00:42, 42.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2119it [00:42, 42.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2120it [00:42, 42.84it/s, failures=0, objective=-12.7]
 
-    528it [00:10, 43.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 2121it [00:42, 42.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2122it [00:42, 42.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2122it [00:42, 42.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2123it [00:42, 42.60it/s, failures=0, objective=-12.7]
 
-    529it [00:10, 43.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 2124it [00:42, 42.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2125it [00:42, 42.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2126it [00:42, 42.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2127it [00:42, 39.61it/s, failures=0, objective=-12.7]
 
-    530it [00:10, 43.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 2127it [00:43, 39.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2128it [00:43, 39.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2129it [00:43, 39.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2130it [00:43, 39.61it/s, failures=0, objective=-12.7]
 
-    531it [00:10, 43.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 2131it [00:43, 39.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2132it [00:43, 39.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2133it [00:43, 43.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2133it [00:43, 43.64it/s, failures=0, objective=-12.7]
 
-    532it [00:10, 43.35it/s, failures=0, objective=-13.8]
+    Random Search:: : 2134it [00:43, 43.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2135it [00:43, 43.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2136it [00:43, 43.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2137it [00:43, 43.64it/s, failures=0, objective=-12.7]
 
-    533it [00:10, 44.28it/s, failures=0, objective=-13.8]
+    Random Search:: : 2138it [00:43, 43.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2139it [00:43, 45.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2139it [00:43, 45.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2140it [00:43, 45.78it/s, failures=0, objective=-12.7]
 
-    533it [00:10, 44.28it/s, failures=0, objective=-13.8]
+    Random Search:: : 2141it [00:43, 45.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2142it [00:43, 45.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2143it [00:43, 45.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2144it [00:43, 43.22it/s, failures=0, objective=-12.7]
 
-    534it [00:10, 44.28it/s, failures=0, objective=-13.8]
+    Random Search:: : 2144it [00:43, 43.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2145it [00:43, 43.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2146it [00:43, 43.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2147it [00:43, 43.22it/s, failures=0, objective=-12.7]
 
-    535it [00:10, 44.28it/s, failures=0, objective=-13.8]
+    Random Search:: : 2148it [00:43, 43.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2149it [00:43, 42.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2149it [00:43, 42.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2150it [00:43, 42.80it/s, failures=0, objective=-12.7]
 
-    536it [00:11, 44.28it/s, failures=0, objective=-13.8]
+    Random Search:: : 2151it [00:43, 42.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2152it [00:43, 42.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2153it [00:43, 42.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2154it [00:43, 42.80it/s, failures=0, objective=-12.7]
 
-    537it [00:11, 44.28it/s, failures=0, objective=-13.8]
+    Random Search:: : 2155it [00:43, 45.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2155it [00:43, 45.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2156it [00:43, 45.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2157it [00:43, 45.99it/s, failures=0, objective=-12.7]
 
-    538it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2158it [00:43, 45.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2159it [00:43, 45.99it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2160it [00:43, 45.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2160it [00:43, 45.07it/s, failures=0, objective=-12.7]
 
-    538it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2161it [00:43, 45.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2162it [00:43, 45.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2163it [00:43, 45.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2164it [00:43, 45.07it/s, failures=0, objective=-12.7]
 
-    539it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2165it [00:43, 45.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2166it [00:43, 45.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2167it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2167it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
-    540it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2168it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2169it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2170it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2171it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
-    541it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2172it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2173it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2174it [00:43, 51.50it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2175it [00:44, 45.16it/s, failures=0, objective=-12.7]
 
-    542it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2175it [00:44, 45.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2176it [00:44, 45.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2177it [00:44, 45.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2178it [00:44, 45.16it/s, failures=0, objective=-12.7]
 
-    543it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2179it [00:44, 45.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2180it [00:44, 45.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2181it [00:44, 45.16it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2182it [00:44, 49.71it/s, failures=0, objective=-12.7]
 
-    544it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2182it [00:44, 49.71it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2183it [00:44, 49.71it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2184it [00:44, 49.71it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2185it [00:44, 49.71it/s, failures=0, objective=-12.7]
 
-    545it [00:11, 43.93it/s, failures=0, objective=-13.8]
+    Random Search:: : 2186it [00:44, 49.71it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2187it [00:44, 49.71it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2188it [00:44, 41.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2188it [00:44, 41.19it/s, failures=0, objective=-12.7]
 
-    546it [00:11, 50.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 2189it [00:44, 41.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2190it [00:44, 41.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2191it [00:44, 41.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2192it [00:44, 41.19it/s, failures=0, objective=-12.7]
 
-    546it [00:11, 50.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 2193it [00:44, 41.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2194it [00:44, 41.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2195it [00:44, 47.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2195it [00:44, 47.34it/s, failures=0, objective=-12.7]
 
-    547it [00:11, 50.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 2196it [00:44, 47.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2197it [00:44, 47.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2198it [00:44, 47.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2199it [00:44, 47.34it/s, failures=0, objective=-12.7]
 
-    548it [00:11, 50.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 2200it [00:44, 47.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2201it [00:44, 47.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2202it [00:44, 52.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2202it [00:44, 52.65it/s, failures=0, objective=-12.7]
 
-    549it [00:11, 50.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 2203it [00:44, 52.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2204it [00:44, 52.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2205it [00:44, 52.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2206it [00:44, 52.65it/s, failures=0, objective=-12.7]
 
-    550it [00:11, 50.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 2207it [00:44, 52.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2208it [00:44, 53.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2208it [00:44, 53.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2209it [00:44, 53.21it/s, failures=0, objective=-12.7]
 
-    551it [00:11, 50.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 2210it [00:44, 53.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2211it [00:44, 53.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2212it [00:44, 53.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2213it [00:44, 53.21it/s, failures=0, objective=-12.7]
 
-    552it [00:11, 50.31it/s, failures=0, objective=-13.8]
+    Random Search:: : 2214it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2214it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2215it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2216it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
-    553it [00:11, 54.47it/s, failures=0, objective=-13.8]
+    Random Search:: : 2217it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2218it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2219it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2220it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
-    553it [00:11, 54.47it/s, failures=0, objective=-13.8]
+    Random Search:: : 2221it [00:44, 51.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2222it [00:44, 51.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2222it [00:44, 51.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2223it [00:44, 51.54it/s, failures=0, objective=-12.7]
 
-    554it [00:11, 54.47it/s, failures=0, objective=-13.8]
+    Random Search:: : 2224it [00:45, 51.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2225it [00:45, 51.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2226it [00:45, 51.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2227it [00:45, 51.54it/s, failures=0, objective=-12.7]
 
-    555it [00:11, 54.47it/s, failures=0, objective=-13.8]
+    Random Search:: : 2228it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2228it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2229it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2230it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
-    556it [00:11, 54.47it/s, failures=0, objective=-13.8]
+    Random Search:: : 2231it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2232it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2233it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2234it [00:45, 44.31it/s, failures=0, objective=-12.7]
 
-    557it [00:11, 54.47it/s, failures=0, objective=-13.8]
+    Random Search:: : 2234it [00:45, 44.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2235it [00:45, 44.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2236it [00:45, 44.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2237it [00:45, 44.31it/s, failures=0, objective=-12.7]
 
-    558it [00:11, 54.47it/s, failures=0, objective=-13.8]
+    Random Search:: : 2238it [00:45, 44.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2239it [00:45, 44.31it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2240it [00:45, 45.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2240it [00:45, 45.27it/s, failures=0, objective=-12.7]
 
-    559it [00:11, 55.44it/s, failures=0, objective=-13.8]
+    Random Search:: : 2241it [00:45, 45.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2242it [00:45, 45.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2243it [00:45, 45.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2244it [00:45, 45.27it/s, failures=0, objective=-12.7]
 
-    559it [00:11, 55.44it/s, failures=0, objective=-13.8]
+    Random Search:: : 2245it [00:45, 45.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2246it [00:45, 45.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2247it [00:45, 47.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2247it [00:45, 47.14it/s, failures=0, objective=-12.7]
 
-    560it [00:11, 55.44it/s, failures=0, objective=-13.8]
+    Random Search:: : 2248it [00:45, 47.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2249it [00:45, 47.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2250it [00:45, 47.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2251it [00:45, 47.14it/s, failures=0, objective=-12.7]
 
-    561it [00:11, 55.44it/s, failures=0, objective=-13.8]
+    Random Search:: : 2252it [00:45, 47.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2253it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2253it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2254it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
-    562it [00:11, 55.44it/s, failures=0, objective=-13.8]
+    Random Search:: : 2255it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2256it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2257it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2258it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
-    563it [00:11, 55.44it/s, failures=0, objective=-13.8]
+    Random Search:: : 2259it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2260it [00:45, 50.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2261it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2261it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
-    564it [00:11, 55.44it/s, failures=0, objective=-13.8]
+    Random Search:: : 2262it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2263it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2264it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2265it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
-    565it [00:11, 54.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 2266it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2267it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2268it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2269it [00:45, 49.60it/s, failures=0, objective=-12.7]
 
-    565it [00:11, 54.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 2270it [00:45, 58.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2270it [00:45, 58.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2271it [00:45, 58.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2272it [00:45, 58.63it/s, failures=0, objective=-12.7]
 
-    566it [00:11, 54.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 2273it [00:45, 58.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2274it [00:45, 58.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2275it [00:45, 58.63it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2276it [00:45, 58.63it/s, failures=0, objective=-12.7]
 
-    567it [00:11, 54.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 2277it [00:45, 60.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2277it [00:45, 60.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2278it [00:45, 60.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2279it [00:46, 60.29it/s, failures=0, objective=-12.7]
 
-    568it [00:11, 54.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 2280it [00:46, 60.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2281it [00:46, 60.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2282it [00:46, 60.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2283it [00:46, 60.29it/s, failures=0, objective=-12.7]
 
-    569it [00:11, 54.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 2284it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2284it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2285it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2286it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
-    570it [00:11, 54.08it/s, failures=0, objective=-13.8]
+    Random Search:: : 2287it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2288it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2289it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2290it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
-    571it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2291it [00:46, 57.21it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2292it [00:46, 56.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2292it [00:46, 56.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2293it [00:46, 56.57it/s, failures=0, objective=-12.7]
 
-    571it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2294it [00:46, 56.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2295it [00:46, 56.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2296it [00:46, 56.57it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2297it [00:46, 56.57it/s, failures=0, objective=-12.7]
 
-    572it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2298it [00:46, 47.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2298it [00:46, 47.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2299it [00:46, 47.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2300it [00:46, 47.22it/s, failures=0, objective=-12.7]
 
-    573it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2301it [00:46, 47.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2302it [00:46, 47.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2303it [00:46, 47.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2304it [00:46, 47.60it/s, failures=0, objective=-12.7]
 
-    574it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2304it [00:46, 47.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2305it [00:46, 47.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2306it [00:46, 47.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2307it [00:46, 47.60it/s, failures=0, objective=-12.7]
 
-    575it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2308it [00:46, 47.60it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2309it [00:46, 45.58it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2309it [00:46, 45.58it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2310it [00:46, 45.58it/s, failures=0, objective=-12.7]
 
-    576it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2311it [00:46, 45.58it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2312it [00:46, 45.58it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2313it [00:46, 45.58it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2314it [00:46, 45.58it/s, failures=0, objective=-12.7]
 
-    577it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2315it [00:46, 45.58it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2316it [00:46, 48.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2316it [00:46, 48.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2317it [00:46, 48.28it/s, failures=0, objective=-12.7]
 
-    578it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2318it [00:46, 48.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2319it [00:46, 48.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2320it [00:46, 48.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2321it [00:46, 48.65it/s, failures=0, objective=-12.7]
 
-    579it [00:11, 53.53it/s, failures=0, objective=-13.8]
+    Random Search:: : 2321it [00:46, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2322it [00:46, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2323it [00:46, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2324it [00:46, 48.65it/s, failures=0, objective=-12.7]
 
-    580it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2325it [00:47, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2326it [00:47, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2326it [00:47, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2327it [00:47, 47.25it/s, failures=0, objective=-12.7]
 
-    580it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2328it [00:47, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2329it [00:47, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2330it [00:47, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2331it [00:47, 43.80it/s, failures=0, objective=-12.7]
 
-    581it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2331it [00:47, 43.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2332it [00:47, 43.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2333it [00:47, 43.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2334it [00:47, 43.80it/s, failures=0, objective=-12.7]
 
-    582it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2335it [00:47, 43.80it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2336it [00:47, 40.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2336it [00:47, 40.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2337it [00:47, 40.29it/s, failures=0, objective=-12.7]
 
-    583it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2338it [00:47, 40.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2339it [00:47, 40.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2340it [00:47, 40.29it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2341it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
-    584it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2341it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2342it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2343it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2344it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
-    585it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2345it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2346it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2347it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2348it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
-    586it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2349it [00:47, 40.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2350it [00:47, 51.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2350it [00:47, 51.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2351it [00:47, 51.32it/s, failures=0, objective=-12.7]
 
-    587it [00:11, 53.24it/s, failures=0, objective=-13.8]
+    Random Search:: : 2352it [00:47, 51.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2353it [00:47, 51.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2354it [00:47, 51.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2355it [00:47, 51.32it/s, failures=0, objective=-12.7]
 
-    588it [00:11, 57.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 2356it [00:47, 52.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2356it [00:47, 52.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2357it [00:47, 52.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2358it [00:47, 52.35it/s, failures=0, objective=-12.7]
 
-    588it [00:11, 57.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 2359it [00:47, 52.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2360it [00:47, 52.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2361it [00:47, 52.35it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2362it [00:47, 50.59it/s, failures=0, objective=-12.7]
 
-    589it [00:11, 57.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 2362it [00:47, 50.59it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2363it [00:47, 50.59it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2364it [00:47, 50.59it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2365it [00:47, 50.59it/s, failures=0, objective=-12.7]
 
-    590it [00:11, 57.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 2366it [00:47, 50.59it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2367it [00:48, 50.59it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2368it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2368it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
-    591it [00:11, 57.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 2369it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2370it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2371it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2372it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
-    592it [00:11, 57.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 2373it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2374it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2375it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2376it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
-    593it [00:11, 57.88it/s, failures=0, objective=-13.8]
+    Random Search:: : 2377it [00:48, 39.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2378it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2378it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2379it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
-    594it [00:11, 58.33it/s, failures=0, objective=-13.8]
+    Random Search:: : 2380it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2381it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2382it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2383it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
-    594it [00:11, 58.33it/s, failures=0, objective=-13.8]
+    Random Search:: : 2384it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2385it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2386it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2387it [00:48, 48.65it/s, failures=0, objective=-12.7]
 
-    595it [00:11, 58.33it/s, failures=0, objective=-13.8]
+    Random Search:: : 2388it [00:48, 59.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2388it [00:48, 59.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2389it [00:48, 59.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2390it [00:48, 59.76it/s, failures=0, objective=-12.7]
 
-    596it [00:12, 58.33it/s, failures=0, objective=-13.8]
+    Random Search:: : 2391it [00:48, 59.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2392it [00:48, 59.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2393it [00:48, 59.76it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2394it [00:48, 59.76it/s, failures=0, objective=-12.7]
 
-    597it [00:12, 58.33it/s, failures=0, objective=-13.8]
+    Random Search:: : 2395it [00:48, 51.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2395it [00:48, 51.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2396it [00:48, 51.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2397it [00:48, 51.37it/s, failures=0, objective=-12.7]
 
-    598it [00:12, 58.33it/s, failures=0, objective=-13.8]
+    Random Search:: : 2398it [00:48, 51.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2399it [00:48, 51.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2400it [00:48, 51.37it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2401it [00:48, 52.14it/s, failures=0, objective=-12.7]
 
-    599it [00:12, 58.33it/s, failures=0, objective=-13.8]
+    Random Search:: : 2401it [00:48, 52.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2402it [00:48, 52.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2403it [00:48, 52.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2404it [00:48, 52.14it/s, failures=0, objective=-12.7]
 
-    600it [00:12, 58.33it/s, failures=0, objective=-13.8]
+    Random Search:: : 2405it [00:48, 52.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2406it [00:48, 52.14it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2407it [00:48, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2407it [00:48, 49.36it/s, failures=0, objective=-12.7]
 
-    601it [00:12, 60.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2408it [00:48, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2409it [00:48, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2410it [00:48, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2411it [00:48, 49.36it/s, failures=0, objective=-12.7]
 
-    601it [00:12, 60.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2412it [00:48, 49.36it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2413it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2413it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2414it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
-    602it [00:12, 60.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2415it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2416it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2417it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2418it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
-    603it [00:12, 60.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2419it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2420it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2421it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2422it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
-    604it [00:12, 60.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2423it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2424it [00:48, 51.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2425it [00:48, 64.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2425it [00:48, 64.08it/s, failures=0, objective=-12.7]
 
-    605it [00:12, 60.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2426it [00:48, 64.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2427it [00:48, 64.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2428it [00:48, 64.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2429it [00:49, 64.08it/s, failures=0, objective=-12.7]
 
-    606it [00:12, 60.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2430it [00:49, 64.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2431it [00:49, 64.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2432it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2432it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
-    607it [00:12, 60.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2433it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2434it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2435it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2436it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
-    608it [00:12, 48.98it/s, failures=0, objective=-13.8]
+    Random Search:: : 2437it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2438it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2439it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2440it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
-    608it [00:12, 48.98it/s, failures=0, objective=-13.8]
+    Random Search:: : 2441it [00:49, 55.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2442it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2442it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2443it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
-    609it [00:12, 48.98it/s, failures=0, objective=-13.8]
+    Random Search:: : 2444it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2445it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2446it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2447it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
-    610it [00:12, 48.98it/s, failures=0, objective=-13.8]
+    Random Search:: : 2448it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2449it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2450it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2451it [00:49, 60.42it/s, failures=0, objective=-12.7]
 
-    611it [00:12, 48.98it/s, failures=0, objective=-13.8]
+    Random Search:: : 2452it [00:49, 64.09it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2452it [00:49, 64.09it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2453it [00:49, 64.09it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2454it [00:49, 64.09it/s, failures=0, objective=-12.7]
 
-    612it [00:12, 48.98it/s, failures=0, objective=-13.8]
+    Random Search:: : 2455it [00:49, 64.09it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2456it [00:49, 64.09it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2457it [00:49, 64.09it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2458it [00:49, 64.09it/s, failures=0, objective=-12.7]
 
-    613it [00:12, 48.98it/s, failures=0, objective=-13.8]
+    Random Search:: : 2459it [00:49, 63.69it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2459it [00:49, 63.69it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2460it [00:49, 63.69it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2461it [00:49, 63.69it/s, failures=0, objective=-12.7]
 
-    614it [00:12, 43.79it/s, failures=0, objective=-13.8]
+    Random Search:: : 2462it [00:49, 63.69it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2463it [00:49, 63.69it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2464it [00:49, 63.69it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2465it [00:49, 63.69it/s, failures=0, objective=-12.7]
 
-    614it [00:12, 43.79it/s, failures=0, objective=-13.8]
+    Random Search:: : 2466it [00:49, 45.47it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2466it [00:49, 45.47it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2467it [00:49, 45.47it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2468it [00:49, 45.47it/s, failures=0, objective=-12.7]
 
-    615it [00:12, 43.79it/s, failures=0, objective=-13.8]
+    Random Search:: : 2469it [00:49, 45.47it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2470it [00:49, 45.47it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2471it [00:49, 45.47it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2472it [00:49, 47.93it/s, failures=0, objective=-12.7]
 
-    616it [00:12, 43.79it/s, failures=0, objective=-13.8]
+    Random Search:: : 2472it [00:49, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2473it [00:49, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2474it [00:49, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2475it [00:49, 47.93it/s, failures=0, objective=-12.7]
 
-    617it [00:12, 43.79it/s, failures=0, objective=-13.8]
+    Random Search:: : 2476it [00:50, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2477it [00:50, 47.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2478it [00:50, 43.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2478it [00:50, 43.32it/s, failures=0, objective=-12.7]
 
-    618it [00:12, 43.79it/s, failures=0, objective=-13.8]
+    Random Search:: : 2479it [00:50, 43.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2480it [00:50, 43.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2481it [00:50, 43.32it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2482it [00:50, 43.32it/s, failures=0, objective=-12.7]
 
-    619it [00:12, 43.79it/s, failures=0, objective=-13.8]
+    Random Search:: : 2483it [00:50, 42.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2483it [00:50, 42.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2484it [00:50, 42.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2485it [00:50, 42.92it/s, failures=0, objective=-12.7]
 
-    620it [00:12, 45.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 2486it [00:50, 42.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2487it [00:50, 42.92it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2488it [00:50, 39.20it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2488it [00:50, 39.20it/s, failures=0, objective=-12.7]
 
-    620it [00:12, 45.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 2489it [00:50, 39.20it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2490it [00:50, 39.20it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2491it [00:50, 39.20it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2492it [00:50, 39.20it/s, failures=0, objective=-12.7]
 
-    621it [00:12, 45.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 2493it [00:50, 39.20it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2494it [00:50, 39.20it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2495it [00:50, 45.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2495it [00:50, 45.67it/s, failures=0, objective=-12.7]
 
-    622it [00:12, 45.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 2496it [00:50, 45.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2497it [00:50, 45.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2498it [00:50, 45.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2499it [00:50, 45.67it/s, failures=0, objective=-12.7]
 
-    623it [00:12, 45.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 2500it [00:50, 41.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2500it [00:50, 41.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2501it [00:50, 41.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2502it [00:50, 41.55it/s, failures=0, objective=-12.7]
 
-    624it [00:12, 45.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 2503it [00:50, 41.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2504it [00:50, 41.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2505it [00:50, 41.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2506it [00:50, 41.55it/s, failures=0, objective=-12.7]
 
-    625it [00:12, 45.15it/s, failures=0, objective=-13.8]
+    Random Search:: : 2507it [00:50, 47.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2507it [00:50, 47.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2508it [00:50, 47.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2509it [00:50, 47.56it/s, failures=0, objective=-12.7]
 
-    626it [00:12, 44.59it/s, failures=0, objective=-13.8]
+    Random Search:: : 2510it [00:50, 47.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2511it [00:50, 47.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2512it [00:50, 47.56it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2513it [00:50, 46.88it/s, failures=0, objective=-12.7]
 
-    626it [00:12, 44.59it/s, failures=0, objective=-13.8]
+    Random Search:: : 2513it [00:50, 46.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2514it [00:50, 46.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2515it [00:50, 46.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2516it [00:50, 46.88it/s, failures=0, objective=-12.7]
 
-    627it [00:12, 44.59it/s, failures=0, objective=-13.8]
+    Random Search:: : 2517it [00:50, 46.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2518it [00:50, 46.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2519it [00:50, 46.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2520it [00:50, 52.07it/s, failures=0, objective=-12.7]
 
-    628it [00:12, 44.59it/s, failures=0, objective=-13.8]
+    Random Search:: : 2520it [00:50, 52.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2521it [00:50, 52.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2522it [00:50, 52.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2523it [00:50, 52.07it/s, failures=0, objective=-12.7]
 
-    629it [00:12, 44.59it/s, failures=0, objective=-13.8]
+    Random Search:: : 2524it [00:50, 52.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2525it [00:50, 52.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2526it [00:51, 52.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2527it [00:51, 52.07it/s, failures=0, objective=-12.7]
 
-    630it [00:12, 44.59it/s, failures=0, objective=-13.8]
+    Random Search:: : 2528it [00:51, 52.07it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2529it [00:51, 61.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2529it [00:51, 61.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2530it [00:51, 61.52it/s, failures=0, objective=-12.7]
 
-    631it [00:12, 44.59it/s, failures=0, objective=-13.8]
+    Random Search:: : 2531it [00:51, 61.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2532it [00:51, 61.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2533it [00:51, 61.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2534it [00:51, 61.52it/s, failures=0, objective=-12.7]
 
-    632it [00:12, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2535it [00:51, 61.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2536it [00:51, 57.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2536it [00:51, 57.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2537it [00:51, 57.49it/s, failures=0, objective=-12.7]
 
-    632it [00:12, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2538it [00:51, 57.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2539it [00:51, 57.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2540it [00:51, 57.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2541it [00:51, 57.49it/s, failures=0, objective=-12.7]
 
-    633it [00:12, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2542it [00:51, 57.49it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2543it [00:51, 56.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2543it [00:51, 56.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2544it [00:51, 56.28it/s, failures=0, objective=-12.7]
 
-    634it [00:12, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2545it [00:51, 56.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2546it [00:51, 56.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2547it [00:51, 56.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2548it [00:51, 56.28it/s, failures=0, objective=-12.7]
 
-    635it [00:12, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2549it [00:51, 56.28it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2550it [00:51, 58.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2550it [00:51, 58.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2551it [00:51, 58.27it/s, failures=0, objective=-12.7]
 
-    636it [00:12, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2552it [00:51, 58.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2553it [00:51, 58.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2554it [00:51, 58.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2555it [00:51, 58.27it/s, failures=0, objective=-12.7]
 
-    637it [00:12, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2556it [00:51, 51.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2556it [00:51, 51.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2557it [00:51, 51.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2558it [00:51, 51.95it/s, failures=0, objective=-12.7]
 
-    638it [00:12, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2559it [00:51, 51.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2560it [00:51, 51.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2561it [00:51, 51.95it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2562it [00:51, 44.78it/s, failures=0, objective=-12.7]
 
-    639it [00:13, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2562it [00:51, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2563it [00:51, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2564it [00:51, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2565it [00:51, 44.78it/s, failures=0, objective=-12.7]
 
-    640it [00:13, 41.65it/s, failures=0, objective=-13.8]
+    Random Search:: : 2566it [00:51, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2567it [00:51, 44.78it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2568it [00:51, 46.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2568it [00:51, 46.06it/s, failures=0, objective=-12.7]
 
-    641it [00:13, 51.96it/s, failures=0, objective=-13.8]
+    Random Search:: : 2569it [00:51, 46.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2570it [00:51, 46.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2571it [00:51, 46.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2572it [00:51, 46.06it/s, failures=0, objective=-12.7]
 
-    641it [00:13, 51.96it/s, failures=0, objective=-13.8]
+    Random Search:: : 2573it [00:51, 44.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2573it [00:51, 44.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2574it [00:52, 44.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2575it [00:52, 44.13it/s, failures=0, objective=-12.7]
 
-    642it [00:13, 51.96it/s, failures=0, objective=-13.8]
+    Random Search:: : 2576it [00:52, 44.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2577it [00:52, 44.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2578it [00:52, 44.13it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2579it [00:52, 47.54it/s, failures=0, objective=-12.7]
 
-    643it [00:13, 51.96it/s, failures=0, objective=-13.8]
+    Random Search:: : 2579it [00:52, 47.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2580it [00:52, 47.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2581it [00:52, 47.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2582it [00:52, 47.54it/s, failures=0, objective=-12.7]
 
-    644it [00:13, 51.96it/s, failures=0, objective=-13.8]
+    Random Search:: : 2583it [00:52, 47.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2584it [00:52, 47.54it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2585it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2585it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
-    645it [00:13, 51.96it/s, failures=0, objective=-13.8]
+    Random Search:: : 2586it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2587it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2588it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2589it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
-    646it [00:13, 51.96it/s, failures=0, objective=-13.8]
+    Random Search:: : 2590it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2591it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2592it [00:52, 49.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2593it [00:52, 55.88it/s, failures=0, objective=-12.7]
 
-    647it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2593it [00:52, 55.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2594it [00:52, 55.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2595it [00:52, 55.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2596it [00:52, 55.88it/s, failures=0, objective=-12.7]
 
-    647it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2597it [00:52, 55.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2598it [00:52, 55.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2599it [00:52, 53.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2599it [00:52, 53.52it/s, failures=0, objective=-12.7]
 
-    648it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2600it [00:52, 53.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2601it [00:52, 53.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2602it [00:52, 53.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2603it [00:52, 53.52it/s, failures=0, objective=-12.7]
 
-    649it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2604it [00:52, 53.52it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2605it [00:52, 44.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2605it [00:52, 44.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2606it [00:52, 44.44it/s, failures=0, objective=-12.7]
 
-    650it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2607it [00:52, 44.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2608it [00:52, 44.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2609it [00:52, 44.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2610it [00:52, 44.44it/s, failures=0, objective=-12.7]
 
-    651it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2611it [00:52, 44.44it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2612it [00:52, 47.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2612it [00:52, 47.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2613it [00:52, 47.84it/s, failures=0, objective=-12.7]
 
-    652it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2614it [00:52, 47.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2615it [00:52, 47.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2616it [00:52, 47.84it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2617it [00:52, 47.84it/s, failures=0, objective=-12.7]
 
-    653it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2618it [00:52, 47.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2618it [00:52, 47.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2619it [00:52, 47.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2620it [00:52, 47.55it/s, failures=0, objective=-12.7]
 
-    654it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2621it [00:52, 47.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2622it [00:52, 47.55it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2623it [00:52, 47.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2623it [00:52, 47.10it/s, failures=0, objective=-12.7]
 
-    655it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2624it [00:53, 47.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2625it [00:53, 47.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2626it [00:53, 47.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2627it [00:53, 47.10it/s, failures=0, objective=-12.7]
 
-    656it [00:13, 52.74it/s, failures=0, objective=-13.8]
+    Random Search:: : 2628it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2628it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2629it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2630it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
-    657it [00:13, 63.51it/s, failures=0, objective=-13.8]
+    Random Search:: : 2631it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2632it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2633it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2634it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
-    657it [00:13, 63.51it/s, failures=0, objective=-13.8]
+    Random Search:: : 2635it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2636it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2637it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2638it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
-    658it [00:13, 63.51it/s, failures=0, objective=-13.8]
+    Random Search:: : 2639it [00:53, 45.05it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2640it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2640it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2641it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
-    659it [00:13, 63.51it/s, failures=0, objective=-13.8]
+    Random Search:: : 2642it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2643it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2644it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2645it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
-    660it [00:13, 63.51it/s, failures=0, objective=-13.8]
+    Random Search:: : 2646it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2647it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2648it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2649it [00:53, 58.61it/s, failures=0, objective=-12.7]
 
-    661it [00:13, 63.51it/s, failures=0, objective=-13.8]
+    Random Search:: : 2650it [00:53, 61.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2650it [00:53, 61.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2651it [00:53, 61.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2652it [00:53, 61.27it/s, failures=0, objective=-12.7]
 
-    662it [00:13, 63.51it/s, failures=0, objective=-13.8]
+    Random Search:: : 2653it [00:53, 61.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2654it [00:53, 61.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2655it [00:53, 61.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2656it [00:53, 61.27it/s, failures=0, objective=-12.7]
 
-    663it [00:13, 63.51it/s, failures=0, objective=-13.8]
+    Random Search:: : 2657it [00:53, 49.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2657it [00:53, 49.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2658it [00:53, 49.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2659it [00:53, 49.08it/s, failures=0, objective=-12.7]
 
-    664it [00:13, 61.86it/s, failures=0, objective=-13.8]
+    Random Search:: : 2660it [00:53, 49.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2661it [00:53, 49.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2662it [00:53, 49.08it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2663it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
-    664it [00:13, 61.86it/s, failures=0, objective=-13.8]
+    Random Search:: : 2663it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2664it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2665it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2666it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
-    665it [00:13, 61.86it/s, failures=0, objective=-13.8]
+    Random Search:: : 2667it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2668it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2669it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2670it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
-    666it [00:13, 61.86it/s, failures=0, objective=-13.8]
+    Random Search:: : 2671it [00:53, 47.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2672it [00:53, 52.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2672it [00:53, 52.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2673it [00:53, 52.33it/s, failures=0, objective=-12.7]
 
-    667it [00:13, 61.86it/s, failures=0, objective=-13.8]
+    Random Search:: : 2674it [00:53, 52.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2675it [00:53, 52.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2676it [00:54, 52.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2677it [00:54, 52.33it/s, failures=0, objective=-12.7]
 
-    668it [00:13, 61.86it/s, failures=0, objective=-13.8]
+    Random Search:: : 2678it [00:54, 45.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2678it [00:54, 45.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2679it [00:54, 45.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2680it [00:54, 45.04it/s, failures=0, objective=-12.7]
 
-    669it [00:13, 61.86it/s, failures=0, objective=-13.8]
+    Random Search:: : 2681it [00:54, 45.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2682it [00:54, 45.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2683it [00:54, 45.04it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2684it [00:54, 48.10it/s, failures=0, objective=-12.7]
 
-    670it [00:13, 61.86it/s, failures=0, objective=-13.8]
+    Random Search:: : 2684it [00:54, 48.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2685it [00:54, 48.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2686it [00:54, 48.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2687it [00:54, 48.10it/s, failures=0, objective=-12.7]
 
-    671it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2688it [00:54, 48.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2689it [00:54, 48.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2690it [00:54, 48.10it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2691it [00:54, 48.66it/s, failures=0, objective=-12.7]
 
-    671it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2691it [00:54, 48.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2692it [00:54, 48.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2693it [00:54, 48.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2694it [00:54, 48.66it/s, failures=0, objective=-12.7]
 
-    672it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2695it [00:54, 48.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2696it [00:54, 48.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2697it [00:54, 51.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2697it [00:54, 51.19it/s, failures=0, objective=-12.7]
 
-    673it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2698it [00:54, 51.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2699it [00:54, 51.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2700it [00:54, 51.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2701it [00:54, 51.19it/s, failures=0, objective=-12.7]
 
-    674it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2702it [00:54, 51.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2703it [00:54, 51.19it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2704it [00:54, 49.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2704it [00:54, 49.75it/s, failures=0, objective=-12.7]
 
-    675it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2705it [00:54, 49.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2706it [00:54, 49.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2707it [00:54, 49.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2708it [00:54, 49.75it/s, failures=0, objective=-12.7]
 
-    676it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2709it [00:54, 49.75it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2710it [00:54, 51.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2710it [00:54, 51.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2711it [00:54, 51.67it/s, failures=0, objective=-12.7]
 
-    677it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2712it [00:54, 51.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2713it [00:54, 51.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2714it [00:54, 51.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2715it [00:54, 51.67it/s, failures=0, objective=-12.7]
 
-    678it [00:13, 55.69it/s, failures=0, objective=-13.8]
+    Random Search:: : 2716it [00:54, 51.67it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2717it [00:54, 52.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2717it [00:54, 52.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2718it [00:54, 52.06it/s, failures=0, objective=-12.7]
 
-    679it [00:13, 58.16it/s, failures=0, objective=-13.8]
+    Random Search:: : 2719it [00:54, 52.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2720it [00:54, 52.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2721it [00:54, 52.06it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2722it [00:54, 52.06it/s, failures=0, objective=-12.7]
 
-    679it [00:13, 58.16it/s, failures=0, objective=-13.8]
+    Random Search:: : 2723it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2723it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2724it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2725it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
-    680it [00:13, 58.16it/s, failures=0, objective=-13.8]
+    Random Search:: : 2726it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2727it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2728it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2729it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
-    681it [00:13, 58.16it/s, failures=0, objective=-13.8]
+    Random Search:: : 2730it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2731it [00:55, 44.17it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2732it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2732it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
-    682it [00:13, 58.16it/s, failures=0, objective=-13.8]
+    Random Search:: : 2733it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2734it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2735it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2736it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
-    683it [00:13, 58.16it/s, failures=0, objective=-13.8]
+    Random Search:: : 2737it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2738it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2739it [00:55, 52.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2740it [00:55, 58.33it/s, failures=0, objective=-12.7]
 
-    684it [00:13, 58.16it/s, failures=0, objective=-13.8]
+    Random Search:: : 2740it [00:55, 58.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2741it [00:55, 58.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2742it [00:55, 58.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2743it [00:55, 58.33it/s, failures=0, objective=-12.7]
 
-    685it [00:13, 58.16it/s, failures=0, objective=-13.8]
+    Random Search:: : 2744it [00:55, 58.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2745it [00:55, 58.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2746it [00:55, 58.33it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2747it [00:55, 42.74it/s, failures=0, objective=-12.7]
 
-    686it [00:13, 58.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2747it [00:55, 42.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2748it [00:55, 42.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2749it [00:55, 42.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2750it [00:55, 42.74it/s, failures=0, objective=-12.7]
 
-    686it [00:13, 58.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2751it [00:55, 42.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2752it [00:55, 42.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2753it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2753it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
-    687it [00:13, 58.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2754it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2755it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2756it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2757it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
-    688it [00:13, 58.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2758it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2759it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2760it [00:55, 39.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2761it [00:55, 45.64it/s, failures=0, objective=-12.7]
 
-    689it [00:13, 58.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2761it [00:55, 45.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2762it [00:55, 45.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2763it [00:55, 45.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2764it [00:55, 45.64it/s, failures=0, objective=-12.7]
 
-    690it [00:13, 58.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2765it [00:55, 45.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2766it [00:55, 45.64it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2767it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2767it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
-    691it [00:13, 58.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2768it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2769it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2770it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2771it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
-    692it [00:13, 58.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2772it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2773it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2774it [00:55, 47.25it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2775it [00:56, 54.11it/s, failures=0, objective=-12.7]
 
-    693it [00:13, 56.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2775it [00:56, 54.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2776it [00:56, 54.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2777it [00:56, 54.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2778it [00:56, 54.11it/s, failures=0, objective=-12.7]
 
-    693it [00:13, 56.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2779it [00:56, 54.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2780it [00:56, 54.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2781it [00:56, 53.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2781it [00:56, 53.26it/s, failures=0, objective=-12.7]
 
-    694it [00:13, 56.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2782it [00:56, 53.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2783it [00:56, 53.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2784it [00:56, 53.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2785it [00:56, 53.26it/s, failures=0, objective=-12.7]
 
-    695it [00:13, 56.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2786it [00:56, 53.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2787it [00:56, 51.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2787it [00:56, 51.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2788it [00:56, 51.83it/s, failures=0, objective=-12.7]
 
-    696it [00:13, 56.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2789it [00:56, 51.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2790it [00:56, 51.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2791it [00:56, 51.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2792it [00:56, 51.83it/s, failures=0, objective=-12.7]
 
-    697it [00:13, 56.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2793it [00:56, 51.83it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2794it [00:56, 53.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2794it [00:56, 53.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2795it [00:56, 53.00it/s, failures=0, objective=-12.7]
 
-    698it [00:13, 56.00it/s, failures=0, objective=-13.8]
+    Random Search:: : 2796it [00:56, 53.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2797it [00:56, 53.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2798it [00:56, 53.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2799it [00:56, 53.00it/s, failures=0, objective=-12.7]
 
-    699it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2800it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2800it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2801it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2802it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
-    699it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2803it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2804it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2805it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2806it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
-    700it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2807it [00:56, 43.88it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2808it [00:56, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2808it [00:56, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2809it [00:56, 50.00it/s, failures=0, objective=-12.7]
 
-    701it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2810it [00:56, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2811it [00:56, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2812it [00:56, 50.00it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2813it [00:56, 50.00it/s, failures=0, objective=-12.7]
 
-    702it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2814it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2814it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2815it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2816it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
-    703it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2817it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2818it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2819it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2820it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
-    704it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2821it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2822it [00:56, 44.26it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2823it [00:57, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2823it [00:57, 49.11it/s, failures=0, objective=-12.7]
 
-    705it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2824it [00:57, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2825it [00:57, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2826it [00:57, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2827it [00:57, 49.11it/s, failures=0, objective=-12.7]
 
-    706it [00:14, 55.06it/s, failures=0, objective=-13.8]
+    Random Search:: : 2828it [00:57, 49.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2829it [00:57, 50.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2829it [00:57, 50.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2830it [00:57, 50.42it/s, failures=0, objective=-12.7]
 
-    707it [00:14, 59.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 2831it [00:57, 50.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2832it [00:57, 50.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2833it [00:57, 50.42it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2834it [00:57, 50.42it/s, failures=0, objective=-12.7]
 
-    707it [00:14, 59.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 2835it [00:57, 47.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2835it [00:57, 47.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2836it [00:57, 47.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2837it [00:57, 47.40it/s, failures=0, objective=-12.7]
 
-    708it [00:14, 59.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 2838it [00:57, 47.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2839it [00:57, 47.40it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2840it [00:57, 46.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2840it [00:57, 46.11it/s, failures=0, objective=-12.7]
 
-    709it [00:14, 59.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 2841it [00:57, 46.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2842it [00:57, 46.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2843it [00:57, 46.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2844it [00:57, 46.11it/s, failures=0, objective=-12.7]
 
-    710it [00:14, 59.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 2845it [00:57, 46.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2846it [00:57, 46.11it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2847it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2847it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
-    711it [00:14, 59.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 2848it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2849it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2850it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2851it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
-    712it [00:14, 59.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 2852it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2853it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2854it [00:57, 50.27it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2855it [00:57, 57.34it/s, failures=0, objective=-12.7]
 
-    713it [00:14, 59.61it/s, failures=0, objective=-13.8]
+    Random Search:: : 2855it [00:57, 57.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2856it [00:57, 57.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2857it [00:57, 57.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2858it [00:57, 57.34it/s, failures=0, objective=-12.7]
 
-    714it [00:14, 46.03it/s, failures=0, objective=-13.8]
+    Random Search:: : 2859it [00:57, 57.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2860it [00:57, 57.34it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2861it [00:57, 55.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2861it [00:57, 55.51it/s, failures=0, objective=-12.7]
 
-    714it [00:14, 46.03it/s, failures=0, objective=-13.8]
+    Random Search:: : 2862it [00:57, 55.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2863it [00:57, 55.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2864it [00:57, 55.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2865it [00:57, 55.51it/s, failures=0, objective=-12.7]
 
-    715it [00:14, 46.03it/s, failures=0, objective=-13.8]
+    Random Search:: : 2866it [00:57, 55.51it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2867it [00:57, 40.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2867it [00:57, 40.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2868it [00:58, 40.96it/s, failures=0, objective=-12.7]
 
-    716it [00:14, 46.03it/s, failures=0, objective=-13.8]
+    Random Search:: : 2869it [00:58, 40.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2870it [00:58, 40.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2871it [00:58, 40.96it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2872it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
-    717it [00:14, 46.03it/s, failures=0, objective=-13.8]
+    Random Search:: : 2872it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2873it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2874it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2875it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
-    718it [00:14, 46.03it/s, failures=0, objective=-13.8]
+    Random Search:: : 2876it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2877it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2878it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2879it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
-    719it [00:14, 46.03it/s, failures=0, objective=-13.8]
+    Random Search:: : 2880it [00:58, 41.72it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2881it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2881it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2882it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
-    720it [00:14, 45.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 2883it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2884it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2885it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2886it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
-    720it [00:14, 45.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 2887it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2888it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2889it [00:58, 50.82it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2890it [00:58, 58.74it/s, failures=0, objective=-12.7]
 
-    721it [00:14, 45.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 2890it [00:58, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2891it [00:58, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2892it [00:58, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2893it [00:58, 58.74it/s, failures=0, objective=-12.7]
 
-    722it [00:14, 45.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 2894it [00:58, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2895it [00:58, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2896it [00:58, 58.74it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2897it [00:58, 53.43it/s, failures=0, objective=-12.7]
 
-    723it [00:14, 45.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 2897it [00:58, 53.43it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2898it [00:58, 53.43it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2899it [00:58, 53.43it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2900it [00:58, 53.43it/s, failures=0, objective=-12.7]
 
-    724it [00:14, 45.37it/s, failures=0, objective=-13.8]
+    Random Search:: : 2901it [00:58, 53.43it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2902it [00:58, 53.43it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2903it [00:58, 53.43it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2904it [00:58, 54.66it/s, failures=0, objective=-12.7]
 
-    725it [00:14, 44.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 2904it [00:58, 54.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2905it [00:58, 54.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2906it [00:58, 54.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2907it [00:58, 54.66it/s, failures=0, objective=-12.7]
 
-    725it [00:14, 44.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 2908it [00:58, 54.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2909it [00:58, 54.66it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2910it [00:58, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2910it [00:58, 48.70it/s, failures=0, objective=-12.7]
 
-    726it [00:14, 44.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 2911it [00:58, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2912it [00:58, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2913it [00:58, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2914it [00:58, 48.70it/s, failures=0, objective=-12.7]
 
-    727it [00:14, 44.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 2915it [00:58, 48.70it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2916it [00:58, 49.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2916it [00:58, 49.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2917it [00:58, 49.93it/s, failures=0, objective=-12.7]
 
-    728it [00:14, 44.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 2918it [00:58, 49.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2919it [00:58, 49.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2920it [00:58, 49.93it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2921it [00:58, 49.93it/s, failures=0, objective=-12.7]
 
-    729it [00:14, 44.97it/s, failures=0, objective=-13.8]
+    Random Search:: : 2922it [00:59, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2922it [00:59, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2923it [00:59, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2924it [00:59, 50.22it/s, failures=0, objective=-12.7]
 
-    730it [00:14, 45.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2925it [00:59, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2926it [00:59, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2927it [00:59, 50.22it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2928it [00:59, 46.15it/s, failures=0, objective=-12.7]
 
-    730it [00:14, 45.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2928it [00:59, 46.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2929it [00:59, 46.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2930it [01:02, 46.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2931it [01:02, 46.15it/s, failures=0, objective=-12.7]
 
-    731it [00:14, 45.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2932it [01:02, 46.15it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2933it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2933it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2934it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    732it [00:14, 45.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2935it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2936it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2937it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2938it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    733it [00:14, 45.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2939it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2940it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2941it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2942it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    734it [00:14, 45.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2943it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2944it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2945it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2946it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    735it [00:14, 45.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2947it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2948it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2949it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2950it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    736it [00:14, 45.67it/s, failures=0, objective=-13.8]
+    Random Search:: : 2951it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2952it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2953it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2954it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    737it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2955it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2956it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2957it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2958it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    737it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2959it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2960it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2961it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2962it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    738it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2963it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2964it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2965it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2966it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    739it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2967it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2968it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2969it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2970it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    740it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2971it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2972it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2973it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2974it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    741it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2975it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2976it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2977it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2978it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    742it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2979it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2980it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2981it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2982it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    743it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2983it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2984it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2985it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2986it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    744it [00:14, 51.39it/s, failures=0, objective=-13.8]
+    Random Search:: : 2987it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2988it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2989it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2990it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    745it [00:14, 53.07it/s, failures=0, objective=-13.8]
+    Random Search:: : 2991it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2992it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2993it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2994it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    745it [00:14, 53.07it/s, failures=0, objective=-13.8]
+    Random Search:: : 2995it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2996it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2997it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 2998it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    746it [00:14, 53.07it/s, failures=0, objective=-13.8]
+    Random Search:: : 2999it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3000it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3001it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3002it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    747it [00:15, 53.07it/s, failures=0, objective=-13.8]
+    Random Search:: : 3003it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3004it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3005it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3006it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    748it [00:15, 53.07it/s, failures=0, objective=-13.8]
+    Random Search:: : 3007it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3008it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3009it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3010it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    749it [00:15, 53.07it/s, failures=0, objective=-13.8]
+    Random Search:: : 3011it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3012it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3013it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3014it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    750it [00:15, 53.07it/s, failures=0, objective=-13.8]
+    Random Search:: : 3015it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3016it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3017it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3018it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    751it [00:15, 51.82it/s, failures=0, objective=-13.8]
+    Random Search:: : 3019it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3020it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3021it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3022it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    751it [00:15, 51.82it/s, failures=0, objective=-13.8]
+    Random Search:: : 3023it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3024it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3025it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
+    Random Search:: : 3026it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-    752it [00:15, 51.82it/s, failures=0, objective=-13.8]
+    Random Search:: : 3027it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
-
-
-
-    753it [00:15, 51.82it/s, failures=0, objective=-13.8]
-
-
-
-
-    754it [00:15, 51.82it/s, failures=0, objective=-13.8]
-
-
-
-
-    755it [00:15, 51.82it/s, failures=0, objective=-13.8]
-
-
-
-
-    756it [00:15, 51.82it/s, failures=0, objective=-13.8]
-
-
-
-
-    757it [00:15, 49.30it/s, failures=0, objective=-13.8]
-
-
-
-
-    757it [00:15, 49.30it/s, failures=0, objective=-13.8]
-
-
-
-
-    758it [00:15, 49.30it/s, failures=0, objective=-13.8]
-
-
-
-
-    759it [00:15, 49.30it/s, failures=0, objective=-13.8]
-
-
-
-
-    760it [00:15, 49.30it/s, failures=0, objective=-13.8]
-
-
-
-
-    761it [00:15, 49.30it/s, failures=0, objective=-13.8]
-
-
-
-
-    762it [00:15, 49.30it/s, failures=0, objective=-13.8]
-
-
-
-
-    763it [00:15, 51.50it/s, failures=0, objective=-13.8]
-
-
-
-
-    763it [00:15, 51.50it/s, failures=0, objective=-13.8]
-
-
-
-
-    764it [00:15, 51.50it/s, failures=0, objective=-13.8]
-
-
-
-
-    765it [00:15, 51.50it/s, failures=0, objective=-13.8]
-
-
-
-
-    766it [00:15, 51.50it/s, failures=0, objective=-13.8]
-
-
-
-
-    767it [00:15, 51.50it/s, failures=0, objective=-13.8]
-
-
-
-
-    768it [00:15, 51.50it/s, failures=0, objective=-13.8]
-
-
-
-
-    769it [00:15, 49.19it/s, failures=0, objective=-13.8]
-
-
-
-
-    769it [00:15, 49.19it/s, failures=0, objective=-13.8]
-
-
-
-
-    770it [00:15, 49.19it/s, failures=0, objective=-13.8]
-
-
-
-
-    771it [00:15, 49.19it/s, failures=0, objective=-13.8]
-
-
-
-
-    772it [00:15, 49.19it/s, failures=0, objective=-13.8]
-
-
-
-
-    773it [00:15, 49.19it/s, failures=0, objective=-13.8]
-
-
-
-
-    774it [00:15, 49.19it/s, failures=0, objective=-13.8]
-
-
-
-
-    775it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    775it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    776it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    777it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    778it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    779it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    780it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    781it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    782it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    783it [00:15, 51.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    784it [00:15, 58.47it/s, failures=0, objective=-13.8]
-
-
-
-
-    784it [00:15, 58.47it/s, failures=0, objective=-13.8]
-
-
-
-
-    785it [00:15, 58.47it/s, failures=0, objective=-13.8]
-
-
-
-
-    786it [00:15, 58.47it/s, failures=0, objective=-13.8]
-
-
-
-
-    787it [00:15, 58.47it/s, failures=0, objective=-13.8]
-
-
-
-
-    788it [00:15, 58.47it/s, failures=0, objective=-13.8]
-
-
-
-
-    789it [00:15, 58.47it/s, failures=0, objective=-13.8]
-
-
-
-
-    790it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    790it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    791it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    792it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    793it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    794it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    795it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    796it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    797it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    798it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    799it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    800it [00:15, 47.08it/s, failures=0, objective=-13.8]
-
-
-
-
-    801it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    801it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    802it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    803it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    804it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    805it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    806it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    807it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    808it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    809it [00:16, 54.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    810it [00:16, 57.84it/s, failures=0, objective=-13.8]
-
-
-
-
-    810it [00:16, 57.84it/s, failures=0, objective=-13.8]
-
-
-
-
-    811it [00:16, 57.84it/s, failures=0, objective=-13.8]
-
-
-
-
-    812it [00:16, 57.84it/s, failures=0, objective=-13.8]
-
-
-
-
-    813it [00:16, 57.84it/s, failures=0, objective=-13.8]
-
-
-
-
-    814it [00:16, 57.84it/s, failures=0, objective=-13.8]
-
-
-
-
-    815it [00:16, 57.84it/s, failures=0, objective=-13.8]
-
-
-
-
-    816it [00:16, 49.99it/s, failures=0, objective=-13.8]
-
-
-
-
-    816it [00:16, 49.99it/s, failures=0, objective=-13.8]
-
-
-
-
-    817it [00:16, 49.99it/s, failures=0, objective=-13.8]
-
-
-
-
-    818it [00:16, 49.99it/s, failures=0, objective=-13.8]
-
-
-
-
-    819it [00:16, 49.99it/s, failures=0, objective=-13.8]
-
-
-
-
-    820it [00:16, 49.99it/s, failures=0, objective=-13.8]
-
-
-
-
-    821it [00:16, 49.99it/s, failures=0, objective=-13.8]
-
-
-
-
-    822it [00:16, 38.78it/s, failures=0, objective=-13.8]
-
-
-
-
-    822it [00:16, 38.78it/s, failures=0, objective=-13.8]
-
-
-
-
-    823it [00:16, 38.78it/s, failures=0, objective=-13.8]
-
-
-
-
-    824it [00:16, 38.78it/s, failures=0, objective=-13.8]
-
-
-
-
-    825it [00:16, 38.78it/s, failures=0, objective=-13.8]
-
-
-
-
-    826it [00:16, 38.78it/s, failures=0, objective=-13.8]
-
-
-
-
-    827it [00:16, 39.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    827it [00:16, 39.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    828it [00:16, 39.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    829it [00:16, 39.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    830it [00:16, 39.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    831it [00:16, 39.58it/s, failures=0, objective=-13.8]
-
-
-
-
-    832it [00:16, 36.10it/s, failures=0, objective=-13.8]
-
-
-
-
-    832it [00:16, 36.10it/s, failures=0, objective=-13.8]
-
-
-
-
-    833it [00:16, 36.10it/s, failures=0, objective=-13.8]
-
-
-
-
-    834it [00:16, 36.10it/s, failures=0, objective=-13.8]
-
-
-
-
-    835it [00:16, 36.10it/s, failures=0, objective=-13.8]
-
-
-
-
-    836it [00:16, 36.10it/s, failures=0, objective=-13.8]
-
-
-
-
-    837it [00:17, 37.52it/s, failures=0, objective=-13.8]
-
-
-
-
-    837it [00:17, 37.52it/s, failures=0, objective=-13.8]
-
-
-
-
-    838it [00:17, 37.52it/s, failures=0, objective=-13.8]
-
-
-
-
-    839it [00:17, 37.52it/s, failures=0, objective=-13.8]
-
-
-
-
-    840it [00:17, 37.52it/s, failures=0, objective=-13.8]
-
-
-
-
-    841it [00:17, 37.52it/s, failures=0, objective=-13.8]
-
-
-
-
-    842it [00:17, 37.52it/s, failures=0, objective=-13.8]
-
-
-
-
-    843it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    843it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    844it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    845it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    846it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    847it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    848it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    849it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    850it [00:17, 41.37it/s, failures=0, objective=-13.8]
-
-
-
-
-    851it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    851it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    852it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    853it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    854it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    855it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    856it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    857it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    858it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    859it [00:17, 49.35it/s, failures=0, objective=-13.8]
-
-
-
-
-    860it [00:17, 56.59it/s, failures=0, objective=-13.8]
-
-
-
-
-    860it [00:17, 56.59it/s, failures=0, objective=-13.8]
-
-
-
-
-    861it [00:17, 56.59it/s, failures=0, objective=-13.8]
-
-
-
-
-    862it [00:17, 56.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    863it [00:17, 56.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    864it [00:17, 56.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    865it [00:17, 56.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    866it [00:17, 54.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    866it [00:17, 54.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    867it [00:17, 54.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    868it [00:17, 54.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    869it [00:17, 54.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    870it [00:17, 54.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    871it [00:17, 54.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    872it [00:17, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    872it [00:17, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    873it [00:17, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    874it [00:17, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    875it [00:17, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    876it [00:17, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    877it [00:17, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    878it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    878it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    879it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    880it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    881it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    882it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    883it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    884it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    885it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    886it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    887it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    888it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    889it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    890it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    891it [00:17, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    892it [00:17, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    892it [00:17, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    893it [00:17, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    894it [00:17, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    895it [00:17, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    896it [00:17, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    897it [00:18, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    898it [00:18, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    899it [00:18, 64.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    900it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    900it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    901it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    902it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    903it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    904it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    905it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    906it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    907it [00:18, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    908it [00:18, 55.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    908it [00:18, 55.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    909it [00:18, 55.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    910it [00:18, 55.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    911it [00:18, 55.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    912it [00:18, 55.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    913it [00:18, 55.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    914it [00:18, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    914it [00:18, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    915it [00:18, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    916it [00:18, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    917it [00:18, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    918it [00:18, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    919it [00:18, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    920it [00:18, 45.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    920it [00:18, 45.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    921it [00:18, 45.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    922it [00:18, 45.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    923it [00:18, 45.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    924it [00:18, 45.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    925it [00:18, 45.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    926it [00:18, 45.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    927it [00:18, 49.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    927it [00:18, 49.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    928it [00:18, 49.79it/s, failures=0, objective=-12.7]
-
-
-
-    2479it [01:21, 14.11it/s, failures=0, objective=-1.26]
-
-
-
-
-    929it [00:18, 49.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    930it [00:18, 49.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    931it [00:18, 49.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    932it [00:18, 49.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    933it [00:18, 46.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    933it [00:18, 46.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    934it [00:18, 46.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    935it [00:18, 46.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    936it [00:18, 46.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    937it [00:18, 46.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    938it [00:18, 46.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    939it [00:18, 49.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    939it [00:18, 49.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    940it [00:18, 49.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    941it [00:18, 49.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    942it [00:18, 49.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    943it [00:18, 49.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    944it [00:18, 49.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    945it [00:19, 51.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    945it [00:19, 51.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    946it [00:19, 51.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    947it [00:19, 51.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    948it [00:19, 51.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    949it [00:19, 51.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    950it [00:19, 51.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    951it [00:19, 51.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    952it [00:19, 53.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    952it [00:19, 53.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    953it [00:19, 53.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    954it [00:19, 53.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    955it [00:19, 53.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    956it [00:19, 53.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    957it [00:19, 53.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    958it [00:19, 50.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    958it [00:19, 50.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    959it [00:19, 50.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    960it [00:19, 50.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    961it [00:19, 50.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    962it [00:19, 50.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    963it [00:19, 50.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    964it [00:19, 40.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    964it [00:19, 40.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    965it [00:19, 40.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    966it [00:19, 40.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    967it [00:19, 40.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    968it [00:19, 40.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    969it [00:19, 42.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    969it [00:19, 42.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    970it [00:19, 42.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    971it [00:19, 42.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    972it [00:19, 42.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    973it [00:19, 42.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    974it [00:19, 42.06it/s, failures=0, objective=-12.7]
-
-
-
-
-    975it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    975it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    976it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    977it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    978it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    979it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    980it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    981it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    982it [00:19, 44.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    983it [00:19, 51.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    983it [00:19, 51.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    984it [00:19, 51.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    985it [00:19, 51.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    986it [00:19, 51.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    987it [00:19, 51.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    988it [00:19, 51.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    989it [00:19, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    989it [00:19, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    990it [00:19, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    991it [00:20, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    992it [00:20, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    993it [00:20, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    994it [00:20, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    995it [00:20, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    996it [00:20, 47.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    997it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    997it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    998it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    999it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1000it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1001it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1002it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1003it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1004it [00:20, 53.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1005it [00:20, 59.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1005it [00:20, 59.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1006it [00:20, 59.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1007it [00:20, 59.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1008it [00:20, 59.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1009it [00:20, 59.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1010it [00:20, 59.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1011it [00:20, 59.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1012it [00:20, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1012it [00:20, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1013it [00:20, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1014it [00:20, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1015it [00:20, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1016it [00:20, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1017it [00:20, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1018it [00:20, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1019it [00:20, 57.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1019it [00:20, 57.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1020it [00:20, 57.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1021it [00:20, 57.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1022it [00:20, 57.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1023it [00:20, 57.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1024it [00:20, 57.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1025it [00:20, 57.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1026it [00:20, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1026it [00:20, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1027it [00:20, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1028it [00:20, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1029it [00:20, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1030it [00:20, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1031it [00:20, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1032it [00:20, 49.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1032it [00:20, 49.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1033it [00:20, 49.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1034it [00:20, 49.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1035it [00:20, 49.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1036it [00:20, 49.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1037it [00:20, 49.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1038it [00:20, 46.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1038it [00:20, 46.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1039it [00:20, 46.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1040it [00:20, 46.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1041it [00:20, 46.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1042it [00:21, 46.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1043it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1043it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1044it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1045it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1046it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1047it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1048it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1049it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1050it [00:21, 43.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1051it [00:21, 50.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    1051it [00:21, 50.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    1052it [00:21, 50.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    1053it [00:21, 50.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    1054it [00:21, 50.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    1055it [00:21, 50.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    1056it [00:21, 50.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    1057it [00:21, 49.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1057it [00:21, 49.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1058it [00:21, 49.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1059it [00:21, 49.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1060it [00:21, 49.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1061it [00:21, 49.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1062it [00:21, 49.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1063it [00:21, 52.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1063it [00:21, 52.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1064it [00:21, 52.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1065it [00:21, 52.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1066it [00:21, 52.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1067it [00:21, 52.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1068it [00:21, 52.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1069it [00:21, 53.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1069it [00:21, 53.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1070it [00:21, 53.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1071it [00:21, 53.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1072it [00:21, 53.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1073it [00:21, 53.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1074it [00:21, 53.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1075it [00:21, 45.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1075it [00:21, 45.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1076it [00:21, 45.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1077it [00:21, 45.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1078it [00:21, 45.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1079it [00:21, 45.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1080it [00:21, 45.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1081it [00:21, 45.10it/s, failures=0, objective=-12.7]
-
-
-
-
-    1082it [00:21, 43.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    1082it [00:21, 43.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    1083it [00:21, 43.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    1084it [00:21, 43.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    1085it [00:21, 43.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    1086it [00:21, 43.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    1087it [00:21, 43.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    1088it [00:21, 43.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    1089it [00:21, 48.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1089it [00:21, 48.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1090it [00:21, 48.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1091it [00:21, 48.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1092it [00:22, 48.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1093it [00:22, 48.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1094it [00:22, 48.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1095it [00:22, 50.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1095it [00:22, 50.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1096it [00:22, 50.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1097it [00:22, 50.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1098it [00:22, 50.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1099it [00:22, 50.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1100it [00:22, 50.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    1101it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1101it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1102it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1103it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1104it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1105it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1106it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1107it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1108it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1109it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1110it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1111it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1112it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1113it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1114it [00:22, 48.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1115it [00:22, 65.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    1115it [00:22, 65.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    1116it [00:22, 65.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    1117it [00:22, 65.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    1118it [00:22, 65.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    1119it [00:22, 65.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    1120it [00:22, 65.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    1121it [00:22, 65.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    1122it [00:22, 55.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1122it [00:22, 55.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1123it [00:22, 55.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1124it [00:22, 55.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1125it [00:22, 55.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1126it [00:22, 55.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1127it [00:22, 55.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1128it [00:22, 55.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1129it [00:22, 58.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1129it [00:22, 58.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1130it [00:22, 58.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1131it [00:22, 58.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1132it [00:22, 58.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1133it [00:22, 58.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1134it [00:22, 58.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1135it [00:22, 58.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1136it [00:22, 51.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1136it [00:22, 51.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1137it [00:22, 51.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1138it [00:22, 51.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1139it [00:22, 51.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1140it [00:22, 51.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1141it [00:22, 51.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1142it [00:22, 44.27it/s, failures=0, objective=-12.7]
-
-
-
-
-    1142it [00:22, 44.27it/s, failures=0, objective=-12.7]
-
-
-
-
-    1143it [00:23, 44.27it/s, failures=0, objective=-12.7]
-
-
-
-
-    1144it [00:23, 44.27it/s, failures=0, objective=-12.7]
-
-
-
-
-    1145it [00:23, 44.27it/s, failures=0, objective=-12.7]
-
-
-
-
-    1146it [00:23, 44.27it/s, failures=0, objective=-12.7]
-
-
-
-
-    1147it [00:23, 44.27it/s, failures=0, objective=-12.7]
-
-
-
-
-    1148it [00:23, 38.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1148it [00:23, 38.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1149it [00:23, 38.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1150it [00:23, 38.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1151it [00:23, 38.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1152it [00:23, 38.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    1153it [00:23, 34.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    1153it [00:23, 34.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    1154it [00:23, 34.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    1155it [00:23, 34.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    1156it [00:23, 34.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    1157it [00:23, 34.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    1158it [00:23, 34.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    1159it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1159it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1160it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1161it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1162it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1163it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1164it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1165it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1166it [00:23, 38.83it/s, failures=0, objective=-12.7]
-
-
-
-
-    1167it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1167it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1168it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1169it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1170it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1171it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1172it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1173it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1174it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1175it [00:23, 44.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1176it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1176it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1177it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1178it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1179it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1180it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1181it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1182it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1183it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1184it [00:23, 52.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    1185it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1185it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1186it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1187it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1188it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1189it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1190it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1191it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1192it [00:23, 61.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1193it [00:23, 58.51it/s, failures=0, objective=-12.7]
-
-
-
-
-    1193it [00:23, 58.51it/s, failures=0, objective=-12.7]
-
-
-
-
-    1194it [00:23, 58.51it/s, failures=0, objective=-12.7]
-
-
-
-
-    1195it [00:24, 58.51it/s, failures=0, objective=-12.7]
-
-
-
-
-    1196it [00:24, 58.51it/s, failures=0, objective=-12.7]
-
-
-
-
-    1197it [00:24, 58.51it/s, failures=0, objective=-12.7]
-
-
-
-
-    1198it [00:24, 58.51it/s, failures=0, objective=-12.7]
-
-
-
-
-    1199it [00:24, 58.51it/s, failures=0, objective=-12.7]
-
-
-
-
-    1200it [00:24, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1200it [00:24, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1201it [00:24, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1202it [00:24, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1203it [00:24, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1204it [00:24, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1205it [00:24, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1206it [00:24, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1207it [00:24, 60.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1207it [00:24, 60.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1208it [00:24, 60.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1209it [00:24, 60.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1210it [00:24, 60.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1211it [00:24, 60.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1212it [00:24, 60.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1213it [00:24, 60.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1214it [00:24, 48.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1214it [00:24, 48.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1215it [00:24, 48.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1216it [00:24, 48.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1217it [00:24, 48.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1218it [00:24, 48.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1219it [00:24, 48.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1220it [00:24, 41.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1220it [00:24, 41.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1221it [00:24, 41.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1222it [00:24, 41.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1223it [00:24, 41.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1224it [00:24, 41.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1225it [00:24, 41.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1226it [00:24, 45.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1226it [00:24, 45.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1227it [00:24, 45.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1228it [00:24, 45.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1229it [00:24, 45.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1230it [00:24, 45.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1231it [00:24, 45.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    1232it [00:24, 43.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1232it [00:24, 43.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1233it [00:24, 43.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1234it [00:24, 43.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1235it [00:24, 43.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1236it [00:24, 43.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1237it [00:24, 43.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1238it [00:24, 43.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1239it [00:24, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1239it [00:24, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1240it [00:24, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1241it [00:24, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1242it [00:25, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1243it [00:25, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1244it [00:25, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1245it [00:25, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1246it [00:25, 49.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    1247it [00:25, 53.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1247it [00:25, 53.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1248it [00:25, 53.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1249it [00:25, 53.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1250it [00:25, 53.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1251it [00:25, 53.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1252it [00:25, 53.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1253it [00:25, 53.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1254it [00:25, 55.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1254it [00:25, 55.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1255it [00:25, 55.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1256it [00:25, 55.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1257it [00:25, 55.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1258it [00:25, 55.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1259it [00:25, 55.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1260it [00:25, 49.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1260it [00:25, 49.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1261it [00:25, 49.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1262it [00:25, 49.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1263it [00:25, 49.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1264it [00:25, 49.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1265it [00:25, 49.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1266it [00:25, 51.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1266it [00:25, 51.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1267it [00:25, 51.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1268it [00:25, 51.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1269it [00:25, 51.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1270it [00:25, 51.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1271it [00:25, 51.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1272it [00:25, 49.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1272it [00:25, 49.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1273it [00:25, 49.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1274it [00:25, 49.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1275it [00:25, 49.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1276it [00:25, 49.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1277it [00:25, 49.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1278it [00:25, 49.77it/s, failures=0, objective=-12.7]
-
-
-
-
-    1279it [00:25, 54.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1279it [00:25, 54.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1280it [00:25, 54.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1281it [00:25, 54.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1282it [00:25, 54.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1283it [00:25, 54.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1284it [00:25, 54.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1285it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1285it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1286it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1287it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1288it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1289it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1290it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1291it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1292it [00:25, 55.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1293it [00:25, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1293it [00:25, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1294it [00:25, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1295it [00:25, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1296it [00:25, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1297it [00:26, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1298it [00:26, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1299it [00:26, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1300it [00:26, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1301it [00:26, 59.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    1302it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1302it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1303it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1304it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1305it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1306it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1307it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1308it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1309it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1310it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1311it [00:26, 63.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1312it [00:26, 64.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    1312it [00:26, 64.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    1313it [00:26, 64.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    1314it [00:26, 64.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    1315it [00:26, 64.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    1316it [00:26, 64.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    1317it [00:26, 64.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    1318it [00:26, 64.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    1319it [00:26, 55.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1319it [00:26, 55.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1320it [00:26, 55.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1321it [00:26, 55.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1322it [00:26, 55.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1323it [00:26, 55.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1324it [00:26, 55.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1325it [00:26, 46.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    1325it [00:26, 46.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    1326it [00:26, 46.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    1327it [00:26, 46.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    1328it [00:26, 46.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    1329it [00:26, 46.60it/s, failures=0, objective=-12.7]
-
-
-
-
-    1330it [00:26, 46.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    1330it [00:26, 46.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    1331it [00:26, 46.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    1332it [00:26, 46.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    1333it [00:26, 46.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    1334it [00:26, 46.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    1335it [00:26, 44.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1335it [00:26, 44.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1336it [00:26, 44.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1337it [00:26, 44.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1338it [00:26, 44.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1339it [00:26, 44.74it/s, failures=0, objective=-12.7]
-
-
-
-
-    1340it [00:27, 37.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1340it [00:27, 37.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1341it [00:27, 37.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1342it [00:27, 37.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1343it [00:27, 37.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1344it [00:27, 37.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1345it [00:27, 38.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1345it [00:27, 38.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1346it [00:27, 38.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1347it [00:27, 38.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1348it [00:27, 38.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1349it [00:27, 38.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1350it [00:27, 38.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1351it [00:27, 38.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1352it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1352it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1353it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1354it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1355it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1356it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1357it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1358it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1359it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1360it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1361it [00:27, 44.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1362it [00:27, 48.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    1362it [00:27, 48.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    1363it [00:27, 48.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    1364it [00:27, 48.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    1365it [00:27, 48.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    1366it [00:27, 48.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    1367it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1367it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1368it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1369it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1370it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1371it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1372it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1373it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1374it [00:27, 40.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1375it [00:27, 44.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1375it [00:27, 44.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1376it [00:27, 44.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1377it [00:27, 44.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1378it [00:27, 44.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1379it [00:27, 44.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1380it [00:27, 44.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1381it [00:27, 44.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1382it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1382it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1383it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1384it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1385it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1386it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1387it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1388it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1389it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1390it [00:27, 48.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    1391it [00:27, 57.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1391it [00:27, 57.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1392it [00:28, 57.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1393it [00:28, 57.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1394it [00:28, 57.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1395it [00:28, 57.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1396it [00:28, 57.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1397it [00:28, 57.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    1398it [00:28, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1398it [00:28, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1399it [00:28, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1400it [00:28, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1401it [00:28, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1402it [00:28, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1403it [00:28, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1404it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1404it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1405it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1406it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1407it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1408it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1409it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1410it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1411it [00:28, 50.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    1412it [00:28, 57.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1412it [00:28, 57.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1413it [00:28, 57.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1414it [00:28, 57.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1415it [00:28, 57.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1416it [00:28, 57.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1417it [00:28, 57.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1418it [00:28, 57.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1419it [00:28, 57.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1419it [00:28, 57.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1420it [00:28, 57.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1421it [00:28, 57.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1422it [00:28, 57.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1423it [00:28, 57.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1424it [00:28, 57.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1425it [00:28, 57.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1426it [00:28, 56.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1426it [00:28, 56.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1427it [00:28, 56.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1428it [00:28, 56.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1429it [00:28, 56.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1430it [00:28, 56.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1431it [00:28, 56.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1432it [00:28, 54.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1432it [00:28, 54.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1433it [00:28, 54.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1434it [00:28, 54.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1435it [00:28, 54.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1436it [00:28, 54.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1437it [00:28, 54.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    1438it [00:28, 45.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    1438it [00:28, 45.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    1439it [00:28, 45.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    1440it [00:29, 45.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    1441it [00:29, 45.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    1442it [00:29, 45.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    1443it [00:29, 42.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1443it [00:29, 42.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1444it [00:29, 42.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1445it [00:29, 42.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1446it [00:29, 42.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1447it [00:29, 42.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1448it [00:29, 38.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1448it [00:29, 38.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1449it [00:29, 38.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1450it [00:29, 38.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1451it [00:29, 38.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1452it [00:29, 38.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1453it [00:29, 38.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1454it [00:29, 42.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1454it [00:29, 42.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1455it [00:29, 42.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1456it [00:29, 42.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1457it [00:29, 42.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1458it [00:29, 42.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1459it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1459it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1460it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1461it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1462it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1463it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1464it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1465it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1466it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1467it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1468it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1469it [00:29, 41.55it/s, failures=0, objective=-12.7]
-
-
-
-
-    1470it [00:29, 53.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1470it [00:29, 53.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1471it [00:29, 53.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1472it [00:29, 53.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1473it [00:29, 53.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1474it [00:29, 53.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1475it [00:29, 53.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    1476it [00:29, 50.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1476it [00:29, 50.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1477it [00:29, 50.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1478it [00:29, 50.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1479it [00:29, 50.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1480it [00:29, 50.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1481it [00:29, 50.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1482it [00:29, 52.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1482it [00:29, 52.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1483it [00:29, 52.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1484it [00:29, 52.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1485it [00:29, 52.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1486it [00:29, 52.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1487it [00:29, 52.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1488it [00:29, 52.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1489it [00:29, 56.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1489it [00:29, 56.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1490it [00:29, 56.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1491it [00:29, 56.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1492it [00:30, 56.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1493it [00:30, 56.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1494it [00:30, 56.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1495it [00:30, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    1495it [00:30, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    1496it [00:30, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    1497it [00:30, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    1498it [00:30, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    1499it [00:30, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    1500it [00:30, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    1501it [00:30, 49.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    1502it [00:30, 54.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1502it [00:30, 54.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1503it [00:30, 54.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1504it [00:30, 54.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1505it [00:30, 54.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1506it [00:30, 54.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1507it [00:30, 54.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1508it [00:30, 46.63it/s, failures=0, objective=-12.7]
-
-
-
-
-    1508it [00:30, 46.63it/s, failures=0, objective=-12.7]
-
-
-
-
-    1509it [00:30, 46.63it/s, failures=0, objective=-12.7]
-
-
-
-
-    1510it [00:30, 46.63it/s, failures=0, objective=-12.7]
-
-
-
-
-    1511it [00:30, 46.63it/s, failures=0, objective=-12.7]
-
-
-
-
-    1512it [00:30, 46.63it/s, failures=0, objective=-12.7]
-
-
-
-
-    1513it [00:30, 46.63it/s, failures=0, objective=-12.7]
-
-
-
-
-    1514it [00:30, 46.63it/s, failures=0, objective=-12.7]
-
-
-
-
-    1515it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1515it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1516it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1517it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1518it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1519it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1520it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1521it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1522it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1523it [00:30, 51.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    1524it [00:30, 58.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1524it [00:30, 58.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1525it [00:30, 58.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1526it [00:30, 58.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1527it [00:30, 58.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1528it [00:30, 58.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1529it [00:30, 58.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1530it [00:30, 58.05it/s, failures=0, objective=-12.7]
-
-
-
-
-    1531it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1531it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1532it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1533it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1534it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1535it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1536it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1537it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1538it [00:30, 47.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    1539it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1539it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1540it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1541it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1542it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1543it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1544it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1545it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1546it [00:30, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1547it [00:31, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1548it [00:31, 53.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1549it [00:31, 61.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    1549it [00:31, 61.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    1550it [00:31, 61.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    1551it [00:31, 61.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    1552it [00:31, 61.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    1553it [00:31, 61.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    1554it [00:31, 61.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    1555it [00:31, 61.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    1556it [00:31, 50.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1556it [00:31, 50.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1557it [00:31, 50.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1558it [00:31, 50.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1559it [00:31, 50.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1560it [00:31, 50.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1561it [00:31, 50.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1562it [00:31, 50.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1563it [00:31, 51.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    1563it [00:31, 51.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    1564it [00:31, 51.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    1565it [00:31, 51.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    1566it [00:31, 51.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    1567it [00:31, 51.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    1568it [00:31, 51.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    1569it [00:31, 37.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1569it [00:31, 37.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1570it [00:31, 37.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1571it [00:31, 37.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1572it [00:31, 37.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1573it [00:31, 37.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1574it [00:31, 33.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1574it [00:31, 33.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1575it [00:31, 33.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1576it [00:31, 33.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1577it [00:31, 33.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1578it [00:31, 33.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1579it [00:31, 33.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1580it [00:31, 33.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1581it [00:31, 39.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    1581it [00:31, 39.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    1582it [00:31, 39.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    1583it [00:31, 39.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    1584it [00:32, 39.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    1585it [00:32, 39.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    1586it [00:32, 39.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    1587it [00:32, 42.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1587it [00:32, 42.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1588it [00:32, 42.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1589it [00:32, 42.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1590it [00:32, 42.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1591it [00:32, 42.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1592it [00:32, 42.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1593it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1593it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1594it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1595it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1596it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1597it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1598it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1599it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1600it [00:32, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1601it [00:32, 49.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    1601it [00:32, 49.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    1602it [00:32, 49.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    1603it [00:32, 49.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    1604it [00:32, 49.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    1605it [00:32, 49.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    1606it [00:32, 49.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    1607it [00:32, 51.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1607it [00:32, 51.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1608it [00:32, 51.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1609it [00:32, 51.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1610it [00:32, 51.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1611it [00:32, 51.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1612it [00:32, 51.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    1613it [00:32, 51.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    1613it [00:32, 51.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    1614it [00:32, 51.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    1615it [00:32, 51.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    1616it [00:32, 51.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    1617it [00:32, 51.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    1618it [00:32, 51.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    1619it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1619it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1620it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1621it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1622it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1623it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1624it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1625it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1626it [00:32, 46.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1627it [00:32, 52.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    1627it [00:32, 52.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    1628it [00:32, 52.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    1629it [00:32, 52.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    1630it [00:32, 52.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    1631it [00:32, 52.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    1632it [00:32, 52.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    1633it [00:32, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1633it [00:32, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1634it [00:32, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1635it [00:33, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1636it [00:33, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1637it [00:33, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1638it [00:33, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1639it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1639it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1640it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1641it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1642it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1643it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1644it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1645it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1646it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1647it [00:33, 46.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1648it [00:33, 56.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1648it [00:33, 56.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1649it [00:33, 56.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1650it [00:33, 56.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1651it [00:33, 56.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1652it [00:33, 56.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1653it [00:33, 56.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1654it [00:33, 56.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    1655it [00:33, 48.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    1655it [00:33, 48.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    1656it [00:33, 48.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    1657it [00:33, 48.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    1658it [00:33, 48.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    1659it [00:33, 48.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    1660it [00:33, 48.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    1661it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1661it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1662it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1663it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1664it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1665it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1666it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1667it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1668it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1669it [00:33, 46.96it/s, failures=0, objective=-12.7]
-
-
-
-
-    1670it [00:33, 56.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1670it [00:33, 56.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1671it [00:33, 56.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1672it [00:33, 56.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1673it [00:33, 56.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1674it [00:33, 56.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1675it [00:33, 56.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1676it [00:33, 56.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    1677it [00:33, 55.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1677it [00:33, 55.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1678it [00:33, 55.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1679it [00:33, 55.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1680it [00:33, 55.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1681it [00:33, 55.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1682it [00:33, 55.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1683it [00:33, 47.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1683it [00:33, 47.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1684it [00:34, 47.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1685it [00:34, 47.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1686it [00:34, 47.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1687it [00:34, 47.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1688it [00:34, 47.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    1689it [00:34, 41.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1689it [00:34, 41.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1690it [00:34, 41.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1691it [00:34, 41.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1692it [00:34, 41.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1693it [00:34, 41.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1694it [00:34, 41.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1695it [00:34, 41.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1696it [00:34, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1696it [00:34, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1697it [00:34, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1698it [00:34, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1699it [00:34, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1700it [00:34, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    1701it [00:34, 43.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    1701it [00:34, 43.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    1702it [00:34, 43.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    1703it [00:34, 43.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    1704it [00:34, 43.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    1705it [00:34, 43.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    1706it [00:34, 43.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    1707it [00:34, 46.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    1707it [00:34, 46.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    1708it [00:34, 46.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    1709it [00:34, 46.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    1710it [00:34, 46.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    1711it [00:34, 46.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    1712it [00:34, 40.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    1712it [00:34, 40.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    1713it [00:34, 40.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    1714it [00:34, 40.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    1715it [00:34, 40.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    1716it [00:34, 40.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    1717it [00:34, 40.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    1718it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1718it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1719it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1720it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1721it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1722it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1723it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1724it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1725it [00:34, 41.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1726it [00:34, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1726it [00:34, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1727it [00:34, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1728it [00:34, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1729it [00:34, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1730it [00:35, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1731it [00:35, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1732it [00:35, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1733it [00:35, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1734it [00:35, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1735it [00:35, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1736it [00:35, 48.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    1737it [00:35, 61.49it/s, failures=0, objective=-12.7]
-
-
-
-
-    1737it [00:35, 61.49it/s, failures=0, objective=-12.7]
-
-
-
-
-    1738it [00:35, 61.49it/s, failures=0, objective=-12.7]
-
-
-
-
-    1739it [00:35, 61.49it/s, failures=0, objective=-12.7]
-
-
-
-
-    1740it [00:35, 61.49it/s, failures=0, objective=-12.7]
-
-
-
-
-    1741it [00:35, 61.49it/s, failures=0, objective=-12.7]
-
-
-
-
-    1742it [00:35, 61.49it/s, failures=0, objective=-12.7]
-
-
-
-
-    1743it [00:35, 61.49it/s, failures=0, objective=-12.7]
-
-
-
-
-    1744it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1744it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1745it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1746it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1747it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1748it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1749it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1750it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1751it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1752it [00:35, 61.71it/s, failures=0, objective=-12.7]
-
-
-
-
-    1753it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1753it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1754it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1755it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1756it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1757it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1758it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1759it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1760it [00:35, 67.95it/s, failures=0, objective=-12.7]
-
-
-
-
-    1761it [00:35, 59.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    1761it [00:35, 59.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    1762it [00:35, 59.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    1763it [00:35, 59.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    1764it [00:35, 59.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    1765it [00:35, 59.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    1766it [00:35, 59.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    1767it [00:35, 59.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    1768it [00:35, 50.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1768it [00:35, 50.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1769it [00:35, 50.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1770it [00:35, 50.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1771it [00:35, 50.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1772it [00:35, 50.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1773it [00:35, 50.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1774it [00:35, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1774it [00:35, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1775it [00:35, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1776it [00:35, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1777it [00:35, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1778it [00:35, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1779it [00:35, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    1780it [00:35, 50.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1780it [00:35, 50.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1781it [00:35, 50.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1782it [00:35, 50.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1783it [00:35, 50.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1784it [00:35, 50.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1785it [00:36, 50.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    1786it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1786it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1787it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1788it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1789it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1790it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1791it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1792it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1793it [00:36, 46.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    1794it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1794it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1795it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1796it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1797it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1798it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1799it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1800it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1801it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1802it [00:36, 53.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    1803it [00:36, 57.68it/s, failures=0, objective=-12.7]
-
-
-
-
-    1803it [00:36, 57.68it/s, failures=0, objective=-12.7]
-
-
-
-
-    1804it [00:36, 57.68it/s, failures=0, objective=-12.7]
-
-
-
-
-    1805it [00:36, 57.68it/s, failures=0, objective=-12.7]
-
-
-
-
-    1806it [00:36, 57.68it/s, failures=0, objective=-12.7]
-
-
-
-
-    1807it [00:36, 57.68it/s, failures=0, objective=-12.7]
-
-
-
-
-    1808it [00:36, 57.68it/s, failures=0, objective=-12.7]
-
-
-
-
-    1809it [00:36, 57.68it/s, failures=0, objective=-12.7]
-
-
-
-
-    1810it [00:36, 55.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1810it [00:36, 55.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1811it [00:36, 55.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1812it [00:36, 55.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1813it [00:36, 55.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1814it [00:36, 55.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1815it [00:36, 55.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    1816it [00:36, 50.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1816it [00:36, 50.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1817it [00:36, 50.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1818it [00:36, 50.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1819it [00:36, 50.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1820it [00:36, 50.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1821it [00:36, 50.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1822it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1822it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1823it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1824it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1825it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1826it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1827it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1828it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1829it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1830it [00:36, 40.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    1831it [00:36, 46.33it/s, failures=0, objective=-12.7]
-
-
-
-
-    1831it [00:36, 46.33it/s, failures=0, objective=-12.7]
-
-
-
-
-    1832it [00:36, 46.33it/s, failures=0, objective=-12.7]
-
-
-
-
-    1833it [00:36, 46.33it/s, failures=0, objective=-12.7]
-
-
-
-
-    1834it [00:37, 46.33it/s, failures=0, objective=-12.7]
-
-
-
-
-    1835it [00:37, 46.33it/s, failures=0, objective=-12.7]
-
-
-
-
-    1836it [00:37, 41.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1836it [00:37, 41.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1837it [00:37, 41.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1838it [00:37, 41.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1839it [00:37, 41.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1840it [00:37, 41.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1841it [00:37, 41.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1842it [00:37, 41.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    1843it [00:37, 45.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1843it [00:37, 45.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1844it [00:37, 45.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1845it [00:37, 45.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1846it [00:37, 45.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1847it [00:37, 45.43it/s, failures=0, objective=-12.7]
-
-
-
-
-    1848it [00:37, 43.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1848it [00:37, 43.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1849it [00:37, 43.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1850it [00:37, 43.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1851it [00:37, 43.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1852it [00:37, 43.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1853it [00:37, 43.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1854it [00:37, 46.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1854it [00:37, 46.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1855it [00:37, 46.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1856it [00:37, 46.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1857it [00:37, 46.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1858it [00:37, 46.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1859it [00:37, 46.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1860it [00:37, 46.29it/s, failures=0, objective=-12.7]
-
-
-
-
-    1861it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1861it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1862it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1863it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1864it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1865it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1866it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1867it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1868it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1869it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1870it [00:37, 51.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    1871it [00:37, 62.21it/s, failures=0, objective=-12.7]
-
-
-
-
-    1871it [00:37, 62.21it/s, failures=0, objective=-12.7]
-
-
-
-
-    1872it [00:37, 62.21it/s, failures=0, objective=-12.7]
-
-
-
-
-    1873it [00:37, 62.21it/s, failures=0, objective=-12.7]
-
-
-
-
-    1874it [00:37, 62.21it/s, failures=0, objective=-12.7]
-
-
-
-
-    1875it [00:37, 62.21it/s, failures=0, objective=-12.7]
-
-
-
-
-    1876it [00:37, 62.21it/s, failures=0, objective=-12.7]
-
-
-
-
-    1877it [00:37, 62.21it/s, failures=0, objective=-12.7]
-
-
-
-
-    1878it [00:37, 61.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1878it [00:37, 61.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1879it [00:37, 61.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1880it [00:37, 61.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1881it [00:37, 61.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1882it [00:37, 61.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1883it [00:37, 61.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1884it [00:37, 61.97it/s, failures=0, objective=-12.7]
-
-
-
-
-    1885it [00:37, 54.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    1885it [00:37, 54.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    1886it [00:38, 54.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    1887it [00:38, 54.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    1888it [00:38, 54.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    1889it [00:38, 54.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    1890it [00:38, 54.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    1891it [00:38, 51.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1891it [00:38, 51.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1892it [00:38, 51.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1893it [00:38, 51.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1894it [00:38, 51.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1895it [00:38, 51.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1896it [00:38, 51.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1897it [00:38, 51.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1898it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1898it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1899it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1900it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1901it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1902it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1903it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1904it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1905it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1906it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1907it [00:38, 53.92it/s, failures=0, objective=-12.7]
-
-
-
-
-    1908it [00:38, 63.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1908it [00:38, 63.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1909it [00:38, 63.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1910it [00:38, 63.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1911it [00:38, 63.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1912it [00:38, 63.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1913it [00:38, 63.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1914it [00:38, 63.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    1915it [00:38, 48.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1915it [00:38, 48.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1916it [00:38, 48.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1917it [00:38, 48.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1918it [00:38, 48.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1919it [00:38, 48.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1920it [00:38, 48.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    1921it [00:38, 49.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1921it [00:38, 49.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1922it [00:38, 49.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1923it [00:38, 49.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1924it [00:38, 49.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1925it [00:38, 49.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1926it [00:38, 49.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    1927it [00:38, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    1927it [00:38, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    1928it [00:38, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    1929it [00:38, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    1930it [00:38, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    1931it [00:38, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    1932it [00:38, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    1933it [00:38, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1933it [00:38, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1934it [00:38, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1935it [00:39, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1936it [00:39, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1937it [00:39, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1938it [00:39, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1939it [00:39, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1940it [00:39, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1941it [00:39, 45.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    1942it [00:39, 55.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    1942it [00:39, 55.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    1943it [00:39, 55.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    1944it [00:39, 55.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    1945it [00:39, 55.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    1946it [00:39, 55.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    1947it [00:39, 55.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    1948it [00:39, 55.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    1949it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1949it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1950it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1951it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1952it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1953it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1954it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1955it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1956it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1957it [00:39, 47.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    1958it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1958it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1959it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1960it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1961it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1962it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1963it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1964it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1965it [00:39, 57.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    1966it [00:39, 60.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    1966it [00:39, 60.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    1967it [00:39, 60.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    1968it [00:39, 60.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    1969it [00:39, 60.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    1970it [00:39, 60.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    1971it [00:39, 60.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    1972it [00:39, 60.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    1973it [00:39, 62.25it/s, failures=0, objective=-12.7]
-
-
-
-
-    1973it [00:39, 62.25it/s, failures=0, objective=-12.7]
-
-
-
-
-    1974it [00:39, 62.25it/s, failures=0, objective=-12.7]
-
-
-
-
-    1975it [00:39, 62.25it/s, failures=0, objective=-12.7]
-
-
-
-
-    1976it [00:39, 62.25it/s, failures=0, objective=-12.7]
-
-
-
-
-    1977it [00:39, 62.25it/s, failures=0, objective=-12.7]
-
-
-
-
-    1978it [00:39, 62.25it/s, failures=0, objective=-12.7]
-
-
-
-
-    1979it [00:39, 62.25it/s, failures=0, objective=-12.7]
-
-
-
-
-    1980it [00:39, 49.80it/s, failures=0, objective=-12.7]
-
-
-
-
-    1980it [00:39, 49.80it/s, failures=0, objective=-12.7]
-
-
-
-
-    1981it [00:39, 49.80it/s, failures=0, objective=-12.7]
-
-
-
-
-    1982it [00:39, 49.80it/s, failures=0, objective=-12.7]
-
-
-
-
-    1983it [00:39, 49.80it/s, failures=0, objective=-12.7]
-
-
-
-
-    1984it [00:39, 49.80it/s, failures=0, objective=-12.7]
-
-
-
-
-    1985it [00:39, 49.80it/s, failures=0, objective=-12.7]
-
-
-
-
-    1986it [00:39, 49.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1986it [00:39, 49.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1987it [00:39, 49.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1988it [00:39, 49.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1989it [00:40, 49.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1990it [00:40, 49.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1991it [00:40, 49.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1992it [00:40, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    1992it [00:40, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    1993it [00:40, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    1994it [00:40, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    1995it [00:40, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    1996it [00:40, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    1997it [00:40, 46.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    1998it [00:40, 47.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1998it [00:40, 47.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    1999it [00:40, 47.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2000it [00:40, 47.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2001it [00:40, 47.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2002it [00:40, 47.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2003it [00:40, 46.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    2003it [00:40, 46.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    2004it [00:40, 46.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    2005it [00:40, 46.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    2006it [00:40, 46.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    2007it [00:40, 46.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    2008it [00:40, 46.13it/s, failures=0, objective=-12.7]
-
-
-
-
-    2009it [00:40, 41.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2009it [00:40, 41.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2010it [00:40, 41.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2011it [00:40, 41.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2012it [00:40, 41.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2013it [00:40, 41.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2014it [00:40, 41.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2015it [00:40, 41.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2016it [00:40, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2016it [00:40, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2017it [00:40, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2018it [00:40, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2019it [00:40, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2020it [00:40, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2021it [00:40, 48.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2022it [00:40, 43.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2022it [00:40, 43.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2023it [00:40, 43.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2024it [00:40, 43.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2025it [00:40, 43.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2026it [00:40, 43.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2027it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2027it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2028it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2029it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2030it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2031it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2032it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2033it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2034it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2035it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2036it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2037it [00:40, 43.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2038it [00:40, 57.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    2038it [00:40, 57.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    2039it [00:41, 57.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    2040it [00:41, 57.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    2041it [00:41, 57.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    2042it [00:41, 57.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    2043it [00:41, 57.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    2044it [00:41, 57.52it/s, failures=0, objective=-12.7]
-
-
-
-
-    2045it [00:41, 55.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2045it [00:41, 55.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2046it [00:41, 55.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2047it [00:41, 55.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2048it [00:41, 55.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2049it [00:41, 55.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2050it [00:41, 55.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2051it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2051it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2052it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2053it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2054it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2055it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2056it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2057it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2058it [00:41, 49.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2059it [00:41, 55.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2059it [00:41, 55.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2060it [00:41, 55.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2061it [00:41, 55.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2062it [00:41, 55.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2063it [00:41, 55.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2064it [00:41, 55.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2065it [00:41, 49.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    2065it [00:41, 49.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    2066it [00:41, 49.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    2067it [00:41, 49.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    2068it [00:41, 49.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    2069it [00:41, 49.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    2070it [00:41, 49.40it/s, failures=0, objective=-12.7]
-
-
-
-
-    2071it [00:41, 50.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2071it [00:41, 50.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2072it [00:41, 50.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2073it [00:41, 50.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2074it [00:41, 50.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2075it [00:41, 50.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2076it [00:41, 50.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2077it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2077it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2078it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2079it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2080it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2081it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2082it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2083it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2084it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2084it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2085it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2086it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2087it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2088it [00:41, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2089it [00:42, 50.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2090it [00:42, 52.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2090it [00:42, 52.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2091it [00:42, 52.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2092it [00:42, 52.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2093it [00:42, 52.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2094it [00:42, 52.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2095it [00:42, 52.11it/s, failures=0, objective=-12.7]
-
-
-
-
-    2096it [00:42, 40.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2096it [00:42, 40.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2097it [00:42, 40.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2098it [00:42, 40.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2099it [00:42, 40.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2100it [00:42, 40.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2101it [00:42, 40.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2102it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2102it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2103it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2104it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2105it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2106it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2107it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2108it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2109it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2110it [00:42, 42.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2111it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2111it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2112it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2113it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2114it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2115it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2116it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2117it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2118it [00:42, 49.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2119it [00:42, 53.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2119it [00:42, 53.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2120it [00:42, 53.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2121it [00:42, 53.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2122it [00:42, 53.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2123it [00:42, 53.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2124it [00:42, 53.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2125it [00:42, 53.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2126it [00:42, 54.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    2126it [00:42, 54.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    2127it [00:42, 54.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    2128it [00:42, 54.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    2129it [00:42, 54.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    2130it [00:42, 54.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    2131it [00:42, 54.94it/s, failures=0, objective=-12.7]
-
-
-
-
-    2132it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2132it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2133it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2134it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2135it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2136it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2137it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2138it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2139it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2140it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2141it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2142it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2143it [00:43, 40.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2144it [00:43, 55.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2144it [00:43, 55.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2145it [00:43, 55.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2146it [00:43, 55.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2147it [00:43, 55.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2148it [00:43, 55.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2149it [00:43, 55.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2150it [00:43, 55.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2151it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2151it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2152it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2153it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2154it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2155it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2156it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2157it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2158it [00:43, 44.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2159it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2159it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2160it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2161it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2162it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2163it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2164it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2165it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2166it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2167it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2168it [00:43, 47.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2169it [00:43, 58.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2169it [00:43, 58.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2170it [00:43, 58.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2171it [00:43, 58.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2172it [00:43, 58.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2173it [00:43, 58.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2174it [00:43, 58.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2175it [00:43, 58.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2176it [00:43, 58.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    2176it [00:43, 58.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    2177it [00:43, 58.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    2178it [00:43, 58.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    2179it [00:43, 58.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    2180it [00:43, 58.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    2181it [00:43, 58.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    2182it [00:43, 58.46it/s, failures=0, objective=-12.7]
-
-
-
-
-    2183it [00:43, 58.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    2183it [00:43, 58.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    2184it [00:43, 58.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    2185it [00:43, 58.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    2186it [00:43, 58.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    2187it [00:43, 58.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    2188it [00:43, 58.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    2189it [00:44, 58.16it/s, failures=0, objective=-12.7]
-
-
-
-
-    2190it [00:44, 50.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    2190it [00:44, 50.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    2191it [00:44, 50.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    2192it [00:44, 50.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    2193it [00:44, 50.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    2194it [00:44, 50.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    2195it [00:44, 50.91it/s, failures=0, objective=-12.7]
-
-
-
-
-    2196it [00:44, 48.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2196it [00:44, 48.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2197it [00:44, 48.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2198it [00:44, 48.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2199it [00:44, 48.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2200it [00:44, 48.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2201it [00:44, 48.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2202it [00:44, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2202it [00:44, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2203it [00:44, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2204it [00:44, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2205it [00:44, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2206it [00:44, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2207it [00:44, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2208it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2208it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2209it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2210it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2211it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2212it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2213it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2214it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2215it [00:44, 50.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2216it [00:44, 57.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2216it [00:44, 57.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2217it [00:44, 57.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2218it [00:44, 57.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2219it [00:44, 57.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2220it [00:44, 57.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2221it [00:44, 57.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2222it [00:44, 47.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2222it [00:44, 47.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2223it [00:44, 47.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2224it [00:44, 47.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2225it [00:44, 47.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2226it [00:44, 47.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2227it [00:44, 47.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2228it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2228it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2229it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2230it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2231it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2232it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2233it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2234it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2235it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2236it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2237it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2238it [00:44, 44.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2239it [00:44, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2239it [00:44, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2240it [00:44, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2241it [00:45, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2242it [00:45, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2243it [00:45, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2244it [00:45, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2245it [00:45, 58.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2246it [00:45, 52.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2246it [00:45, 52.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2247it [00:45, 52.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2248it [00:45, 52.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2249it [00:45, 52.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2250it [00:45, 52.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2251it [00:45, 52.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2252it [00:45, 52.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2252it [00:45, 52.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2253it [00:45, 52.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2254it [00:45, 52.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2255it [00:45, 52.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2256it [00:45, 52.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2257it [00:45, 52.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2258it [00:45, 52.28it/s, failures=0, objective=-12.7]
-
-
-
-
-    2259it [00:45, 54.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2259it [00:45, 54.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2260it [00:45, 54.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2261it [00:45, 54.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2262it [00:45, 54.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2263it [00:45, 54.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2264it [00:45, 54.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2265it [00:45, 54.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2265it [00:45, 54.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2266it [00:45, 54.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2267it [00:45, 54.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2268it [00:45, 54.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2269it [00:45, 54.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2270it [00:45, 54.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2271it [00:45, 52.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2271it [00:45, 52.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2272it [00:45, 52.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2273it [00:45, 52.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2274it [00:45, 52.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2275it [00:45, 52.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2276it [00:45, 52.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2277it [00:45, 49.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2277it [00:45, 49.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2278it [00:45, 49.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2279it [00:45, 49.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2280it [00:45, 49.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2281it [00:45, 49.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2282it [00:45, 49.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2283it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2283it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2284it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2285it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2286it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2287it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2288it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2289it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2290it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2291it [00:45, 50.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2292it [00:45, 59.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    2292it [00:45, 59.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    2293it [00:45, 59.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    2294it [00:45, 59.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    2295it [00:46, 59.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    2296it [00:46, 59.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    2297it [00:46, 59.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    2298it [00:46, 59.65it/s, failures=0, objective=-12.7]
-
-
-
-
-    2299it [00:46, 46.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2299it [00:46, 46.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2300it [00:46, 46.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2301it [00:46, 46.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2302it [00:46, 46.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2303it [00:46, 46.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2304it [00:46, 46.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2305it [00:46, 47.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2305it [00:46, 47.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2306it [00:46, 47.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2307it [00:46, 47.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2308it [00:46, 47.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2309it [00:46, 47.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2310it [00:46, 47.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2311it [00:46, 47.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2311it [00:46, 47.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2312it [00:46, 47.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2313it [00:46, 47.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2314it [00:46, 47.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2315it [00:46, 47.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2316it [00:46, 47.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2317it [00:46, 47.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2318it [00:46, 50.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2318it [00:46, 50.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2319it [00:46, 50.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2320it [00:46, 50.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2321it [00:46, 50.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2322it [00:46, 50.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2323it [00:46, 50.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2324it [00:46, 50.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2325it [00:46, 54.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2325it [00:46, 54.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2326it [00:46, 54.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2327it [00:46, 54.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2328it [00:46, 54.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2329it [00:46, 54.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2330it [00:46, 54.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2331it [00:46, 54.30it/s, failures=0, objective=-12.7]
-
-
-
-
-    2332it [00:46, 52.20it/s, failures=0, objective=-12.7]
-
-
-
-
-    2332it [00:46, 52.20it/s, failures=0, objective=-12.7]
-
-
-
-
-    2333it [00:46, 52.20it/s, failures=0, objective=-12.7]
-
-
-
-
-    2334it [00:46, 52.20it/s, failures=0, objective=-12.7]
-
-
-
-
-    2335it [00:46, 52.20it/s, failures=0, objective=-12.7]
-
-
-
-
-    2336it [00:46, 52.20it/s, failures=0, objective=-12.7]
-
-
-
-
-    2337it [00:46, 52.20it/s, failures=0, objective=-12.7]
-
-
-
-
-    2338it [00:46, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2338it [00:46, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2339it [00:46, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2340it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2341it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2342it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2343it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2344it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2345it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2346it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2347it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2348it [00:47, 47.54it/s, failures=0, objective=-12.7]
-
-
-
-
-    2349it [00:47, 59.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    2349it [00:47, 59.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    2350it [00:47, 59.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    2351it [00:47, 59.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    2352it [00:47, 59.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    2353it [00:47, 59.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    2354it [00:47, 59.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    2355it [00:47, 59.79it/s, failures=0, objective=-12.7]
-
-
-
-
-    2356it [00:47, 54.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2356it [00:47, 54.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2357it [00:47, 54.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2358it [00:47, 54.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2359it [00:47, 54.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2360it [00:47, 54.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2361it [00:47, 54.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2362it [00:47, 54.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    2362it [00:47, 54.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    2363it [00:47, 54.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    2364it [00:47, 54.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    2365it [00:47, 54.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    2366it [00:47, 54.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    2367it [00:47, 54.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    2368it [00:47, 54.69it/s, failures=0, objective=-12.7]
-
-
-
-
-    2369it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2369it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2370it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2371it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2372it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2373it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2374it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2375it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2376it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2377it [00:47, 57.56it/s, failures=0, objective=-12.7]
-
-
-
-
-    2378it [00:47, 64.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    2378it [00:47, 64.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    2379it [00:47, 64.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    2380it [00:47, 64.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    2381it [00:47, 64.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    2382it [00:47, 64.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    2383it [00:47, 64.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    2384it [00:47, 64.09it/s, failures=0, objective=-12.7]
-
-
-
-
-    2385it [00:47, 43.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    2385it [00:47, 43.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    2386it [00:47, 43.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    2387it [00:47, 43.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    2388it [00:47, 43.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    2389it [00:47, 43.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    2390it [00:48, 43.37it/s, failures=0, objective=-12.7]
-
-
-
-
-    2391it [00:48, 41.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2391it [00:48, 41.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2392it [00:48, 41.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2393it [00:48, 41.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2394it [00:48, 41.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2395it [00:48, 41.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2396it [00:48, 41.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2396it [00:48, 41.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2397it [00:48, 41.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2398it [00:48, 41.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2399it [00:48, 41.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2400it [00:48, 41.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2401it [00:48, 41.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2402it [00:48, 45.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2402it [00:48, 45.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2403it [00:48, 45.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2404it [00:48, 45.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2405it [00:48, 45.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2406it [00:48, 45.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2407it [00:48, 45.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2408it [00:48, 45.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2409it [00:48, 46.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2409it [00:48, 46.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2410it [00:48, 46.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2411it [00:48, 46.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2412it [00:48, 46.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2413it [00:48, 46.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2414it [00:48, 42.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2414it [00:48, 42.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2415it [00:48, 42.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2416it [00:48, 42.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2417it [00:48, 42.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2418it [00:48, 42.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2419it [00:48, 42.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2420it [00:48, 42.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2421it [00:48, 47.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2421it [00:48, 47.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2422it [00:48, 47.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2423it [00:48, 47.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2424it [00:48, 47.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2425it [00:48, 47.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2426it [00:48, 47.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2427it [00:48, 47.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2428it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2428it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2429it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2430it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2431it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2432it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2433it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2434it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2435it [00:48, 48.35it/s, failures=0, objective=-12.7]
-
-
-
-
-    2436it [00:48, 54.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2436it [00:48, 54.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2437it [00:48, 54.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2438it [00:48, 54.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2439it [00:48, 54.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2440it [00:48, 54.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2441it [00:48, 54.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2442it [00:49, 55.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2442it [00:49, 55.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2443it [00:49, 55.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2444it [00:49, 55.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2445it [00:49, 55.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2446it [00:49, 55.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2447it [00:49, 55.61it/s, failures=0, objective=-12.7]
-
-
-
-
-    2448it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2448it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2449it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2450it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2451it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2452it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2453it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2454it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2455it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2456it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2457it [00:49, 55.64it/s, failures=0, objective=-12.7]
-
-
-
-
-    2458it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2458it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2459it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2460it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2461it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2462it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2463it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2464it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2465it [00:49, 65.76it/s, failures=0, objective=-12.7]
-
-
-
-
-    2466it [00:49, 65.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    2466it [00:49, 65.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    2467it [00:49, 65.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    2468it [00:49, 65.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    2469it [00:49, 65.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    2470it [00:49, 65.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    2471it [00:49, 65.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    2472it [00:49, 65.58it/s, failures=0, objective=-12.7]
-
-
-
-
-    2473it [00:49, 56.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2473it [00:49, 56.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2474it [00:49, 56.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2475it [00:49, 56.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2476it [00:49, 56.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2477it [00:49, 56.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2478it [00:49, 56.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2479it [00:49, 53.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2479it [00:49, 53.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2480it [00:49, 53.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2481it [00:49, 53.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2482it [00:49, 53.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2483it [00:49, 53.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2484it [00:49, 53.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2485it [00:49, 50.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    2485it [00:49, 50.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    2486it [00:49, 50.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    2487it [00:49, 50.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    2488it [00:49, 50.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    2489it [00:49, 50.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    2490it [00:49, 50.73it/s, failures=0, objective=-12.7]
-
-
-
-
-    2491it [00:49, 51.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    2491it [00:49, 51.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    2492it [00:49, 51.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    2493it [00:49, 51.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    2494it [00:49, 51.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    2495it [00:49, 51.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    2496it [00:49, 51.85it/s, failures=0, objective=-12.7]
-
-
-
-
-    2497it [00:50, 51.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2497it [00:50, 51.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2498it [00:50, 51.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2499it [00:50, 51.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2500it [00:50, 51.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2501it [00:50, 51.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2502it [00:50, 51.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2503it [00:50, 51.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2504it [00:50, 47.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    2504it [00:50, 47.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    2505it [00:50, 47.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    2506it [00:50, 47.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    2507it [00:50, 47.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    2508it [00:50, 47.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    2509it [00:50, 47.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    2510it [00:50, 47.23it/s, failures=0, objective=-12.7]
-
-
-
-
-    2511it [00:50, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2511it [00:50, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2512it [00:50, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2513it [00:50, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2514it [00:50, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2515it [00:50, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2516it [00:50, 44.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2516it [00:50, 44.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2517it [00:50, 44.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2518it [00:50, 44.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2519it [00:50, 44.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2520it [00:50, 44.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2521it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2521it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2522it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2523it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2524it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2525it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2526it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2527it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2528it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2529it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2530it [00:50, 44.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2531it [00:50, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2531it [00:50, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2532it [00:50, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2533it [00:50, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2534it [00:50, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2535it [00:50, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2536it [00:50, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2537it [00:50, 58.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2538it [00:50, 59.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2538it [00:50, 59.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2539it [00:50, 59.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2540it [00:50, 59.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2541it [00:50, 59.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2542it [00:50, 59.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2543it [00:50, 59.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2544it [00:50, 59.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2545it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2545it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2546it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2547it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2548it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2549it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2550it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2551it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2552it [00:50, 57.66it/s, failures=0, objective=-12.7]
-
-
-
-
-    2553it [00:51, 61.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2553it [00:51, 61.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2554it [00:51, 61.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2555it [00:51, 61.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2556it [00:51, 61.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2557it [00:51, 61.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2558it [00:51, 61.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2559it [00:51, 61.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2560it [00:51, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2560it [00:51, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2561it [00:51, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2562it [00:51, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2563it [00:51, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2564it [00:51, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2565it [00:51, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2566it [00:51, 38.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2566it [00:51, 38.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2567it [00:51, 38.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2568it [00:51, 38.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2569it [00:51, 38.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2570it [00:51, 38.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2571it [00:51, 38.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2572it [00:51, 41.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2572it [00:51, 41.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2573it [00:51, 41.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2574it [00:51, 41.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2575it [00:51, 41.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2576it [00:51, 41.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2577it [00:51, 41.62it/s, failures=0, objective=-12.7]
-
-
-
-
-    2578it [00:51, 44.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2578it [00:51, 44.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2579it [00:51, 44.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2580it [00:51, 44.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2581it [00:51, 44.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2582it [00:51, 44.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2583it [00:51, 44.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2584it [00:51, 44.78it/s, failures=0, objective=-12.7]
-
-
-
-
-    2585it [00:51, 49.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2585it [00:51, 49.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2586it [00:51, 49.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2587it [00:51, 49.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2588it [00:51, 49.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2589it [00:51, 49.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2590it [00:51, 49.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2591it [00:51, 43.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    2591it [00:51, 43.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    2592it [00:52, 43.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    2593it [00:52, 43.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    2594it [00:52, 43.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    2595it [00:52, 43.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    2596it [00:52, 43.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    2597it [00:52, 43.81it/s, failures=0, objective=-12.7]
-
-
-
-
-    2598it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2598it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2599it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2600it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2601it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2602it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2603it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2604it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2605it [00:52, 48.42it/s, failures=0, objective=-12.7]
-
-
-
-
-    2606it [00:52, 55.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2606it [00:52, 55.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2607it [00:52, 55.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2608it [00:52, 55.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2609it [00:52, 55.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2610it [00:52, 55.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2611it [00:52, 55.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2612it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2612it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2613it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2614it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2615it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2616it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2617it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2618it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2619it [00:52, 50.72it/s, failures=0, objective=-12.7]
-
-
-
-
-    2620it [00:52, 55.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2620it [00:52, 55.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2621it [00:52, 55.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2622it [00:52, 55.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2623it [00:52, 55.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2624it [00:52, 55.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2625it [00:52, 55.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2626it [00:52, 55.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2627it [00:52, 56.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2627it [00:52, 56.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2628it [00:52, 56.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2629it [00:52, 56.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2630it [00:52, 56.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2631it [00:52, 56.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2632it [00:52, 56.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2633it [00:52, 54.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2633it [00:52, 54.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2634it [00:52, 54.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2635it [00:52, 54.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2636it [00:52, 54.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2637it [00:52, 54.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2638it [00:52, 54.57it/s, failures=0, objective=-12.7]
-
-
-
-
-    2639it [00:52, 50.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2639it [00:52, 50.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2640it [00:52, 50.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2641it [00:52, 50.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2642it [00:52, 50.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2643it [00:52, 50.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2644it [00:52, 50.75it/s, failures=0, objective=-12.7]
-
-
-
-
-    2645it [00:52, 48.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2645it [00:52, 48.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2646it [00:52, 48.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2647it [00:53, 48.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2648it [00:53, 48.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2649it [00:53, 48.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2650it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2650it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2651it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2652it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2653it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2654it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2655it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2656it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2657it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2658it [00:53, 44.31it/s, failures=0, objective=-12.7]
-
-
-
-
-    2659it [00:53, 52.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2659it [00:53, 52.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2660it [00:53, 52.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2661it [00:53, 52.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2662it [00:53, 52.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2663it [00:53, 52.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2664it [00:53, 52.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2665it [00:53, 51.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2665it [00:53, 51.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2666it [00:53, 51.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2667it [00:53, 51.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2668it [00:53, 51.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2669it [00:53, 51.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2670it [00:53, 51.39it/s, failures=0, objective=-12.7]
-
-
-
-
-    2671it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2671it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2672it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2673it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2674it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2675it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2676it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2677it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2678it [00:53, 48.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2679it [00:53, 47.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    2679it [00:53, 47.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    2680it [00:53, 47.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    2681it [00:53, 47.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    2682it [00:53, 47.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    2683it [00:53, 47.50it/s, failures=0, objective=-12.7]
-
-
-
-
-    2684it [00:53, 46.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2684it [00:53, 46.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2685it [00:53, 46.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2686it [00:53, 46.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2687it [00:53, 46.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2688it [00:53, 46.17it/s, failures=0, objective=-12.7]
-
-
-
-
-    2689it [00:53, 46.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    2689it [00:53, 46.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    2690it [00:53, 46.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    2691it [00:53, 46.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    2692it [00:53, 46.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    2693it [00:53, 46.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    2694it [00:54, 46.01it/s, failures=0, objective=-12.7]
-
-
-
-
-    2695it [00:54, 49.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2695it [00:54, 49.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2696it [00:54, 49.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2697it [00:54, 49.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2698it [00:54, 49.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2699it [00:54, 49.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2700it [00:54, 49.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2701it [00:54, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2701it [00:54, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2702it [00:54, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2703it [00:54, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2704it [00:54, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2705it [00:54, 46.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2706it [00:54, 47.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2706it [00:54, 47.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2707it [00:54, 47.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2708it [00:54, 47.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2709it [00:54, 47.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2710it [00:54, 47.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2711it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2711it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2712it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2713it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2714it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2715it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2716it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2717it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2718it [00:54, 44.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2719it [00:54, 52.99it/s, failures=0, objective=-12.7]
-
-
-
-
-    2719it [00:54, 52.99it/s, failures=0, objective=-12.7]
-
-
-
-
-    2720it [00:54, 52.99it/s, failures=0, objective=-12.7]
-
-
-
-
-    2721it [00:54, 52.99it/s, failures=0, objective=-12.7]
-
-
-
-
-    2722it [00:54, 52.99it/s, failures=0, objective=-12.7]
-
-
-
-
-    2723it [00:54, 52.99it/s, failures=0, objective=-12.7]
-
-
-
-
-    2724it [00:54, 52.99it/s, failures=0, objective=-12.7]
-
-
-
-
-    2725it [00:54, 52.99it/s, failures=0, objective=-12.7]
-
-
-
-
-    2726it [00:54, 53.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2726it [00:54, 53.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2727it [00:54, 53.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2728it [00:54, 53.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2729it [00:54, 53.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2730it [00:54, 53.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2731it [00:54, 53.45it/s, failures=0, objective=-12.7]
-
-
-
-
-    2732it [00:54, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2732it [00:54, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2733it [00:54, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2734it [00:54, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2735it [00:54, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2736it [00:54, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2737it [00:54, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2738it [00:54, 52.24it/s, failures=0, objective=-12.7]
-
-
-
-
-    2739it [00:54, 52.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2739it [00:54, 52.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2740it [00:54, 52.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2741it [00:54, 52.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2742it [00:54, 52.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2743it [00:54, 52.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2744it [00:54, 52.19it/s, failures=0, objective=-12.7]
-
-
-
-
-    2745it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2745it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2746it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2747it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2748it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2749it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2750it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2751it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2752it [00:55, 51.02it/s, failures=0, objective=-12.7]
-
-
-
-
-    2753it [00:55, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2753it [00:55, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2754it [00:55, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2755it [00:55, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2756it [00:55, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2757it [00:55, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2758it [00:55, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2759it [00:55, 55.90it/s, failures=0, objective=-12.7]
-
-
-
-
-    2760it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2760it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2761it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2762it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2763it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2764it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2765it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2766it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2767it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2768it [00:55, 56.34it/s, failures=0, objective=-12.7]
-
-
-
-
-    2769it [00:55, 63.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2769it [00:55, 63.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2770it [00:55, 63.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2771it [00:55, 63.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2772it [00:55, 63.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2773it [00:55, 63.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2774it [00:55, 63.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2775it [00:55, 63.41it/s, failures=0, objective=-12.7]
-
-
-
-
-    2776it [00:55, 59.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2776it [00:55, 59.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2777it [00:55, 59.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2778it [00:55, 59.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2779it [00:55, 59.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2780it [00:55, 59.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2781it [00:55, 59.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2782it [00:55, 59.67it/s, failures=0, objective=-12.7]
-
-
-
-
-    2783it [00:55, 58.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2783it [00:55, 58.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2784it [00:55, 58.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2785it [00:55, 58.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2786it [00:55, 58.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2787it [00:55, 58.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2788it [00:55, 58.26it/s, failures=0, objective=-12.7]
-
-
-
-
-    2789it [00:55, 49.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2789it [00:55, 49.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2790it [00:55, 49.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2791it [00:55, 49.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2792it [00:55, 49.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2793it [00:55, 49.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2794it [00:55, 49.70it/s, failures=0, objective=-12.7]
-
-
-
-
-    2795it [00:55, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2795it [00:55, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2796it [00:55, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2797it [00:55, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2798it [00:56, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2799it [00:56, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2800it [00:56, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2801it [00:56, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2802it [00:56, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2803it [00:56, 45.14it/s, failures=0, objective=-12.7]
-
-
-
-
-    2804it [00:56, 55.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2804it [00:56, 55.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2805it [00:56, 55.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2806it [00:56, 55.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2807it [00:56, 55.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2808it [00:56, 55.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2809it [00:56, 55.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2810it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2810it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2811it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2812it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2813it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2814it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2815it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2816it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2817it [00:56, 53.86it/s, failures=0, objective=-12.7]
-
-
-
-
-    2818it [00:56, 59.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    2818it [00:56, 59.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    2819it [00:56, 59.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    2820it [00:56, 59.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    2821it [00:56, 59.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    2822it [00:56, 59.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    2823it [00:56, 59.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    2824it [00:56, 59.38it/s, failures=0, objective=-12.7]
-
-
-
-
-    2825it [00:56, 45.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2825it [00:56, 45.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2826it [00:56, 45.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2827it [00:56, 45.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2828it [00:56, 45.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2829it [00:56, 45.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2830it [00:56, 45.22it/s, failures=0, objective=-12.7]
-
-
-
-
-    2831it [00:56, 37.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2831it [00:56, 37.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2832it [00:56, 37.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2833it [00:56, 37.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2834it [00:56, 37.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2835it [00:56, 37.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2836it [00:56, 37.88it/s, failures=0, objective=-12.7]
-
-
-
-
-    2837it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2837it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2838it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2839it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2840it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2841it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2842it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2843it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2844it [00:56, 41.53it/s, failures=0, objective=-12.7]
-
-
-
-
-    2845it [00:56, 48.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    2845it [00:56, 48.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    2846it [00:56, 48.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    2847it [00:57, 48.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    2848it [00:57, 48.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    2849it [00:57, 48.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    2850it [00:57, 48.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    2851it [00:57, 48.89it/s, failures=0, objective=-12.7]
-
-
-
-
-    2852it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2852it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2853it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2854it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2855it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2856it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2857it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2858it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2859it [00:57, 52.82it/s, failures=0, objective=-12.7]
-
-
-
-
-    2860it [00:57, 58.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2860it [00:57, 58.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2861it [00:57, 58.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2862it [00:57, 58.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2863it [00:57, 58.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2864it [00:57, 58.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2865it [00:57, 58.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2866it [00:57, 58.08it/s, failures=0, objective=-12.7]
-
-
-
-
-    2867it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2867it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2868it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2869it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2870it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2871it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2872it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2873it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2874it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2875it [00:57, 56.04it/s, failures=0, objective=-12.7]
-
-
-
-
-    2876it [00:57, 63.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    2876it [00:57, 63.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    2877it [00:57, 63.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    2878it [00:57, 63.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    2879it [00:57, 63.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    2880it [00:57, 63.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    2881it [00:57, 63.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    2882it [00:57, 63.36it/s, failures=0, objective=-12.7]
-
-
-
-
-    2883it [00:57, 57.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2883it [00:57, 57.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2884it [00:57, 57.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2885it [00:57, 57.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2886it [00:57, 57.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2887it [00:57, 57.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2888it [00:57, 57.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2889it [00:57, 57.15it/s, failures=0, objective=-12.7]
-
-
-
-
-    2890it [00:57, 50.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    2890it [00:57, 50.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    2891it [00:57, 50.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    2892it [00:57, 50.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    2893it [00:57, 50.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    2894it [00:57, 50.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    2895it [00:57, 50.59it/s, failures=0, objective=-12.7]
-
-
-
-
-    2896it [00:57, 49.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    2896it [00:57, 49.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    2897it [00:57, 49.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    2898it [00:57, 49.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    2899it [00:57, 49.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    2900it [00:58, 49.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    2901it [00:58, 49.07it/s, failures=0, objective=-12.7]
-
-
-
-
-    2902it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2902it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2903it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2904it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2905it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2906it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2907it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2908it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2909it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2910it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2911it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2912it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2913it [00:58, 44.18it/s, failures=0, objective=-12.7]
-
-
-
-
-    2914it [00:58, 60.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    2914it [00:58, 60.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    2915it [00:58, 60.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    2916it [00:58, 60.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    2917it [00:58, 60.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    2918it [00:58, 60.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    2919it [00:58, 60.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    2920it [00:58, 60.93it/s, failures=0, objective=-12.7]
-
-
-
-
-    2921it [00:58, 62.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    2921it [00:58, 62.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    2922it [00:58, 62.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    2923it [00:58, 62.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    2924it [00:58, 62.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    2925it [00:58, 62.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    2926it [00:58, 62.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    2927it [00:58, 62.84it/s, failures=0, objective=-12.7]
-
-
-
-
-    2928it [00:58, 62.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2928it [00:58, 62.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2929it [00:58, 62.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2930it [00:58, 62.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2931it [00:58, 62.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2932it [00:58, 62.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2933it [00:58, 62.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2934it [00:58, 62.12it/s, failures=0, objective=-12.7]
-
-
-
-
-    2935it [00:58, 49.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2935it [00:58, 49.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2936it [00:58, 49.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2937it [00:58, 49.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2938it [00:58, 49.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2939it [00:58, 49.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2940it [00:58, 49.03it/s, failures=0, objective=-12.7]
-
-
-
-
-    2941it [00:58, 46.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    2941it [00:58, 46.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    2942it [00:58, 46.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    2943it [00:58, 46.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    2944it [00:58, 46.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    2945it [00:58, 46.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    2946it [00:58, 46.48it/s, failures=0, objective=-12.7]
-
-
-
-
-    2947it [00:58, 45.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2947it [00:58, 45.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2948it [00:58, 45.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2949it [00:58, 45.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2950it [00:58, 45.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2951it [00:58, 45.32it/s, failures=0, objective=-12.7]
-
-
-
-
-    2952it [00:59, 44.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2952it [00:59, 44.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2953it [00:59, 44.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2954it [00:59, 44.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2955it [00:59, 44.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2956it [00:59, 44.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2957it [00:59, 44.47it/s, failures=0, objective=-12.7]
-
-
-
-
-    2958it [00:59, 45.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2958it [00:59, 45.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2959it [00:59, 45.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2960it [00:59, 45.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2961it [01:01, 45.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2962it [01:01, 45.98it/s, failures=0, objective=-12.7]
-
-
-
-
-    2963it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2963it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2964it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2965it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2966it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2967it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2968it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2969it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2970it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2971it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2972it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2973it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2974it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2975it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2976it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2977it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2978it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2979it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2980it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2981it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2982it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2983it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2984it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2985it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2986it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2987it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2988it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2989it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2990it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2991it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2992it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2993it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2994it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2995it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2996it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2997it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2998it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    2999it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3000it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3001it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3002it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3003it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3004it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3005it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3006it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3007it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3008it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3009it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3010it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3011it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3012it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3013it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3014it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3015it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3016it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3017it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3018it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3019it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3020it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3021it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3022it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3023it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3024it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3025it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3026it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3027it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3028it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3029it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3030it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3031it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3032it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3033it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3034it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3035it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3036it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3037it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3038it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3039it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3040it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3041it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3042it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3043it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3044it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3045it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3046it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3047it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3048it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3049it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3050it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3051it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3052it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3053it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3054it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3055it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3056it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3057it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3058it [01:01,  6.44it/s, failures=0, objective=-12.7]
-
-
-
-
-    3059it [01:01,  6.44it/s, failures=0, objective=-12.7]
+    Random Search:: : 3028it [01:02,  6.01it/s, failures=0, objective=-12.7]
 
 .. raw:: html
 
@@ -29530,78 +10832,78 @@ The evaluator is defined similarly to the one used for the parallel Bayesian opt
       <tbody>
         <tr>
           <th>0</th>
-          <td>29.235011</td>
-          <td>23.773171</td>
-          <td>25.045878</td>
-          <td>3.996254</td>
-          <td>-10.495488</td>
-          <td>-21.138399</td>
-          <td>68</td>
+          <td>-20.766728</td>
+          <td>-13.687020</td>
+          <td>3.208579</td>
+          <td>14.656252</td>
+          <td>30.904723</td>
+          <td>-21.217225</td>
+          <td>44</td>
           <td>DONE</td>
-          <td>0.008281</td>
-          <td>0.004148</td>
-          <td>0.810326</td>
-          <td>0.819860</td>
+          <td>0.007122</td>
+          <td>0.001706</td>
+          <td>0.826846</td>
+          <td>0.835800</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>31.784062</td>
-          <td>28.359515</td>
-          <td>-26.866539</td>
-          <td>-28.771805</td>
-          <td>-28.958426</td>
-          <td>-21.348064</td>
-          <td>32</td>
+          <td>-26.208702</td>
+          <td>-7.851241</td>
+          <td>-1.549278</td>
+          <td>26.743107</td>
+          <td>21.908592</td>
+          <td>-21.182546</td>
+          <td>8</td>
           <td>DONE</td>
-          <td>0.008041</td>
-          <td>0.002444</td>
-          <td>0.984585</td>
-          <td>0.994081</td>
+          <td>0.006853</td>
+          <td>0.000423</td>
+          <td>0.974040</td>
+          <td>0.982752</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>13.252137</td>
-          <td>-12.987214</td>
-          <td>32.371689</td>
-          <td>-14.746514</td>
-          <td>24.353933</td>
-          <td>-21.483177</td>
-          <td>60</td>
+          <td>-29.954127</td>
+          <td>-10.356646</td>
+          <td>9.260725</td>
+          <td>18.842669</td>
+          <td>30.665497</td>
+          <td>-21.400129</td>
+          <td>96</td>
           <td>DONE</td>
-          <td>0.008234</td>
-          <td>0.003744</td>
-          <td>1.071666</td>
-          <td>1.081134</td>
+          <td>0.007674</td>
+          <td>0.004084</td>
+          <td>1.272472</td>
+          <td>1.281458</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>31.820998</td>
-          <td>-8.126421</td>
-          <td>17.015922</td>
-          <td>-0.503969</td>
-          <td>12.716956</td>
-          <td>-20.911212</td>
-          <td>62</td>
+          <td>-4.036735</td>
+          <td>30.824390</td>
+          <td>22.189689</td>
+          <td>-5.897330</td>
+          <td>-11.241145</td>
+          <td>-20.473314</td>
+          <td>14</td>
           <td>DONE</td>
-          <td>0.008247</td>
-          <td>0.003823</td>
-          <td>1.138232</td>
-          <td>1.147452</td>
+          <td>0.006884</td>
+          <td>0.000624</td>
+          <td>1.335467</td>
+          <td>1.344063</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>-0.874815</td>
-          <td>-2.526834</td>
-          <td>-31.179747</td>
-          <td>19.192584</td>
-          <td>0.813664</td>
-          <td>-20.774113</td>
-          <td>94</td>
+          <td>-11.668533</td>
+          <td>8.063203</td>
+          <td>-15.014366</td>
+          <td>-15.690757</td>
+          <td>-0.581364</td>
+          <td>-19.714716</td>
+          <td>97</td>
           <td>DONE</td>
-          <td>0.008431</td>
-          <td>0.005346</td>
-          <td>1.193469</td>
-          <td>1.203844</td>
+          <td>0.007679</td>
+          <td>0.004123</td>
+          <td>1.335666</td>
+          <td>1.344899</td>
         </tr>
         <tr>
           <th>...</th>
@@ -29619,93 +10921,93 @@ The evaluator is defined similarly to the one used for the parallel Bayesian opt
           <td>...</td>
         </tr>
         <tr>
-          <th>3054</th>
-          <td>7.770740</td>
-          <td>-4.307237</td>
-          <td>26.143262</td>
-          <td>-4.632427</td>
-          <td>-24.134341</td>
-          <td>-20.903898</td>
-          <td>3054</td>
+          <th>3023</th>
+          <td>6.953382</td>
+          <td>25.776492</td>
+          <td>-12.543708</td>
+          <td>-6.871995</td>
+          <td>30.161890</td>
+          <td>-20.963278</td>
+          <td>2971</td>
           <td>CANCELLED</td>
-          <td>59.941434</td>
-          <td>59.934208</td>
-          <td>61.944872</td>
-          <td>62.682016</td>
+          <td>58.939656</td>
+          <td>58.931999</td>
+          <td>61.742652</td>
+          <td>62.982683</td>
         </tr>
         <tr>
-          <th>3055</th>
-          <td>15.863290</td>
-          <td>15.453360</td>
-          <td>-4.254422</td>
-          <td>20.671110</td>
-          <td>-18.817923</td>
-          <td>-20.988811</td>
-          <td>2994</td>
+          <th>3024</th>
+          <td>-13.422777</td>
+          <td>-12.042705</td>
+          <td>-31.131575</td>
+          <td>10.548806</td>
+          <td>-0.274992</td>
+          <td>-21.087157</td>
+          <td>3008</td>
           <td>CANCELLED</td>
-          <td>58.705671</td>
-          <td>58.697362</td>
-          <td>60.266440</td>
-          <td>62.682117</td>
+          <td>59.606781</td>
+          <td>59.599442</td>
+          <td>61.326382</td>
+          <td>62.982860</td>
         </tr>
         <tr>
-          <th>3056</th>
-          <td>15.128298</td>
-          <td>-19.413797</td>
-          <td>22.966853</td>
-          <td>-5.025321</td>
-          <td>13.256185</td>
-          <td>-20.533347</td>
-          <td>3020</td>
+          <th>3025</th>
+          <td>28.224476</td>
+          <td>1.288954</td>
+          <td>12.658352</td>
+          <td>24.866225</td>
+          <td>-24.413074</td>
+          <td>-21.559354</td>
+          <td>2958</td>
           <td>CANCELLED</td>
-          <td>59.104921</td>
-          <td>59.096419</td>
-          <td>60.725199</td>
-          <td>62.682218</td>
+          <td>58.516554</td>
+          <td>58.509339</td>
+          <td>60.902880</td>
+          <td>62.983039</td>
         </tr>
         <tr>
-          <th>3057</th>
-          <td>-25.899200</td>
-          <td>-12.080820</td>
-          <td>-21.825952</td>
-          <td>-22.479872</td>
-          <td>2.220505</td>
-          <td>-20.964987</td>
-          <td>3056</td>
+          <th>3026</th>
+          <td>-28.839591</td>
+          <td>3.956619</td>
+          <td>-4.825855</td>
+          <td>-19.522004</td>
+          <td>-20.712440</td>
+          <td>-21.049693</td>
+          <td>3001</td>
           <td>CANCELLED</td>
-          <td>59.952072</td>
-          <td>59.943982</td>
-          <td>60.961464</td>
-          <td>62.682319</td>
+          <td>59.397269</td>
+          <td>59.389745</td>
+          <td>61.952089</td>
+          <td>62.983217</td>
         </tr>
         <tr>
-          <th>3058</th>
-          <td>4.650201</td>
-          <td>18.289610</td>
-          <td>1.069483</td>
-          <td>-7.640196</td>
-          <td>24.161478</td>
-          <td>-20.542261</td>
-          <td>2943</td>
+          <th>3027</th>
+          <td>3.659045</td>
+          <td>6.686664</td>
+          <td>14.981567</td>
+          <td>17.784019</td>
+          <td>17.717559</td>
+          <td>-20.362088</td>
+          <td>2931</td>
           <td>CANCELLED</td>
-          <td>57.784854</td>
-          <td>57.776323</td>
-          <td>60.493585</td>
-          <td>62.682422</td>
+          <td>58.076722</td>
+          <td>58.069241</td>
+          <td>60.209469</td>
+          <td>62.983396</td>
         </tr>
       </tbody>
     </table>
-    <p>3059 rows × 12 columns</p>
+    <p>3028 rows × 12 columns</p>
     </div>
     </div>
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 232-233
+.. GENERATED FROM PYTHON SOURCE LINES 262-263
 
 The number of evaluations of the random search is higher than the parallel Bayesian optimization search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 233-236
+.. GENERATED FROM PYTHON SOURCE LINES 263-266
 
 .. code-block:: Python
 
@@ -29720,37 +11022,38 @@ The number of evaluations of the random search is higher than the parallel Bayes
 
  .. code-block:: none
 
-    Number of evaluations for the parallel Bayesian optimization: 2479
-    Number of evaluations for the random search: 3059
+    Number of evaluations for the parallel Bayesian optimization: 2462
+    Number of evaluations for the random search: 3028
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 237-238
+.. GENERATED FROM PYTHON SOURCE LINES 267-268
 
 The utilization of the worker is confirmed to be near 100% for the random search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 238-256
+.. GENERATED FROM PYTHON SOURCE LINES 268-286
 
-.. code-block:: Python
+.. dropdown:: Code (Plot search trajectory and worker utilization)
 
-    fig, axes = plt.subplots(
-            nrows=2,
-            ncols=1,
-            sharex=True,
-            figsize=figure_size(width=600),
+    .. code-block:: Python
+
+
+        fig, axes = plt.subplots(
+                nrows=2,
+                ncols=1,
+                sharex=True,
+                figsize=figure_size(width=600),
+                tight_layout=True
+            )
+
+        _ = plot_search_trajectory_single_objective_hpo(
+            results["random"], mode="min", x_units="seconds", ax=axes[0]
         )
 
-    plot_search_trajectory_single_objective_hpo(
-        results["random"], mode="min", x_units="seconds", ax=axes[0]
-    )
-
-    plot_worker_utilization(
-        results["random"], num_workers=1, profile_type="start/end", ax=axes[1]
-    )
-
-    plt.tight_layout()
-    plt.show()
+        _ = plot_worker_utilization(
+            results["random"], num_workers=1, profile_type="start/end", ax=axes[1]
+        )
 
 
 
@@ -29764,41 +11067,42 @@ The utilization of the worker is confirmed to be near 100% for the random search
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 257-258
+.. GENERATED FROM PYTHON SOURCE LINES 287-288
 
 However, the objective value of the parallel Bayesian optimization search is significantly better than the random search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 258-285
+.. GENERATED FROM PYTHON SOURCE LINES 288-315
 
-.. code-block:: Python
+.. dropdown:: Code (Plot search trajectories)
+
+    .. code-block:: Python
 
 
-    fig, ax = plt.subplots(figsize=figure_size(width=600))
-    labels = {
-        "random": "Parallel Random Search",
-        "sequential": "Sequential Bayesian Optimization",
-        "parallel": "Parallel Bayesian Optimization",
-        }
-    for i, (key, label) in enumerate(labels.items()):
-        df = results[key]
-        plot_search_trajectory_single_objective_hpo(
-            df,
-            show_failures=False,
-            mode="min",
-            x_units="seconds",
-            ax=ax,
-            label=label,
-            plot_kwargs={"color": f"C{i}"},
-            scatter_success_kwargs={"color": f"C{i}", "alpha": 0.5},
-        )
+        fig, ax = plt.subplots(figsize=figure_size(width=600), tight_layout=True)
+        labels = {
+            "random": "Parallel Random Search",
+            "sequential": "Sequential Bayesian Optimization",
+            "parallel": "Parallel Bayesian Optimization",
+            }
+        for i, (key, label) in enumerate(labels.items()):
+            df = results[key]
+            _ = plot_search_trajectory_single_objective_hpo(
+                df,
+                show_failures=False,
+                mode="min",
+                x_units="seconds",
+                ax=ax,
+                label=label,
+                plot_kwargs={"color": f"C{i}"},
+                scatter_success_kwargs={"color": f"C{i}", "alpha": 0.5},
+            )
 
-    plt.xlabel("Time (sec.)")
-    plt.ylabel("Objective")
-    plt.yscale("log")
-    plt.grid(visible=True, which="minor", linestyle=":")
-    plt.grid(visible=True, which="major", linestyle="-")
-    plt.legend()
-    plt.show()
+        _ = ax.set_xlabel("Time (sec.)")
+        _ = ax.set_ylabel("Objective")
+        _ = ax.set_yscale("log")
+        _ = ax.grid(visible=True, which="minor", linestyle=":")
+        _ = ax.grid(visible=True, which="major", linestyle="-")
+        _ = ax.legend()
 
 
 
@@ -29814,7 +11118,7 @@ However, the objective value of the parallel Bayesian optimization search is sig
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (3 minutes 7.177 seconds)
+   **Total running time of the script:** (3 minutes 9.692 seconds)
 
 
 .. _sphx_glr_download_examples_examples_parallelism_plot_from_serial_to_parallel_hpo.py:

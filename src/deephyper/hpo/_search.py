@@ -1,24 +1,50 @@
 import abc
 import asyncio
 import copy
+import json
 import logging
 import os
 import pathlib
 import time
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 import yaml
 
-from typing import List, Dict
-
-from deephyper.core.exceptions import SearchTerminationError
-from deephyper.core.exceptions import MaximumJobsSpawnReached
-from deephyper.core.exceptions import TimeoutReached
-from deephyper.core.utils._introspection import get_init_params_as_json
-from deephyper.evaluator import Evaluator, HPOJob
+from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.skopt.moo import non_dominated_set
+
+__all__ = ["Search"]
+
+
+def get_init_params_as_json(obj):
+    """Get the parameters of an object in a json format.
+
+    Args:
+        obj (any): The object of which we want to know the ``__init__`` arguments.
+
+    Returns:
+        params (dict): Parameter names mapped to their values.
+    """
+    if hasattr(obj, "_init_params"):
+        base_init_params = obj._init_params
+        if "self" in base_init_params:
+            base_init_params.pop("self")
+    else:
+        base_init_params = dict()
+    params = dict()
+    for k, v in base_init_params.items():
+        if "__" not in k:
+            if hasattr(v, "to_json"):
+                params[k] = v.to_json()
+            else:
+                try:
+                    params[k] = json.loads(json.dumps(v))
+                except Exception:
+                    params[k] = "NA"
+    return params
 
 
 class Search(abc.ABC):
@@ -205,19 +231,12 @@ class Search(abc.ABC):
             if np.isscalar(timeout) and timeout > 0:
                 self._evaluator.timeout = timeout
             self._search(max_evals, timeout, max_evals_strict)
-        except TimeoutReached:
-            self.stopped = True
-            wait_all_running_jobs = False
-            logging.warning("Search is being stopped because the allowed timeout has been reached.")
         except MaximumJobsSpawnReached:
             self.stopped = True
             logging.warning(
                 "Search is being stopped because the maximum number of spawned jobs has been "
                 "reached."
             )
-        except SearchTerminationError:
-            self.stopped = True
-            logging.warning("Search has been requested to be stopped.")
 
         # Collect remaining jobs
         logging.info("Collect remaining jobs...")

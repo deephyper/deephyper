@@ -10,8 +10,7 @@ from ConfigSpace.util import deactivate_inactive_hyperparameters
 from scipy.stats import gaussian_kde
 from sklearn.utils import check_random_state
 
-from deephyper.core.utils.joblib_utils import Parallel, delayed
-from deephyper.core.utils import CaptureSTD
+from deephyper.skopt.joblib import Parallel, delayed
 
 from .transformers import (
     CategoricalEncoder,
@@ -24,6 +23,7 @@ from .transformers import (
     ToInteger,
 )
 
+__all__ = []
 
 # helper class to be able to print [1, ..., 4] instead of [1, '...', 4]
 class _Ellipsis:
@@ -979,9 +979,9 @@ class Space:
             dimensions.
     """
 
-    def __init__(self, dimensions, model_sdv=None, config_space=None):
+    def __init__(self, dimensions, custom_sampler=None, config_space=None):
         # attribute used when a generative model is used to sample
-        self.model_sdv = model_sdv
+        self.custom_sampler = custom_sampler
 
         # attribute use when a config space is used to sample
         assert config_space is None or isinstance(config_space, CS.ConfigurationSpace)
@@ -1106,14 +1106,13 @@ class Space:
 
             hps_names = list(self.config_space.keys())
 
-            if self.model_sdv is None:
+            if self.custom_sampler is None:
                 confs = self.config_space.sample_configuration(n_samples)
 
                 if n_samples == 1:
                     confs = [confs]
             else:
-                with CaptureSTD():
-                    confs = self.model_sdv.sample(n_samples)
+                confs = self.custom_sampler.sample(n_samples)
 
                 sdv_names = confs.columns
 
@@ -1149,7 +1148,7 @@ class Space:
 
             return req_points
         else:
-            if self.model_sdv is None:
+            if self.custom_sampler is None:
                 # Regular sampling without transfer learning from flat search space
                 # Joblib parallel optimization
                 # Draw
@@ -1171,8 +1170,7 @@ class Space:
 
                 return columns.tolist()
             else:
-                with CaptureSTD():
-                    confs = self.model_sdv.sample(n_samples)  # sample from SDV
+                confs = self.custom_sampler.sample(n_samples)
 
                 columns = []
                 for dim in self.dimensions:
