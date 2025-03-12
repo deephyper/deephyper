@@ -1,9 +1,5 @@
 """Utilities from search algorithms."""
 
-import logging
-import multiprocessing
-import multiprocessing.pool
-
 from ConfigSpace.hyperparameters import (
     CategoricalHyperparameter,
     Constant,
