@@ -842,7 +842,7 @@ class CBO(Search):
             top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
             req_df = df.loc[top]
 
-        req_df = req_df[["job_id"] + hp_cols]
+        req_df = req_df[hp_cols]
         req_df = req_df.rename(columns={k: k[2:] for k in hp_cols if k.startswith("p:")})
 
         model = GMMSampler(self._problem.space, random_state=self._random_state)

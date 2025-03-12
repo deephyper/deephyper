@@ -538,7 +538,8 @@ class Evaluator(abc.ABC):
             self.loop = None
 
     def __del__(self):
-        self.close()
+        if hasattr(self, "loop"):
+            self.close()
 
     def _update_job_when_done(self, job: Job, output) -> Job:
         # Check if the output is a Job object or else
