@@ -19,14 +19,6 @@ from deephyper.skopt.moo import non_dominated_set
 __all__ = ["Search"]
 
 
-class SearchTerminationError(RuntimeError):
-    """Raised when a search is terminated."""
-
-
-class TimeoutReached(SearchTerminationError):
-    """Raised when the timeout of the search was reached."""
-
-
 def get_init_params_as_json(obj):
     """Get the parameters of an object in a json format.
 
@@ -148,11 +140,7 @@ class Search(abc.ABC):
                 self._evaluator = Evaluator.create(
                     evaluator,
                     method=method,
-                    method_kwargs={
-                        "callbacks": [TqdmCallback()]
-                        if self._verbose
-                        else []
-                    },
+                    method_kwargs={"callbacks": [TqdmCallback()] if self._verbose else []},
                 )
             else:
                 raise TypeError(
@@ -243,19 +231,12 @@ class Search(abc.ABC):
             if np.isscalar(timeout) and timeout > 0:
                 self._evaluator.timeout = timeout
             self._search(max_evals, timeout, max_evals_strict)
-        except TimeoutReached:
-            self.stopped = True
-            wait_all_running_jobs = False
-            logging.warning("Search is being stopped because the allowed timeout has been reached.")
         except MaximumJobsSpawnReached:
             self.stopped = True
             logging.warning(
                 "Search is being stopped because the maximum number of spawned jobs has been "
                 "reached."
             )
-        except SearchTerminationError:
-            self.stopped = True
-            logging.warning("Search has been requested to be stopped.")
 
         # Collect remaining jobs
         logging.info("Collect remaining jobs...")
