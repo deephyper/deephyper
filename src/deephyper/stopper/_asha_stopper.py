@@ -20,7 +20,7 @@ class SuccessiveHalvingStopper(Stopper):
           - ✅
 
     The Successive Halving (SHA) was proposed in `Non-stochastic Best Arm
-    IdentiÞcation and Hyperparameter Optimization
+    Identification and Hyperparameter Optimization
     <http://proceedings.mlr.press/v51/jamieson16.pdf>`_ in the context of a
     fixed number of hyperparameter configurations. The SHA algorithm was
     synchronous at the time and therefore not efficient when using parallel
@@ -33,27 +33,28 @@ class SuccessiveHalvingStopper(Stopper):
     geometric progression. The first halving step is done after ``min_steps``
     steps. The next halving step is done after ``min_steps *
     reduction_factor`` steps. The next halving step is done after
-    ``min_steps * reduction_factor^2`` steps. And so on.
+    ``min_steps * reduction_factor**2`` steps. And so on.
 
     Args:
         max_steps (int):
             The maximum number of steps to run the evaluation (e.g., number of epochs).
 
         min_steps (float, optional):
-            The minimum number of steps to run the evaluation. Defaults to 1.
+            The minimum number of steps to run the evaluation. Defaults to ``1``.
 
         reduction_factor (float, optional):
             At each halving step the current model is kept only if among the
-            top-``1/reduction_factor*100``%. Defaults to 3.
+            top- ``1/reduction_factor*100`` %. Defaults to ``3``.
 
         min_early_stopping_rate (float, optional):
-            A parameter to delay the halving schedule. Defaults to 0.
+            A parameter to delay the halving schedule. Defaults to ``0``.
 
         min_competing (int, optional):
-            The minimum number of competitors necessary to check the top-k condition. Defaults to 0.
+            The minimum number of competitors necessary to check the top-k condition. 
+            Defaults to ``0``.
 
         min_fully_completed (int, optional):
-            The minimum number of evaluation evaluated with ``max_steps``. Defaults to 1.
+            The minimum number of evaluation evaluated with ``max_steps``. Defaults to ``1``.
     """
 
     def __init__(
