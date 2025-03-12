@@ -1,12 +1,107 @@
-"""Command line for hyperparameter optimization.
+"""Hyperparameter optimization.
+----------------------------
 
 Use the command line help option to get more information.
 
 .. code-block:: bash
 
-   $ deephyper hps ambs --help
+   $ deephyper hpo cbo --help
 
-"""
+    usage: deephyper hpo cbo [-h] --problem PROBLEM --evaluator EVALUATOR [--random-state RANDOM_STATE] [--log-dir LOG_DIR] [--verbose VERBOSE] [--stopper STOPPER] [--surrogate-model SURROGATE_MODEL]
+                            [--surrogate-model-kwargs SURROGATE_MODEL_KWARGS] [--acq-func ACQ_FUNC] [--acq-optimizer ACQ_OPTIMIZER] [--acq-optimizer-freq ACQ_OPTIMIZER_FREQ] [--kappa KAPPA] [--xi XI]
+                            [--n-points N_POINTS] [--filter-duplicated FILTER_DUPLICATED] [--update-prior UPDATE_PRIOR] [--update-prior-quantile UPDATE_PRIOR_QUANTILE]
+                            [--multi-point-strategy MULTI_POINT_STRATEGY] [--n-jobs N_JOBS] [--n-initial-points N_INITIAL_POINTS] [--initial-point-generator INITIAL_POINT_GENERATOR]
+                            [--initial-points INITIAL_POINTS] [--filter-failures FILTER_FAILURES] [--max-failures MAX_FAILURES] [--moo-lower-bounds MOO_LOWER_BOUNDS]
+                            [--moo-scalarization-strategy MOO_SCALARIZATION_STRATEGY] [--moo-scalarization-weight MOO_SCALARIZATION_WEIGHT] [--scheduler SCHEDULER] [--objective-scaler OBJECTIVE_SCALER]
+                            [--max-evals MAX_EVALS] [--timeout TIMEOUT] --run-function RUN_FUNCTION [--num-workers NUM_WORKERS] [--callbacks CALLBACKS] [--run-function-kwargs RUN_FUNCTION_KWARGS]
+                            [--storage STORAGE] [--search-id SEARCH_ID] [--mpicomm-comm MPICOMM_COMM] [--mpicomm-root MPICOMM_ROOT] [--ray-address RAY_ADDRESS] [--ray-password RAY_PASSWORD]
+                            [--ray-num-cpus RAY_NUM_CPUS] [--ray-num-gpus RAY_NUM_GPUS] [--ray-include-dashboard RAY_INCLUDE_DASHBOARD] [--ray-num-cpus-per-task RAY_NUM_CPUS_PER_TASK]
+                            [--ray-num-gpus-per-task RAY_NUM_GPUS_PER_TASK] [--ray-ray-kwargs RAY_RAY_KWARGS]
+
+    options:
+    -h, --help            show this help message and exit
+    --problem PROBLEM
+    --evaluator EVALUATOR
+    --random-state RANDOM_STATE
+                            Type[int]. Defaults to 'None'.
+    --log-dir LOG_DIR     Type[str]. Defaults to '.'.
+    --verbose VERBOSE     Type[int]. Defaults to '0'.
+    --stopper STOPPER     Defaults to 'None'.
+    --surrogate-model SURROGATE_MODEL
+                            Defaults to 'ET'.
+    --surrogate-model-kwargs SURROGATE_MODEL_KWARGS
+                            Type[dict]. Defaults to 'None'.
+    --acq-func ACQ_FUNC   Type[str]. Defaults to 'UCBd'.
+    --acq-optimizer ACQ_OPTIMIZER
+                            Type[str]. Defaults to 'auto'.
+    --acq-optimizer-freq ACQ_OPTIMIZER_FREQ
+                            Type[int]. Defaults to '10'.
+    --kappa KAPPA         Type[float]. Defaults to '1.96'.
+    --xi XI               Type[float]. Defaults to '0.001'.
+    --n-points N_POINTS   Type[int]. Defaults to '10000'.
+    --filter-duplicated FILTER_DUPLICATED
+                            Type[bool]. Defaults to 'True'.
+    --update-prior UPDATE_PRIOR
+                            Type[bool]. Defaults to 'False'.
+    --update-prior-quantile UPDATE_PRIOR_QUANTILE
+                            Type[float]. Defaults to '0.1'.
+    --multi-point-strategy MULTI_POINT_STRATEGY
+                            Type[str]. Defaults to 'cl_max'.
+    --n-jobs N_JOBS       Type[int]. Defaults to '1'.
+    --n-initial-points N_INITIAL_POINTS
+                            Type[int]. Defaults to '10'.
+    --initial-point-generator INITIAL_POINT_GENERATOR
+                            Type[str]. Defaults to 'random'.
+    --initial-points INITIAL_POINTS
+                            Defaults to 'None'.
+    --filter-failures FILTER_FAILURES
+                            Type[str]. Defaults to 'min'.
+    --max-failures MAX_FAILURES
+                            Type[int]. Defaults to '100'.
+    --moo-lower-bounds MOO_LOWER_BOUNDS
+                            Defaults to 'None'.
+    --moo-scalarization-strategy MOO_SCALARIZATION_STRATEGY
+                            Type[str]. Defaults to 'Chebyshev'.
+    --moo-scalarization-weight MOO_SCALARIZATION_WEIGHT
+                            Defaults to 'None'.
+    --scheduler SCHEDULER
+                            Defaults to 'None'.
+    --objective-scaler OBJECTIVE_SCALER
+                            Defaults to 'auto'.
+    --max-evals MAX_EVALS
+                            Defaults to '-1' when number of evaluations is not imposed.
+    --timeout TIMEOUT     Number of seconds before killing search, defaults to 'None'.
+    --run-function RUN_FUNCTION
+    --num-workers NUM_WORKERS
+                            Type[int]. Defaults to '1'.
+    --callbacks CALLBACKS
+                            Type[list]. Defaults to 'None'.
+    --run-function-kwargs RUN_FUNCTION_KWARGS
+                            Type[dict]. Defaults to 'None'.
+    --storage STORAGE     Type[Storage]. Defaults to 'None'.
+    --search-id SEARCH_ID
+                            Type[Hashable]. Defaults to 'None'.
+    --mpicomm-comm MPICOMM_COMM
+                            Defaults to 'None'.
+    --mpicomm-root MPICOMM_ROOT
+                            Defaults to '0'.
+    --ray-address RAY_ADDRESS
+                            Type[str]. Defaults to 'None'.
+    --ray-password RAY_PASSWORD
+                            Type[str]. Defaults to 'None'.
+    --ray-num-cpus RAY_NUM_CPUS
+                            Type[int]. Defaults to 'None'.
+    --ray-num-gpus RAY_NUM_GPUS
+                            Type[int]. Defaults to 'None'.
+    --ray-include-dashboard RAY_INCLUDE_DASHBOARD
+                            Type[bool]. Defaults to 'False'.
+    --ray-num-cpus-per-task RAY_NUM_CPUS_PER_TASK
+                            Type[float]. Defaults to '1'.
+    --ray-num-gpus-per-task RAY_NUM_GPUS_PER_TASK
+                            Type[float]. Defaults to 'None'.
+    --ray-ray-kwargs RAY_RAY_KWARGS
+                            Type[dict]. Defaults to 'None'.
+"""  # noqa: D205, E501
 
 import argparse
 import logging

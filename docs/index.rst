@@ -240,7 +240,7 @@ Table of Contents
     :titlesonly:
 
     Analysis <_autosummary/deephyper.analysis>
-    Core <_autosummary/deephyper.core>
+    CLI <_autosummary/deephyper.cli>
     Ensemble <_autosummary/deephyper.ensemble>
     Evaluator <_autosummary/deephyper.evaluator>
     HPO <_autosummary/deephyper.hpo>

@@ -11,8 +11,6 @@ from ConfigSpace.hyperparameters import (
     OrdinalHyperparameter,
 )
 
-from deephyper.hpo._search import TimeoutReached
-
 __all__ = [
     "get_inactive_value_of_hyperparameter",
     "terminate_on_timeout",

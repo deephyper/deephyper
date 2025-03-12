@@ -11,10 +11,9 @@ import numpy as np
 import pandas as pd
 from sklearn.base import is_regressor
 
-import deephyper.core.exceptions
 import deephyper.skopt
+import deephyper.evaluator
 from deephyper.analysis.hpo import filter_failed_objectives
-from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
 from deephyper.hpo.gmm import GMMSampler
@@ -519,7 +518,7 @@ class CBO(Search):
         self._num_asked += n
         return new_samples
 
-    def _tell(self, results: List[HPOJob]):
+    def _tell(self, results: List[deephyper.evaluator.HPOJob]):
         """Tell the search the results of the evaluations.
 
         Args:

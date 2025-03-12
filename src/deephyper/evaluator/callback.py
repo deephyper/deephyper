@@ -10,10 +10,10 @@ import abc
 import numpy as np
 
 from deephyper.evaluator import HPOJob
-from deephyper.evaluator._evaluator import _test_ipython_interpretor
+from deephyper.evaluator.utils import test_ipython_interpretor
 from deephyper.skopt.moo import hypervolume
 
-if _test_ipython_interpretor():
+if test_ipython_interpretor():
     from tqdm.notebook import tqdm
 else:
     from tqdm import tqdm

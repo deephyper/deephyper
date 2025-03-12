@@ -6,14 +6,13 @@ import logging
 import os
 import pathlib
 import time
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 import yaml
 
-from typing import List, Dict
-
-from deephyper.evaluator import Evaluator, HPOJob
+from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.skopt.moo import non_dominated_set
 
@@ -22,10 +21,6 @@ __all__ = ["Search"]
 
 class SearchTerminationError(RuntimeError):
     """Raised when a search is terminated."""
-
-
-class MaximumJobsSpawnReached(SearchTerminationError):
-    """Raised when the maximum number of jobs is reached."""
 
 
 class TimeoutReached(SearchTerminationError):
@@ -153,7 +148,11 @@ class Search(abc.ABC):
                 self._evaluator = Evaluator.create(
                     evaluator,
                     method=method,
-                    method_kwargs={"callbacks": [TqdmCallback()] if self._verbose else []},
+                    method_kwargs={
+                        "callbacks": [TqdmCallback()]
+                        if self._verbose
+                        else []
+                    },
                 )
             else:
                 raise TypeError(
