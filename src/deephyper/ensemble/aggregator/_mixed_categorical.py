@@ -57,14 +57,14 @@ class MixedCategoricalAggregator(Aggregator):
         Returns:
             Dict[str, Union[np.ndarray, float]]: Aggregated results, including:
 
-            - ``"loc"``: Aggregated categorical probabilities of shape 
+            - ``"loc"``: Aggregated categorical probabilities of shape
                 ``(n_samples, ..., n_classes)``.
             - ``"uncertainty"``: (Optional) Total uncertainty.
             - ``"uncertainty_aleatoric"``: (Optional) Aleatoric uncertainty.
             - ``"uncertainty_epistemic"``: (Optional) Epistemic uncertainty.
 
         Raises:
-            ValueError: If ``y`` dimensions are invalid or if ``weights`` length 
+            ValueError: If ``y`` dimensions are invalid or if ``weights`` length
             does not match ``y``.
         """
         if not isinstance(y, list) or not all(isinstance(arr, np.ndarray) for arr in y):
