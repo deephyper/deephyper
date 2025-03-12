@@ -50,7 +50,7 @@ class SuccessiveHalvingStopper(Stopper):
             A parameter to delay the halving schedule. Defaults to ``0``.
 
         min_competing (int, optional):
-            The minimum number of competitors necessary to check the top-k condition. 
+            The minimum number of competitors necessary to check the top-k condition.
             Defaults to ``0``.
 
         min_fully_completed (int, optional):
