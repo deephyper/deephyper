@@ -1,4 +1,4 @@
 """Utilities to define a search space.
 """
 
-from .space import *  # noqa: F401, F403
+from .space import Dimension, Space, Integer, Real, Categorical, check_dimension

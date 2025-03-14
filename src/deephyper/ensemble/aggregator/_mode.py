@@ -48,8 +48,9 @@ class ModeAggregator(Aggregator):
             Union[Union[np.ndarray, np.ma.MaskedArray], Dict[str, Union[np.ndarray,
             np.ma.MaskedArray]]]: Aggregated results, as an array corresponding to the mode when
             ``with_uncertainty=False`` and as a dict otherwise including:
-                - ``"loc"``: Aggregated mode of shape ``(n_samples, ...)``.
-                - ``"uncertainty"``: Uncertainty values of shape ``(n_samples, ...)`` `.
+
+            - ``"loc"``: Aggregated mode of shape ``(n_samples, ...)``.
+            - ``"uncertainty"``: Uncertainty values of shape ``(n_samples, ...)``.
 
         Raises:
             ValueError: If `y` dimensions are invalid or if `weights` length does not match `y`.

@@ -170,6 +170,15 @@
    "name": "str"
   }
  ],
+ "ackley": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  }
+ ],
  "axes": [
   {
    "is_class": false,
@@ -179,43 +188,22 @@
    "name": "ndarray"
   }
  ],
- "black_box.run_ackley": [
+ "create_problem": [
   {
    "is_class": false,
    "is_explicit": false,
    "module": "builtins",
    "module_short": "builtins",
    "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "black_box_util",
-   "module_short": "black_box_util",
-   "name": "run_ackley"
   }
  ],
- "evaluator": [
+ "execute_search": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator._process_pool",
-   "module_short": "deephyper.evaluator",
-   "name": "ProcessPoolEvaluator"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.evaluator",
-   "module_short": "deephyper.evaluator",
-   "name": "ProcessPoolEvaluator"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "ProcessPoolEvaluator"
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
   }
  ],
  "fig": [
@@ -250,22 +238,132 @@
    "name": "figure_size"
   }
  ],
- "i": [
+ "np.array": [
   {
    "is_class": false,
    "is_explicit": false,
    "module": "builtins",
    "module_short": "builtins",
-   "name": "int"
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "array"
   }
  ],
- "nb_dim": [
+ "np.asarray_chkfinite": [
   {
    "is_class": false,
    "is_explicit": false,
    "module": "builtins",
    "module_short": "builtins",
-   "name": "int"
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "asarray_chkfinite"
+  }
+ ],
+ "np.cos": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ufunc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "cos"
+  }
+ ],
+ "np.exp": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ufunc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "exp"
+  }
+ ],
+ "np.pi": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "pi"
+  }
+ ],
+ "np.random.normal": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy.random",
+   "module_short": "numpy.random",
+   "name": "normal"
+  }
+ ],
+ "np.sqrt": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ufunc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "sqrt"
+  }
+ ],
+ "np.sum": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "sum"
   }
  ],
  "num_workers": [
@@ -341,22 +439,6 @@
    "name": "subplots"
   }
  ],
- "plt.tight_layout": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "matplotlib.pyplot",
-   "module_short": "matplotlib.pyplot",
-   "name": "tight_layout"
-  }
- ],
  "problem": [
   {
    "is_class": false,
@@ -403,6 +485,22 @@
    "name": "HpProblem.add_hyperparameter"
   }
  ],
+ "profile": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper.evaluator",
+   "module_short": "deephyper.evaluator",
+   "name": "profile"
+  }
+ ],
  "results": [
   {
    "is_class": false,
@@ -426,78 +524,13 @@
    "name": "DataFrame"
   }
  ],
- "search": [
+ "run_ackley": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.hpo._cbo",
-   "module_short": "deephyper.hpo",
-   "name": "CBO"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.hpo",
-   "module_short": "deephyper.hpo",
-   "name": "CBO"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "CBO"
-  }
- ],
- "search.search": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.hpo._cbo",
-   "module_short": "deephyper.hpo",
-   "name": "CBO.search"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.hpo",
-   "module_short": "deephyper.hpo",
-   "name": "CBO.search"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "CBO.search"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.hpo._search",
-   "module_short": "deephyper.hpo",
-   "name": "Search.search"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.hpo",
-   "module_short": "deephyper.hpo",
-   "name": "Search.search"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "Search.search"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "abc",
-   "module_short": "abc",
-   "name": "ABC.search"
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
   }
  ],
  "t0": [
@@ -507,6 +540,22 @@
    "module": "numpy",
    "module_short": "numpy",
    "name": "float64"
+  }
+ ],
+ "time.sleep": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "time",
+   "module_short": "time",
+   "name": "sleep"
   }
  ],
  "timeout": [

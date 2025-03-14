@@ -3,6 +3,7 @@ import functools
 from concurrent.futures import ProcessPoolExecutor
 from typing import Callable, Hashable
 
+
 from deephyper.evaluator import Evaluator, Job, JobStatus
 from deephyper.evaluator.storage import SharedMemoryStorage, Storage
 

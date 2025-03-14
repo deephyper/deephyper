@@ -1,30 +1,12 @@
+from typing import Dict, List
+
 import numpy as np
-
-from typing import List, Dict
-
-from ConfigSpace.hyperparameters import (
-    CategoricalHyperparameter,
-    Constant,
-    NumericalHyperparameter,
-    OrdinalHyperparameter,
-)
 
 from deephyper.evaluator import HPOJob
 from deephyper.hpo._search import Search
+from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
 
-
-def get_inactive_value_of_hyperparameter(hp):
-    """Return a value when the hyperparameter is considered inactive."""
-    if isinstance(hp, NumericalHyperparameter):
-        return hp.lower
-    elif isinstance(hp, CategoricalHyperparameter):
-        return hp.choices[0]
-    elif isinstance(hp, OrdinalHyperparameter):
-        return hp.sequence[0]
-    elif isinstance(hp, Constant):
-        return hp.value
-    else:
-        raise ValueError(f"Unsupported hyperparameter type: {type(hp)}")
+__all__ = ["RandomSearch"]
 
 
 class RandomSearch(Search):

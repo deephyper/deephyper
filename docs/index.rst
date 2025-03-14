@@ -26,7 +26,7 @@ The :ref:`pip installation <install-pip>` is recommended. It requires **Python >
     pip install deephyper
 
 
-If you would like to install DeepHyper with its core set of machine learning features (Tensorflow/Keras2, Pytorch, Transfer-Learning for HPO and Learning Curve Extrapolation) use the following command:
+If you would like to install DeepHyper with its core set of machine learning features (Pytorch and Learning Curve Extrapolation) use the following command:
 
 .. code-block:: python
 
@@ -216,7 +216,7 @@ This DataFrame contains 1 row per ``run``-function evaluation:
 
 .. warning:: By convention in DeepHyper, all search algorithms are MAXIMIZING the objective function. If you want to MINIMIZE the objective function, you can simply return the negative of your objective value.
 
-The next steps to learn more about DeepHyper is to follow our :ref:`Tutorials <tutorials>` and :ref:`Examples <examples>`.
+The next steps to learn more about DeepHyper is to follow our :ref:`Examples <examples>`.
 
 Table of Contents
 =================
@@ -233,14 +233,6 @@ Table of Contents
     Publications <https://deephyper.github.io/papers>
     Authors <https://deephyper.github.io/aboutus>
 
-.. toctree:: 2
-   :caption: Facility Guides
-   :maxdepth: 1
-   :titlesonly:
-
-   facility/alcf/index
-   facility/nersc
-   facility/olcf
 
 .. toctree::
     :caption: API Reference
@@ -248,7 +240,7 @@ Table of Contents
     :titlesonly:
 
     Analysis <_autosummary/deephyper.analysis>
-    Core <_autosummary/deephyper.core>
+    CLI <_autosummary/deephyper.cli>
     Ensemble <_autosummary/deephyper.ensemble>
     Evaluator <_autosummary/deephyper.evaluator>
     HPO <_autosummary/deephyper.hpo>

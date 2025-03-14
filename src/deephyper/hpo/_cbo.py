@@ -11,10 +11,9 @@ import numpy as np
 import pandas as pd
 from sklearn.base import is_regressor
 
-import deephyper.core.exceptions
 import deephyper.skopt
+import deephyper.evaluator
 from deephyper.analysis.hpo import filter_failed_objectives
-from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
 from deephyper.hpo.gmm import GMMSampler
@@ -24,6 +23,8 @@ from deephyper.skopt.moo import (
     non_dominated_set,
     non_dominated_set_ranked,
 )
+
+__all__ = ["CBO"]
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {
@@ -119,7 +120,7 @@ class CBO(Search):
             function. Defaults to ``None`` which does not use any stopper.
 
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
-            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "MF", "GBRT",
+            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
             "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
             the best compromise between speed and quality when performing a lot of parallel
             evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-
@@ -281,7 +282,6 @@ class CBO(Search):
             "ET",
             "TB",
             "RS",
-            "MF",
             # Other models
             "GBRT",
             "GP",
@@ -518,7 +518,7 @@ class CBO(Search):
         self._num_asked += n
         return new_samples
 
-    def _tell(self, results: List[HPOJob]):
+    def _tell(self, results: List[deephyper.evaluator.HPOJob]):
         """Tell the search the results of the evaluations.
 
         Args:
@@ -589,7 +589,7 @@ class CBO(Search):
             ValueError: when the name of the surrogate model is unknown.
         """
         # Check if the surrogate model is supported
-        accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
+        accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "HGBRT"]
         if name not in accepted_names:
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
@@ -599,7 +599,7 @@ class CBO(Search):
             surrogate_model_kwargs = {}
 
         # Define default surrogate model parameters
-        if name in ["RF", "ET", "TB", "RS", "MF"]:
+        if name in ["RF", "ET", "TB", "RS"]:
             default_surrogate_model_kwargs = dict(
                 n_estimators=100,
                 max_samples=0.8,
@@ -631,9 +631,6 @@ class CBO(Search):
                 default_surrogate_model_kwargs["bootstrap"] = False
                 default_surrogate_model_kwargs["max_samples"] = None
                 default_surrogate_model_kwargs["max_features"] = "sqrt"
-            elif name == "MF":
-                default_surrogate_model_kwargs["bootstrap"] = False
-                default_surrogate_model_kwargs["max_samples"] = None
 
         elif name == "GBRT":
             default_surrogate_model_kwargs = dict(
@@ -656,17 +653,6 @@ class CBO(Search):
                 **default_surrogate_model_kwargs,
             )
 
-        # Model: Mondrian Forest
-        elif name == "MF":
-            try:
-                surrogate = deephyper.skopt.learning.MondrianForestRegressor(
-                    **default_surrogate_model_kwargs,
-                )
-            except AttributeError:
-                raise deephyper.core.exceptions.MissingRequirementError(
-                    "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) "
-                    "regressor as a surrogate model!"
-                )
         # Model: Gradient Boosting Regression Tree (based on quantiles)
         # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
         elif name == "GBRT":
@@ -856,13 +842,13 @@ class CBO(Search):
             top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
             req_df = df.loc[top]
 
-        req_df = req_df[["job_id"] + hp_cols]
+        req_df = req_df[hp_cols]
         req_df = req_df.rename(columns={k: k[2:] for k in hp_cols if k.startswith("p:")})
 
         model = GMMSampler(self._problem.space, random_state=self._random_state)
         model.fit(req_df)
 
-        self._opt_kwargs["model_sdv"] = model
+        self._opt_kwargs["custom_sampler"] = model
 
         return model
 

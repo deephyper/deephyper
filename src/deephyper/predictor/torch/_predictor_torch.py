@@ -47,7 +47,7 @@ class TorchPredictor(Predictor):
 
 
 class TorchPredictorFileLoader(PredictorFileLoader):
-    """Loads a predictor from a file for the TensorFlow Keras 2 backend.
+    """Loads a predictor from a file for the Pytorch backend.
 
     Args:
         path_predictor_file (str): the path to the predictor file.
