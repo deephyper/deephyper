@@ -67,7 +67,7 @@ OBJECTIVE_VALUE_FAILURE = "F"
 
 
 class Optimizer(object):
-    """Run bayesian optimisation loop in DeepHyper.
+    r"""Run bayesian optimisation loop in DeepHyper.
 
     An ``Optimizer`` represents the steps of a bayesian optimisation loop. To
     use it you need to provide your own loop mechanism. The various
@@ -137,9 +137,9 @@ class Optimizer(object):
                 - Each acquisition function is optimised independently to
                   propose an candidate point `X_i`.
                 - Out of all these candidate points, the next point `X_best` is
-                  chosen by :math:`softmax(\\eta g_i)`
+                  chosen by :math:`softmax(\eta g_i)`
                 - After fitting the surrogate model with `(X_best, y_best)`,
-                  the gains are updated such that :math:`g_i -= \\mu(X_i)`
+                  the gains are updated such that :math:`g_i -= \mu(X_i)`
 
             - `"EIps"` for negated expected improvement per second to take into
               account the function compute time. Then, the objective function is
@@ -199,8 +199,9 @@ class Optimizer(object):
             - `"PBI"` for penalized boundary intersection.
             - `"Quadratic"` for quadratic combination (2-norm).
 
-        moo_scalarization_weight (array, optional) Default is `None`.
-            Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
+        moo_scalarization_weight (array, optional): Default is `None`.
+            Scalarization weights to be used in multiobjective optimization with length equal to
+            the number of objective functions.
             When set to `None`, a uniform weighting is generated.
 
     Attributes:
@@ -367,7 +368,8 @@ class Optimizer(object):
             "n_max_gen": acq_optimizer_kwargs.get("n_max_gen", 1000),
         }
 
-        # TODO: "update_prior" to be removed, this mechanism is too prone to "overfitting" (local minima problems)
+        # TODO: "update_prior" to be removed, this mechanism is too prone
+        # TODO: to "overfitting" (local minima problems)
         self.update_prior = acq_optimizer_kwargs.get("update_prior", False)
         self.update_prior_quantile = acq_optimizer_kwargs.get("update_prior_quantile", 0.9)
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
@@ -435,7 +437,8 @@ class Optimizer(object):
             self._moo_upper_bounds = moo_upper_bounds
         else:
             raise ValueError(
-                f"Parameter 'moo_upper_bounds={moo_upper_bounds}' is invalid. Must be None or a list"
+                f"Parameter 'moo_upper_bounds={moo_upper_bounds}' is invalid. "
+                "Must be None or a list"
             )
 
         # Initialize the moo scalarization strategy
@@ -447,7 +450,8 @@ class Optimizer(object):
             or isinstance(moo_scalarization_strategy, MoScalarFunction)
         ):
             raise ValueError(
-                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+                f"Parameter 'moo_scalarization_strategy={acq_func}' "
+                f"should have a value in {moo_scalarization_strategy_allowed}!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
         self._moo_scalarization_weight = moo_scalarization_weight
@@ -1027,7 +1031,8 @@ class Optimizer(object):
             #         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
             #     )
 
-            #     # var_importance_upper_bound = var_importance.importances_mean + 1.96 * var_importance.importances_std
+            #    var_importance_upper_bound = (
+            # var_importance.importances_mean + 1.96 * var_importance.importances_std)
             #     # var_importance_fraction = var_importance_upper_bound / est_score
             #     var_importance_fraction = var_importance.importances_mean / est_score
             #     for i in range(len(var_importance_fraction)):
@@ -1226,19 +1231,10 @@ class Optimizer(object):
                 "Type of arguments `x` (%s) and `y` (%s) not compatible." % (type(x), type(y))
             )
 
-    def run(self, func, n_iter=1):
-        """Execute ask() + tell() `n_iter` times"""
-        for _ in range(n_iter):
-            x = self.ask()
-            self.tell(x, func(x))
-
-        result = create_result(self.Xi, self.yi, self.space, self.rng, models=self.models)
-        result.specs = self.specs
-        return result
-
     def update_next(self):
-        """Updates the value returned by opt.ask(). Useful if a parameter
-        was updated after ask was called.
+        """Updates the value returned by opt.ask().
+
+        Useful if a parameter was updated after ask was called.
         """
         self.cache_ = {}
         # Ask for a new next_x.
@@ -1246,19 +1242,6 @@ class Optimizer(object):
         if hasattr(self, "_next_x"):
             opt = self.copy(random_state=self.rng)
             self._next_x = opt._next_x
-
-    def get_result(self):
-        """Returns the same result that would be returned by opt.tell()
-        but without calling tell
-
-        Returns:
-        res : `OptimizeResult`, scipy object
-            OptimizeResult instance with the required information.
-
-        """
-        result = create_result(self.Xi, self.yi, self.space, self.rng, models=self.models)
-        result.specs = self.specs
-        return result
 
     def _moo_scalarize(self, yi):
         has_failures = "F" in yi
