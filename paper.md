@@ -40,7 +40,7 @@ Machine learning models are increasingly applied across scientific disciplines, 
 # Statement of need
 
 `DeepHyper` is a Python package for parallel hyperparameter optimization or neural architecture search. It provides
-access to a variety of asynchronous parallel black-box optimization algorithms `deephyper.search`. The 
+access to a variety of asynchronous parallel black-box optimization algorithms `deephyper.hpo`. The 
 software offers a variety of parallel programming backends such as Asyncio, threading, processes, Ray, and MPI `deehyper.evaluator`. The hyperparameter optimization can be single or multi-objective, composed of mixed variables,
 using explicit or hidden constraints, and benefit from early-discarding strategies `deephyper.stopper`. Leveraging the results of hyperparameter optimization or neural architecture search it provides parallel ensemble algorithms `deephyper.ensemble` that can help improve accuracy or quantify disentangled predictive uncertainty.
 
