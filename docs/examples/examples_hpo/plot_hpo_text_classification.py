@@ -51,7 +51,7 @@ n_gpus = torch.cuda.device_count()
 
 # %%
 # The dataset
-# ~~~~~~~~~~~ 
+# -----------
 #
 # The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the :code:`AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
 # 
@@ -68,35 +68,21 @@ def load_data(train_ratio):
         random_split(train_dataset, [num_train, len(train_dataset) - num_train])
     
     ## downsample
-    split_train, _ = random_split(split_train, [int(len(split_train)*.1), int(len(split_train)*.9)])
-    split_valid, _ = random_split(split_valid, [int(len(split_valid)*.1), int(len(split_valid)*.9)])
-    test_dataset, _ = random_split(test_dataset, [int(len(test_dataset)*.1), int(len(test_dataset)*.9)])
+    split_train, _ = random_split(split_train, [int(len(split_train)*.01), int(len(split_train)*.99)])
+    split_valid, _ = random_split(split_valid, [int(len(split_valid)*.01), int(len(split_valid)*.99)])
+    test_dataset, _ = random_split(test_dataset, [int(len(test_dataset)*.01), int(len(test_dataset)*.99)])
 
     return split_train, split_valid, test_dataset
 
 # %%
 # Preprocessing pipelines and Batch generation
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+# --------------------------------------------
 #
 # Here is an example for typical NLP data processing with tokenizer and vocabulary. The first step is to build a vocabulary with the raw training dataset. Here we use built in
 # factory function :code:`build_vocab_from_iterator` which accepts iterator that yield list or iterator of tokens. Users can also pass any special symbols to be added to the
 # vocabulary.
 # 
 # The vocabulary block converts a list of tokens into integers.
-# 
-# .. code-block:: python
-# vocab(['here', 'is', 'an', 'example'])
-# >>> [475, 21, 30, 5286]
-# 
-# 
-# The text pipeline converts a text string into a list of integers based on the lookup table defined in the vocabulary. The label pipeline converts the label into integers. For example,
-# 
-# .. code-block:: python
-# text_pipeline('here is the an example')
-# >>> [475, 21, 2, 30, 5286]
-# label_pipeline('10')
-# >>> 9
-# 
 
 # %%
 train_iter = AG_NEWS(split='train')
@@ -134,7 +120,7 @@ def collate_batch(batch, device):
 
 # %%
 # Define the model
-# ~~~~~~~~~~~~~~~~
+# ----------------
 # 
 # The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag>`_ layer plus a linear layer for the classification purpose.
 
@@ -159,7 +145,7 @@ class TextClassificationModel(nn.Module):
 
 # %%
 # Define functions to train the model and evaluate results.
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ---------------------------------------------------------
 
 # %%
 def train(model, criterion, optimizer, dataloader):
@@ -186,7 +172,7 @@ def evaluate(model, dataloader):
 
 # %%
 # Define the run-function
-# ~~~~~~~~~~~~~~~~~~~~~~~ 
+# -----------------------
 #
 # The run-function defines how the objective that we want to maximize is computed. It takes a :code:`config` dictionary as input and often returns a scalar value that we want to maximize. The :code:`config` contains a sample value of hyperparameters that we want to tune. In this example we will search for:
 # 
@@ -236,7 +222,7 @@ perf_run = get_run(train_ratio=0.95)
 
 # %%
 # Define the Hyperparameter optimization problem
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+# ---------------------------------------------- 
 #
 # Hyperparameter ranges are defined using the following syntax:
 # 
@@ -262,7 +248,7 @@ problem
 
 # %%
 # Evaluate a default configuration
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# --------------------------------
 #
 # We evaluate the performance of the default set of hyperparameters provided in the Pytorch tutorial.
 
@@ -284,7 +270,7 @@ print(f"Accuracy Default Configuration:  {objective_default:.3f}")
 
 # %%
 # Define the evaluator object
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+# ---------------------------
 #
 # The :code:`Evaluator` object allows to change the parallelization backend used by DeepHyper.  
 # It is a standalone object which schedules the execution of remote tasks. All evaluators needs a :code:`run_function` to be instantiated.  
@@ -298,14 +284,6 @@ print(f"Accuracy Default Configuration:  {objective_default:.3f}")
 # Once created the :code:`evaluator.num_workers` gives access to the number of available parallel workers.
 # 
 # Finally, to submit and collect tasks to the evaluator one just needs to use the following interface:
-
-# %%
-# .. code-block:: python
-# configs = [...]
-# evaluator.submit(configs)
-# ...
-# tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
-# tasks_done = evaluator.get("ALL") # For batch synchronous
 
 # %%
 # .. warning:: Each `Evaluator` saves its own state, therefore it is crucial to create a new evaluator when launching a fresh search.
@@ -343,7 +321,7 @@ evaluator_1 = get_evaluator(quick_run)
 
 # %%
 # Define and run the Centralized Bayesian Optimization search (CBO)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+# -----------------------------------------------------------------
 #
 # We create the CBO using the :code:`problem` and :code:`evaluator` defined above.
 
@@ -362,7 +340,7 @@ search = CBO(problem, evaluator_1)
 #
 
 # %%
-results = search.search(max_evals=30)
+results = search.search(max_evals=5)
 
 # %%
 # The returned `results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
@@ -377,7 +355,7 @@ results
 
 # %%
 # Evaluate the best configuration
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# -------------------------------
 #
 # Now that the search is over, let us print the best configuration found during this run and evaluate it on the full training dataset.
 
@@ -395,5 +373,3 @@ print(json.dumps(best_config, indent=4))
 # %%
 objective_best = perf_run(best_config)
 print(f"Accuracy Best Configuration:  {objective_best:.3f}")
-
-
