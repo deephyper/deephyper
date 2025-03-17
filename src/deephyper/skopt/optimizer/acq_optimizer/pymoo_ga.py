@@ -16,7 +16,7 @@ Config.warnings["not_compiled"] = False
 
 
 class PyMOORealProblem(Problem):
-    """Pymoo problem definition."""
+    """Pymoo continuous problem definition."""
 
     def __init__(self, n_var, xl, xu, acq_func, **kwargs):
         super().__init__(n_var=n_var, n_obj=1, xl=xl, xu=xu)
@@ -33,18 +33,23 @@ class GAPymooAcqOptimizer:
 
     def __init__(
         self,
-        xl,
-        xu,
+        space,
         x_init,
         y_init,
         pop_size: int = 100,
         random_state=None,
         termination_kwargs=None,
     ):
+        self.space = space
+        
         # Bounds in the transformed/normalized space
+        transformed_bounds = self.space.transformed_bounds
+        xl, xu = list(zip(*transformed_bounds))
+        xl, xu = np.array(xl), np.array(xu)
         self.xl = np.array(xl)
         self.xu = np.array(xu)
         self.n_var = len(self.xl)
+
         if len(y_init) != len(x_init):
             raise ValueError("The initial x_init and y_init values should have the same size.")
         self.x_init = np.array(x_init)
@@ -52,6 +57,7 @@ class GAPymooAcqOptimizer:
         assert len(y_init) == pop_size
         if len(y_init) != pop_size:
             raise ValueError("The initial x_init and y_init should have a size equal to pop_size.")
+        
         self.pop_size = pop_size
         self.random_state = check_random_state(random_state)
 

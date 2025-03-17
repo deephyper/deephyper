@@ -1,3 +1,5 @@
+"""Sickit-Optimize optimizer class."""
+
 import numbers
 import sys
 import warnings
@@ -30,20 +32,30 @@ from ..utils import (
 
 
 class ExhaustedSearchSpace(RuntimeError):
-    """ "Raised when the search cannot sample new points from the ConfigSpace."""
+    """Raised when the search cannot sample new points from the ConfigSpace."""
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return "The search space is exhausted and cannot sample new unique points!"
 
 
 class ExhaustedFailures(RuntimeError):
-    """Raised when the search has seen ``max_failures`` failures without any valid objective value."""
+    """Raised when search has seen ``max_failures`` failures without any valid objective value."""
 
-    def __str__(self):
-        return "The search has reached its quota of failures! Check if the type of failure is expected or the value of ``max_failures`` in the search algorithm."
+    def __str__(self):  # noqa: D105
+        out = (
+            "The search has reached its quota of failures!"
+            "Check if the type of failure is expected or the value of ``max_failures`` "
+            "in the search algorithm."
+        )
+        return out
 
 
 def boltzmann_distribution(x, beta=1):
+    """Boltzmann distribution function.
+
+    It is a softmax function with a parameter beta that controls the entropy
+    over probabilities.
+    """
     x = np.exp(beta * x)
     x = x / np.sum(x)
     return x
@@ -1104,86 +1116,42 @@ class Optimizer(object):
                     next_x = cand_xs[np.argmin(cand_acqs)]
 
                 elif self.acq_optimizer == "mixedga":
-                    # TODO: vectorized differential evolution
-                    # https://pymoo.org/customization/mixed.html
-                    # https://pymoo.org/interface/problem.html
-
-                    from pymoo.core.mixed import (
-                        MixedVariableGA,
-                        MixedVariableDuplicateElimination,
-                        MixedVariableMating,
-                    )
-                    from pymoo.core.population import Population
-                    from pymoo.optimize import minimize
-                    from pymoo.termination.default import (
-                        DefaultSingleObjectiveTermination,
+                    from deephyper.skopt.optimizer.acq_optimizer.pymoo_mixedga import (
+                        MixedGAPymooAcqOptimizer,
                     )
 
-                    from deephyper.skopt.optimizer._pymoo import (
-                        DefaultSingleObjectiveMixedTermination,
-                        PyMOOMixedVectorizedProblem,
-                        ConfigSpaceRepair,
-                    )
+                    pop_size = self._pymoo_pop_size
 
-                    pop = self._pymoo_pop_size
                     idx_sorted = np.argsort(values)
-                    initial_sampling = [Xsample[i] for i in idx_sorted[:pop]]
-                    initial_sampling = list(
+                    x_init = [Xsample[i] for i in idx_sorted[:pop_size]]
+                    x_init = list(
                         map(
                             lambda x: dict(zip(self.space.dimension_names, x)),
-                            initial_sampling,
+                            x_init,
                         )
                     )
-                    init_pop = Population.new(
-                        "X",
-                        initial_sampling,
-                        "F",
-                        values[idx_sorted[:pop]].reshape(-1),
+
+                    acq_opt = MixedGAPymooAcqOptimizer(
+                        space=self.space,
+                        x_init=x_init,
+                        y_init=values[idx_sorted[:pop_size]],
+                        pop_size=self._pymoo_pop_size,
+                        random_state=self.rng.randint(0, np.iinfo(np.int32).max),
+                        termination_kwargs=self._pymoo_termination_kwargs,
                     )
 
                     args = (est, np.min(yi), cand_acq_func, False, self.acq_func_kwargs)
-                    problem = PyMOOMixedVectorizedProblem(
-                        space=self.space,
-                        acq_func=lambda x: _gaussian_acquisition(self.space.transform(x), *args),
-                    )
-                    repair = ConfigSpaceRepair(self.space)
-                    eliminate_duplicates = MixedVariableDuplicateElimination()
-                    algorithm = MixedVariableGA(
-                        pop=pop,
-                        sampling=init_pop,
-                        mating=MixedVariableMating(
-                            eliminate_duplicates=eliminate_duplicates,
-                            repair=repair,
-                        ),
-                        repair=repair,
-                        eliminate_duplicates=eliminate_duplicates,
-                    )
-
-                    res_ga = minimize(
-                        problem,
-                        algorithm,
-                        termination=DefaultSingleObjectiveMixedTermination(
-                            **self._pymoo_termination_kwargs
-                        ),
-                        seed=self.rng.randint(0, np.iinfo(np.int32).max),
-                        verbose=False,
-                    )
-
-                    next_x = [res_ga.X[name] for name in self.space.dimension_names]
-                    next_x = self.space.transform([next_x])[0]
+                    next_x = acq_opt.minimize(acq_func=lambda x: _gaussian_acquisition(x, *args))
 
                 elif self.acq_optimizer == "ga":
                     from deephyper.skopt.optimizer.acq_optimizer.pymoo_ga import GAPymooAcqOptimizer
 
                     pop_size = self._pymoo_pop_size
-                    xl, xu = list(zip(*transformed_bounds))
-                    xl, xu = np.array(xl), np.array(xu)
 
                     idx_sorted = np.argsort(values)
 
                     acq_opt = GAPymooAcqOptimizer(
-                        xl=xl,
-                        xu=xu,
+                        space=self.space,
                         x_init=Xsample_transformed[idx_sorted[:pop_size]],
                         y_init=values[idx_sorted[:pop_size]],
                         pop_size=self._pymoo_pop_size,

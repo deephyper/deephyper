@@ -1,8 +1,13 @@
-import os
-import time
-
 import numpy as np
 import pytest
+from ConfigSpace import (
+    ForbiddenAndConjunction,
+    ForbiddenEqualsClause,
+    ForbiddenEqualsRelation,
+    GreaterThanCondition,
+)
+
+from deephyper.hpo import CBO, HpProblem
 
 SEARCH_KWARGS_DEFAULTS = dict(
     n_points=100,
@@ -13,8 +18,6 @@ SEARCH_KWARGS_DEFAULTS = dict(
 
 
 def test_pymoo_ga(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((10.0, 20.0), "x")
 
@@ -41,11 +44,37 @@ def test_pymoo_ga(tmp_path):
     assert len(results["objective"] > 19) > 8
 
 
+def test_pymoo_mixedga(tmp_path):
+    problem = HpProblem()
+    problem.add_hyperparameter((10.0, 20.0), "x_real")
+    problem.add_hyperparameter((10, 20), "x_int")
+    problem.add_hyperparameter([f"{i}" for i in range(10)], "x_cat")
+
+    def run(job):
+        return job.parameters["x_real"] + job.parameters["x_int"] + int(job.parameters["x_cat"])
+
+    search = CBO(
+        problem,
+        run,
+        n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
+        random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
+        surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
+        log_dir=tmp_path,
+        acq_optimizer="mixedga",
+        acq_optimizer_freq=1,
+        kappa=5.0,
+        scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
+        verbose=0,
+    )
+    results = search.search(max_evals=25)
+
+    assert len(results) == 25
+    assert len(results["objective"] > 40) > 8
+
+
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
-    from ConfigSpace import GreaterThanCondition
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
 
     max_num_layers = 3
@@ -91,9 +120,6 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
 
 @pytest.mark.slow
 def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
-    from ConfigSpace import ForbiddenAndConjunction, ForbiddenEqualsClause, ForbiddenEqualsRelation
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
 
     max_num_layers = 5
@@ -142,4 +168,4 @@ def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
 
 
 if __name__ == "__main__":
-    test_pymoo_ga(".")
+    test_pymoo_mixedga(".")
