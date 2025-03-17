@@ -63,18 +63,18 @@ It provides smoother epistemic uncertainty estimates compared to usual Random Fo
 ![Uncertainty for Extremely Randomized Forest (Random Split)](figures/random_forest_random_split.png){width=49%}
 
 Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate for improved efficiency.
-It is also combined with a periodic exponential decay (impacting exploration-exploitation parameters of BO) to escape local solutions (Egele et al., 2023).
+It is also combined with a periodic exponential decay (impacting exploration-exploitation parameters of BO) to escape local solutions [@egele2023asynchronous].
 
 ![Periodic Exponential Decay for Bayesian Optimization](figures/example-exp-decay.jpg){width=49%}
 
-Batch parallel genetic algorithms are provided to resolve efficiently the sub-problem of optimizing the acquisition function and it is also more accurate than Monte-Carlo approches.
-An cheap and efficient multi-point acquisition strategy `qUCBd` is provided for better parallel scalability (Egele et al., 2023).
+Batch parallel genetic algorithms are provided to resolve efficiently the sub-problem of optimizing the acquisition function and it is also more accurate than Monte-Carlo approches to find the optimum of the acquisition function.
+A cheap and efficient multi-point acquisition strategy `qUCBd` is provided for better parallel scalability [@egele2023asynchronous].
 
-The multi-objective optimization is enabled by scalarization functions and objective rescaling (Egele and Chang et al., 2023).
+The multi-objective optimization is enabled by scalarization functions and objective rescaling [@egele2023dmobo].
 
-The early-discarding strategies include asynchronous successive halving and a robust learning curve extrapolation (Egele et al., 2024).
+The early-discarding strategies include asynchronous successive halving and a robust learning curve extrapolation [@egele2024unreasonable].
 
-The ensemble strategies is modular to allow: exploring models tested during hyperparameter optimization, classification and regression problems to be treated, disentangled uncertainty quantification (Egele et al., 2022).
+The ensemble strategies is modular to allow: exploring models tested during hyperparameter optimization, classification and regression problems to be treated, disentangled uncertainty quantification [@egele2022autodeuq].
 
 # Acknowledgements
 
