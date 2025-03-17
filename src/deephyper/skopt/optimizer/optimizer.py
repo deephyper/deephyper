@@ -368,10 +368,6 @@ class Optimizer(object):
             "n_max_gen": acq_optimizer_kwargs.get("n_max_gen", 1000),
         }
 
-        # TODO: "update_prior" to be removed, this mechanism is too prone
-        # TODO: to "overfitting" (local minima problems)
-        self.update_prior = acq_optimizer_kwargs.get("update_prior", False)
-        self.update_prior_quantile = acq_optimizer_kwargs.get("update_prior_quantile", 0.9)
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
         self.filter_failures = acq_optimizer_kwargs.get("filter_failures", "mean")
         self.max_failures = acq_optimizer_kwargs.get("max_failures", 100)

@@ -1376,7 +1376,7 @@ class Space:
 
         return distance
 
-    def deactivate_inactive_dimensions(self, x):
+    def deactivate_inactive_dimensions(self, x: list) -> list:
         """When ConfigSpace is used, it will return the "lower" bound of inactive parameters."""
         x = x[:]
         if self.config_space is not None:
