@@ -83,13 +83,6 @@ class MPIDistributedBO(CBO):
             search space is "exhausted" in the sens that no new unique points can be found given
             the sampling size ``n_points``. Defaults to ``True``.
 
-        update_prior (bool, optional): Update the prior of the surrogate model with the new
-            evaluated points. Defaults to ``False``. Should be set to ``True`` when all objectives
-            and parameters are continuous.
-
-        update_prior_quantile (float, optional): The quantile used to update the prior.
-            Defaults to ``0.1``.
-
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
             strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB"]``. All
             ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are
@@ -177,8 +170,6 @@ class MPIDistributedBO(CBO):
         xi: float = 0.001,
         n_points: int = 10000,
         filter_duplicated: bool = True,
-        update_prior: bool = False,
-        update_prior_quantile: float = 0.1,
         multi_point_strategy: str = "cl_max",
         n_jobs: int = 1,
         n_initial_points: int = 10,
@@ -246,8 +237,6 @@ class MPIDistributedBO(CBO):
                 xi=xi,
                 n_points=n_points,
                 filter_duplicated=filter_duplicated,
-                update_prior=update_prior,
-                update_prior_quantile=update_prior_quantile,
                 multi_point_strategy=multi_point_strategy,
                 n_jobs=n_jobs,
                 n_initial_points=n_initial_points,
@@ -279,8 +268,6 @@ class MPIDistributedBO(CBO):
                 xi=xi,
                 n_points=n_points,
                 filter_duplicated=filter_duplicated,
-                update_prior=update_prior,
-                update_prior_quantile=update_prior_quantile,
                 multi_point_strategy=multi_point_strategy,
                 n_jobs=n_jobs,
                 n_initial_points=n_initial_points,

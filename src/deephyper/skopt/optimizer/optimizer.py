@@ -1009,14 +1009,6 @@ class Optimizer(object):
 
                 self._last_est = est.fit(Xtransformed, yi)
 
-            # TODO: to be removed
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-
-                # Update sampling prior
-                if self.update_prior:
-                    self.space.update_prior(Xtransformed, yi, q=self.update_prior_quantile)
-
             # TODO: feature importance
             # if len(Xi) % 25 == 0 and len(Xi) >= 25:
             #     from sklearn.inspection import permutation_importance
