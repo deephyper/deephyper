@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:15.129** total execution time for 1 file **from examples/examples_hpo**:
+**28:11.206** total execution time for 2 files **from examples/examples_hpo**:
 
 .. container::
 
@@ -33,7 +33,8 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification.py` (``plot_hpo_text_classification.py``)
-     - 00:15.129
+     - 28:11.206
+     - 0.0
    * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_for_rf_and_overfitting.py` (``plot_hpo_for_rf_and_overfitting.py``)
-     - 02:45.186
+     - 00:00.000
      - 0.0

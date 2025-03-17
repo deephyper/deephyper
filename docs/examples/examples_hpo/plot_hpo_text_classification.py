@@ -8,7 +8,7 @@ Hyperparameter search for text classification
 In this tutorial we present how to use hyperparameter optimization on a text classification analysis example from the Pytorch documentation.
  
 **Reference**:
-This tutorial is based on materials from the Pytorch Documentation: [Text classification with the torchtext library](https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html)
+This tutorial is based on materials from the Pytorch Documentation: `Text classification with the torchtext library <https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html>'_
 """
 
 # %%
@@ -43,6 +43,7 @@ from torch import nn
 
 # %%
 # .. note::The following can be used to detect if <b>CUDA</b> devices are available on the current host. Therefore, this notebook will automatically adapt the parallel execution based on the ressources available locally. However, it will not be the case if many compute nodes are requested.
+#
 
 # %%
 is_gpu_available = torch.cuda.is_available()
@@ -65,6 +66,11 @@ def load_data(train_ratio):
     num_train = int(len(train_dataset) * train_ratio)
     split_train, split_valid = \
         random_split(train_dataset, [num_train, len(train_dataset) - num_train])
+    
+    ## downsample
+    split_train, _ = random_split(split_train, [int(len(split_train)*.1), int(len(split_train)*.9)])
+    split_valid, _ = random_split(split_valid, [int(len(split_valid)*.1), int(len(split_valid)*.9)])
+    test_dataset, _ = random_split(test_dataset, [int(len(test_dataset)*.1), int(len(test_dataset)*.9)])
 
     return split_train, split_valid, test_dataset
 
@@ -137,7 +143,7 @@ class TextClassificationModel(nn.Module):
 
     def __init__(self, vocab_size, embed_dim, num_class):
         super(TextClassificationModel, self).__init__()
-        self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=True)
+        self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=False)
         self.fc = nn.Linear(embed_dim, num_class)
         self.init_weights()
 
@@ -217,7 +223,7 @@ def get_run(train_ratio=0.95):
   return run
 
 # %%
-# We create two versions of :code:`run`, one quicker to evaluate for the seacrh, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
+# We create two versions of :code:`run`, one quicker to evaluate for the search, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
 
 # %%
 quick_run = get_run(train_ratio=0.3)
@@ -295,11 +301,11 @@ print(f"Accuracy Default Configuration:  {objective_default:.3f}")
 
 # %%
 # .. code-block:: python
-#   configs = [...]
-#   evaluator.submit(configs)
-#   ...
-#   tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
-#   tasks_done = evaluator.get("ALL") # For batch synchronous
+# configs = [...]
+# evaluator.submit(configs)
+# ...
+# tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
+# tasks_done = evaluator.get("ALL") # For batch synchronous
 
 # %%
 # .. warning:: Each `Evaluator` saves its own state, therefore it is crucial to create a new evaluator when launching a fresh search.
@@ -382,7 +388,7 @@ best_config = {k[2:]: v for k, v in best_config.items() if k.startswith("p:")}
 
 print(f"The default configuration has an accuracy of {objective_default:.3f}. \n" 
       f"The best configuration found by DeepHyper has an accuracy {results['objective'].iloc[i_max]:.3f}, \n" 
-      f"finished after {results['timestamp_gather'].iloc[i_max]:.2f} secondes of search.\n")
+      f"finished after {results['m:timestamp_gather'].iloc[i_max]:.2f} secondes of search.\n")
 
 print(json.dumps(best_config, indent=4))
 

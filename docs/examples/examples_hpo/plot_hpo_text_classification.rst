@@ -27,7 +27,7 @@ Hyperparameter search for text classification
 In this tutorial we present how to use hyperparameter optimization on a text classification analysis example from the Pytorch documentation.
  
 **Reference**:
-This tutorial is based on materials from the Pytorch Documentation: [Text classification with the torchtext library](https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html)
+This tutorial is based on materials from the Pytorch Documentation: `Text classification with the torchtext library <https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html>'_
 
 .. GENERATED FROM PYTHON SOURCE LINES 15-21
 
@@ -67,77 +67,15 @@ Imports
 
 
 
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-
-    A module that was compiled using NumPy 1.x cannot be run in
-    NumPy 2.2.3 as it may crash. To support both 1.x and 2.x
-    versions of NumPy, modules must be compiled with NumPy 2.0.
-    Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
-
-    If you are a user of the module, the easiest solution will be to
-    downgrade to 'numpy<2' or try to upgrade the affected module.
-    We expect that some modules will need time to support NumPy 2.
-
-    Traceback (most recent call last):  File "/Users/35e/mamba/envs/deephyper_dev/bin/sphinx-build", line 8, in <module>
-        sys.exit(main())
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx/cmd/build.py", line 491, in main
-        return make_mode.run_make_mode(argv[1:])
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx/cmd/make_mode.py", line 223, in run_make_mode
-        return make.run_generic_build(builder_name)
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx/cmd/make_mode.py", line 206, in run_generic_build
-        return build_main(args + self.opts)
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx/cmd/build.py", line 414, in build_main
-        app = Sphinx(
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx/application.py", line 332, in __init__
-        self._init_builder()
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx/application.py", line 414, in _init_builder
-        self.events.emit('builder-inited')
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx/events.py", line 404, in emit
-        results.append(listener.handler(self.app, *args))
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_gallery.py", line 806, in generate_gallery_rst
-        ) = generate_dir_rst(src_dir, target_dir, gallery_conf, seen_backrefs)
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 606, in generate_dir_rst
-        results = parallel(
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 607, in <genexpr>
-        p_fun(fname, target_dir, src_dir, gallery_conf) for fname in iterator
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 1374, in generate_file_rst
-        output_blocks, time_elapsed = execute_script(
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 1192, in execute_script
-        execute_code_block(
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 1048, in execute_code_block
-        is_last_expr, mem_max = _exec_and_get_memory(
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 876, in _exec_and_get_memory
-        mem_max, _ = call_memory(
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 1725, in _sg_call_memory_noop
-        return 0.0, func()
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/sphinx_gallery/gen_rst.py", line 794, in __call__
-        exec(self.code, self.fake_main.__dict__)
-      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 33, in <module>
-        import torch
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/__init__.py", line 1477, in <module>
-        from .functional import *  # noqa: F403
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/functional.py", line 9, in <module>
-        import torch.nn.functional as F
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/nn/__init__.py", line 1, in <module>
-        from .modules import *  # noqa: F403
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/nn/modules/__init__.py", line 35, in <module>
-        from .transformer import TransformerEncoder, TransformerDecoder, \
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/nn/modules/transformer.py", line 20, in <module>
-        device: torch.device = torch.device(torch._C._get_default_device()),  # torch.device('cpu'),
-    /Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/nn/modules/transformer.py:20: UserWarning: Failed to initialize NumPy: _ARRAY_API not found (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:84.)
-      device: torch.device = torch.device(torch._C._get_default_device()),  # torch.device('cpu'),
 
 
 
-
-.. GENERATED FROM PYTHON SOURCE LINES 45-46
+.. GENERATED FROM PYTHON SOURCE LINES 45-47
 
 .. note::The following can be used to detect if <b>CUDA</b> devices are available on the current host. Therefore, this notebook will automatically adapt the parallel execution based on the ressources available locally. However, it will not be the case if many compute nodes are requested.
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-51
+
+.. GENERATED FROM PYTHON SOURCE LINES 49-52
 
 .. code-block:: Python
 
@@ -151,7 +89,7 @@ Imports
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 52-57
+.. GENERATED FROM PYTHON SOURCE LINES 53-58
 
 The dataset
 ~~~~~~~~~~~ 
@@ -159,7 +97,7 @@ The dataset
 The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the :code:`AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 59-71
+.. GENERATED FROM PYTHON SOURCE LINES 60-77
 
 .. code-block:: Python
 
@@ -172,6 +110,11 @@ The torchtext library provides a few raw dataset iterators, which yield the raw 
         num_train = int(len(train_dataset) * train_ratio)
         split_train, split_valid = \
             random_split(train_dataset, [num_train, len(train_dataset) - num_train])
+    
+        ## downsample
+        split_train, _ = random_split(split_train, [int(len(split_train)*.1), int(len(split_train)*.9)])
+        split_valid, _ = random_split(split_valid, [int(len(split_valid)*.1), int(len(split_valid)*.9)])
+        test_dataset, _ = random_split(test_dataset, [int(len(test_dataset)*.1), int(len(test_dataset)*.9)])
 
         return split_train, split_valid, test_dataset
 
@@ -182,7 +125,7 @@ The torchtext library provides a few raw dataset iterators, which yield the raw 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 72-94
+.. GENERATED FROM PYTHON SOURCE LINES 78-100
 
 Preprocessing pipelines and Batch generation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
@@ -207,7 +150,7 @@ label_pipeline('10')
 >>> 9
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 96-125
+.. GENERATED FROM PYTHON SOURCE LINES 102-131
 
 .. code-block:: Python
 
@@ -247,19 +190,19 @@ label_pipeline('10')
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 126-128
+.. GENERATED FROM PYTHON SOURCE LINES 132-134
 
 .. note:: The :code:`collate_fn` function works on a batch of samples generated from :code:`DataLoader`. The input to :code:`collate_fn` is a batch of data with the batch size in :code:`DataLoader`, and :code:`collate_fn` processes them according to the data processing pipelines declared previously.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 130-134
+.. GENERATED FROM PYTHON SOURCE LINES 136-140
 
 Define the model
 ~~~~~~~~~~~~~~~~
 
 The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag>`_ layer plus a linear layer for the classification purpose.
 
-.. GENERATED FROM PYTHON SOURCE LINES 136-154
+.. GENERATED FROM PYTHON SOURCE LINES 142-160
 
 .. code-block:: Python
 
@@ -267,7 +210,7 @@ The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/n
 
         def __init__(self, vocab_size, embed_dim, num_class):
             super(TextClassificationModel, self).__init__()
-            self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=True)
+            self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=False)
             self.fc = nn.Linear(embed_dim, num_class)
             self.init_weights()
 
@@ -288,12 +231,12 @@ The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/n
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 155-157
+.. GENERATED FROM PYTHON SOURCE LINES 161-163
 
 Define functions to train the model and evaluate results.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. GENERATED FROM PYTHON SOURCE LINES 159-181
+.. GENERATED FROM PYTHON SOURCE LINES 165-187
 
 .. code-block:: Python
 
@@ -326,7 +269,7 @@ Define functions to train the model and evaluate results.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 182-192
+.. GENERATED FROM PYTHON SOURCE LINES 188-198
 
 Define the run-function
 ~~~~~~~~~~~~~~~~~~~~~~~ 
@@ -339,7 +282,7 @@ The run-function defines how the objective that we want to maximize is computed.
 
 A hyperparameter value can be acessed easily in the dictionary through the corresponding key, for example :code:`config["units"]`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 194-219
+.. GENERATED FROM PYTHON SOURCE LINES 200-225
 
 .. code-block:: Python
 
@@ -375,11 +318,11 @@ A hyperparameter value can be acessed easily in the dictionary through the corre
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 220-221
+.. GENERATED FROM PYTHON SOURCE LINES 226-227
 
-We create two versions of :code:`run`, one quicker to evaluate for the seacrh, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
+We create two versions of :code:`run`, one quicker to evaluate for the search, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
 
-.. GENERATED FROM PYTHON SOURCE LINES 223-226
+.. GENERATED FROM PYTHON SOURCE LINES 229-232
 
 .. code-block:: Python
 
@@ -393,13 +336,13 @@ We create two versions of :code:`run`, one quicker to evaluate for the seacrh, w
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 227-230
+.. GENERATED FROM PYTHON SOURCE LINES 233-236
 
 .. note:: The objective maximised by DeepHyper is the scalar value returned by the :code:`run`-function.
 
 In this tutorial it corresponds to the validation accuracy of the model after training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 232-242
+.. GENERATED FROM PYTHON SOURCE LINES 238-248
 
 Define the Hyperparameter optimization problem
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
@@ -412,7 +355,7 @@ Hyperparameter ranges are defined using the following syntax:
 
 We provide the default configuration of hyperparameters as a starting point of the problem.
 
-.. GENERATED FROM PYTHON SOURCE LINES 244-257
+.. GENERATED FROM PYTHON SOURCE LINES 250-263
 
 .. code-block:: Python
 
@@ -447,14 +390,14 @@ We provide the default configuration of hyperparameters as a starting point of t
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 258-262
+.. GENERATED FROM PYTHON SOURCE LINES 264-268
 
 Evaluate a default configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We evaluate the performance of the default set of hyperparameters provided in the Pytorch tutorial.
 
-.. GENERATED FROM PYTHON SOURCE LINES 262-279
+.. GENERATED FROM PYTHON SOURCE LINES 268-285
 
 .. code-block:: Python
 
@@ -477,71 +420,19 @@ We evaluate the performance of the default set of hyperparameters provided in th
 
 
 
+
+
 .. rst-class:: sphx-glr-script-out
 
-.. code-block:: pytb
+ .. code-block:: none
 
-    Traceback (most recent call last):
-      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 275, in <module>
-        objective_default = run_default(problem.default_configuration)
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 213, in run
-        train(model, criterion, optimizer, train_dataloader)
-      File "/Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/plot_hpo_text_classification.py", line 167, in train
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
-      File "/Users/35e/mamba/envs/deephyper_dev/lib/python3.11/site-packages/torch/nn/utils/clip_grad.py", line 55, in clip_grad_norm_
-        norms.extend(torch._foreach_norm(grads, norm_type))
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    NotImplementedError: Could not run 'aten::_foreach_norm.Scalar' with arguments from the 'SparseCPU' backend. This could be because the operator doesn't exist for this backend, or was omitted during the selective/custom build process (if using custom build). If you are a Facebook employee using PyTorch on mobile, please visit https://fburl.com/ptmfixes for possible resolutions. 'aten::_foreach_norm.Scalar' is only available for these backends: [CPU, MPS, Meta, BackendSelect, Python, FuncTorchDynamicLayerBackMode, Functionalize, Named, Conjugate, Negative, ZeroTensor, ADInplaceOrView, AutogradOther, AutogradCPU, AutogradCUDA, AutogradHIP, AutogradXLA, AutogradMPS, AutogradIPU, AutogradXPU, AutogradHPU, AutogradVE, AutogradLazy, AutogradMTIA, AutogradPrivateUse1, AutogradPrivateUse2, AutogradPrivateUse3, AutogradMeta, AutogradNestedTensor, Tracer, AutocastCPU, AutocastCUDA, FuncTorchBatched, BatchedNestedTensor, FuncTorchVmapMode, Batched, VmapMode, FuncTorchGradWrapper, PythonTLSSnapshot, FuncTorchDynamicLayerFrontMode, PreDispatch, PythonDispatcher].
-
-    CPU: registered at /Users/runner/work/pytorch/pytorch/pytorch/build/aten/src/ATen/RegisterCPU.cpp:31357 [kernel]
-    MPS: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/mps/MPSFallback.mm:75 [backend fallback]
-    Meta: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/core/MetaFallbackKernel.cpp:23 [backend fallback]
-    BackendSelect: fallthrough registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/core/BackendSelectFallbackKernel.cpp:3 [backend fallback]
-    Python: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/core/PythonFallbackKernel.cpp:154 [backend fallback]
-    FuncTorchDynamicLayerBackMode: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/functorch/DynamicLayer.cpp:498 [backend fallback]
-    Functionalize: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/FunctionalizeFallbackKernel.cpp:324 [backend fallback]
-    Named: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/core/NamedRegistrations.cpp:7 [backend fallback]
-    Conjugate: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/ConjugateFallback.cpp:17 [backend fallback]
-    Negative: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/native/NegateFallback.cpp:19 [backend fallback]
-    ZeroTensor: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/ZeroTensorFallback.cpp:86 [backend fallback]
-    ADInplaceOrView: fallthrough registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/core/VariableFallbackKernel.cpp:86 [backend fallback]
-    AutogradOther: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradCPU: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradCUDA: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradHIP: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradXLA: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradMPS: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradIPU: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradXPU: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradHPU: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradVE: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradLazy: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradMTIA: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradPrivateUse1: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradPrivateUse2: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradPrivateUse3: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradMeta: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    AutogradNestedTensor: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/VariableType_2.cpp:19039 [autograd kernel]
-    Tracer: registered at /Users/runner/work/pytorch/pytorch/pytorch/torch/csrc/autograd/generated/TraceType_2.cpp:17346 [kernel]
-    AutocastCPU: fallthrough registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/autocast_mode.cpp:378 [backend fallback]
-    AutocastCUDA: fallthrough registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/autocast_mode.cpp:244 [backend fallback]
-    FuncTorchBatched: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/functorch/LegacyBatchingRegistrations.cpp:720 [backend fallback]
-    BatchedNestedTensor: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/functorch/LegacyBatchingRegistrations.cpp:746 [backend fallback]
-    FuncTorchVmapMode: fallthrough registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/functorch/VmapModeRegistrations.cpp:28 [backend fallback]
-    Batched: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/LegacyBatchingRegistrations.cpp:1075 [backend fallback]
-    VmapMode: fallthrough registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/VmapModeRegistrations.cpp:33 [backend fallback]
-    FuncTorchGradWrapper: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/functorch/TensorWrapper.cpp:203 [backend fallback]
-    PythonTLSSnapshot: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/core/PythonFallbackKernel.cpp:162 [backend fallback]
-    FuncTorchDynamicLayerFrontMode: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/functorch/DynamicLayer.cpp:494 [backend fallback]
-    PreDispatch: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/core/PythonFallbackKernel.cpp:166 [backend fallback]
-    PythonDispatcher: registered at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/core/PythonFallbackKernel.cpp:158 [backend fallback]
+    2025-03-15 11:36:00,240 INFO worker.py:1832 -- Started a local Ray instance. View the dashboard at http://127.0.0.1:8266 
+    Accuracy Default Configuration:  0.882
 
 
 
 
-
-.. GENERATED FROM PYTHON SOURCE LINES 280-286
+.. GENERATED FROM PYTHON SOURCE LINES 286-292
 
 Define the evaluator object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
@@ -550,31 +441,31 @@ The :code:`Evaluator` object allows to change the parallelization backend used b
 It is a standalone object which schedules the execution of remote tasks. All evaluators needs a :code:`run_function` to be instantiated.  
 Then a keyword :code:`method` defines the backend (e.g., :code:`"ray"`) and the :code:`method_kwargs` corresponds to keyword arguments of this chosen :code:`method`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 288-290
+.. GENERATED FROM PYTHON SOURCE LINES 294-296
 
 .. code-block:: python
   evaluator = Evaluator.create(run_function, method, method_kwargs)
 
-.. GENERATED FROM PYTHON SOURCE LINES 292-295
+.. GENERATED FROM PYTHON SOURCE LINES 298-301
 
 Once created the :code:`evaluator.num_workers` gives access to the number of available parallel workers.
 
 Finally, to submit and collect tasks to the evaluator one just needs to use the following interface:
 
-.. GENERATED FROM PYTHON SOURCE LINES 297-303
+.. GENERATED FROM PYTHON SOURCE LINES 303-309
 
 .. code-block:: python
-  configs = [...]
-  evaluator.submit(configs)
-  ...
-  tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
-  tasks_done = evaluator.get("ALL") # For batch synchronous
+configs = [...]
+evaluator.submit(configs)
+...
+tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
+tasks_done = evaluator.get("ALL") # For batch synchronous
 
-.. GENERATED FROM PYTHON SOURCE LINES 305-306
+.. GENERATED FROM PYTHON SOURCE LINES 311-312
 
 .. warning:: Each `Evaluator` saves its own state, therefore it is crucial to create a new evaluator when launching a fresh search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 308-338
+.. GENERATED FROM PYTHON SOURCE LINES 314-344
 
 .. code-block:: Python
 
@@ -609,32 +500,62 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
     evaluator_1 = get_evaluator(quick_run)
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 339-343
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x12f539220>]}
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 345-349
 
 Define and run the Centralized Bayesian Optimization search (CBO)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 
 We create the CBO using the :code:`problem` and :code:`evaluator` defined above.
 
-.. GENERATED FROM PYTHON SOURCE LINES 345-347
+.. GENERATED FROM PYTHON SOURCE LINES 351-353
 
 .. code-block:: Python
 
     from deephyper.hpo import CBO
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 348-349
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 354-355
 
 Instanciate the search with the problem and a specific evaluator
 
-.. GENERATED FROM PYTHON SOURCE LINES 349-351
+.. GENERATED FROM PYTHON SOURCE LINES 355-357
 
 .. code-block:: Python
 
     search = CBO(problem, evaluator_1)
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 352-357
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    WARNING:root:Results file already exists, it will be renamed to /Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/results_20250315-113641.csv
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 358-363
 
 .. note:: All DeepHyper's search algorithm have two stopping criteria:
 
@@ -642,14 +563,25 @@ Instanciate the search with the problem and a specific evaluator
 * :code:`timeout (int)`: Defines a time budget (in seconds) before stopping the search. Default to :code:`None` for an infinite time budget.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 359-361
+.. GENERATED FROM PYTHON SOURCE LINES 365-367
 
 .. code-block:: Python
 
     results = search.search(max_evals=30)
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 362-368
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 2252.58it/s, failures=0, objective=0.839]      7%|▋         | 2/30 [00:11<02:34,  5.53s/it, failures=0, objective=0.839]        7%|▋         | 2/30 [00:11<02:34,  5.53s/it, failures=0, objective=0.839]     10%|█         | 3/30 [00:19<03:00,  6.67s/it, failures=0, objective=0.839]     10%|█         | 3/30 [00:19<03:00,  6.67s/it, failures=0, objective=0.839]     13%|█▎        | 4/30 [00:43<05:47, 13.37s/it, failures=0, objective=0.839]     13%|█▎        | 4/30 [00:43<05:47, 13.37s/it, failures=0, objective=0.839]     17%|█▋        | 5/30 [00:47<04:08,  9.93s/it, failures=0, objective=0.839]     17%|█▋        | 5/30 [00:47<04:08,  9.93s/it, failures=0, objective=0.839]     20%|██        | 6/30 [01:12<06:00, 15.01s/it, failures=0, objective=0.839]     20%|██        | 6/30 [01:12<06:00, 15.01s/it, failures=0, objective=0.839]     23%|██▎       | 7/30 [01:17<04:32, 11.85s/it, failures=0, objective=0.839]     23%|██▎       | 7/30 [01:17<04:32, 11.85s/it, failures=0, objective=0.839]     27%|██▋       | 8/30 [01:22<03:27,  9.43s/it, failures=0, objective=0.839]     27%|██▋       | 8/30 [01:22<03:27,  9.43s/it, failures=0, objective=0.839]     30%|███       | 9/30 [01:26<02:48,  8.04s/it, failures=0, objective=0.839]     30%|███       | 9/30 [01:26<02:48,  8.04s/it, failures=0, objective=0.839]     33%|███▎      | 10/30 [01:31<02:20,  7.02s/it, failures=0, objective=0.839]     33%|███▎      | 10/30 [01:31<02:20,  7.02s/it, failures=0, objective=0.839]     37%|███▋      | 11/30 [03:03<10:24, 32.85s/it, failures=0, objective=0.839]     37%|███▋      | 11/30 [03:03<10:24, 32.85s/it, failures=0, objective=0.839]     40%|████      | 12/30 [03:09<07:24, 24.71s/it, failures=0, objective=0.839]     40%|████      | 12/30 [03:09<07:24, 24.71s/it, failures=0, objective=0.839]     43%|████▎     | 13/30 [03:40<07:31, 26.56s/it, failures=0, objective=0.839]     43%|████▎     | 13/30 [03:40<07:31, 26.56s/it, failures=0, objective=0.839]     47%|████▋     | 14/30 [04:09<07:19, 27.48s/it, failures=0, objective=0.839]     47%|████▋     | 14/30 [04:09<07:19, 27.48s/it, failures=0, objective=0.839]     50%|█████     | 15/30 [05:16<09:47, 39.17s/it, failures=0, objective=0.839]     50%|█████     | 15/30 [05:16<09:47, 39.17s/it, failures=0, objective=0.842]     53%|█████▎    | 16/30 [06:39<12:16, 52.57s/it, failures=0, objective=0.842]     53%|█████▎    | 16/30 [06:39<12:16, 52.57s/it, failures=0, objective=0.842]     57%|█████▋    | 17/30 [07:43<12:07, 56.00s/it, failures=0, objective=0.842]     57%|█████▋    | 17/30 [07:43<12:07, 56.00s/it, failures=0, objective=0.848]     60%|██████    | 18/30 [08:47<11:41, 58.42s/it, failures=0, objective=0.848]     60%|██████    | 18/30 [08:47<11:41, 58.42s/it, failures=0, objective=0.848]     63%|██████▎   | 19/30 [09:49<10:52, 59.28s/it, failures=0, objective=0.848]     63%|██████▎   | 19/30 [09:49<10:52, 59.28s/it, failures=0, objective=0.848]     67%|██████▋   | 20/30 [10:57<10:20, 62.06s/it, failures=0, objective=0.848]     67%|██████▋   | 20/30 [10:57<10:20, 62.06s/it, failures=0, objective=0.848]     70%|███████   | 21/30 [12:02<09:26, 62.91s/it, failures=0, objective=0.848]     70%|███████   | 21/30 [12:02<09:26, 62.91s/it, failures=0, objective=0.848]     73%|███████▎  | 22/30 [13:02<08:14, 61.85s/it, failures=0, objective=0.848]     73%|███████▎  | 22/30 [13:02<08:14, 61.85s/it, failures=0, objective=0.848]     77%|███████▋  | 23/30 [13:48<06:40, 57.21s/it, failures=0, objective=0.848]     77%|███████▋  | 23/30 [13:48<06:40, 57.21s/it, failures=0, objective=0.848]     80%|████████  | 24/30 [14:52<05:55, 59.27s/it, failures=0, objective=0.848]     80%|████████  | 24/30 [14:52<05:55, 59.27s/it, failures=0, objective=0.848]     83%|████████▎ | 25/30 [15:51<04:56, 59.31s/it, failures=0, objective=0.848]     83%|████████▎ | 25/30 [15:51<04:56, 59.31s/it, failures=0, objective=0.848]     87%|████████▋ | 26/30 [17:07<04:16, 64.13s/it, failures=0, objective=0.848]     87%|████████▋ | 26/30 [17:07<04:16, 64.13s/it, failures=0, objective=0.848]     90%|█████████ | 27/30 [18:23<03:22, 67.65s/it, failures=0, objective=0.848]     90%|█████████ | 27/30 [18:23<03:22, 67.65s/it, failures=0, objective=0.848]     93%|█████████▎| 28/30 [19:16<02:06, 63.33s/it, failures=0, objective=0.848]     93%|█████████▎| 28/30 [19:16<02:06, 63.33s/it, failures=0, objective=0.848]     97%|█████████▋| 29/30 [20:22<01:04, 64.03s/it, failures=0, objective=0.848]     97%|█████████▋| 29/30 [20:22<01:04, 64.03s/it, failures=0, objective=0.848]    100%|██████████| 30/30 [21:22<00:00, 62.98s/it, failures=0, objective=0.848]    100%|██████████| 30/30 [21:22<00:00, 62.98s/it, failures=0, objective=0.848]
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 368-374
 
 The returned `results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
 
@@ -658,21 +590,394 @@ The returned `results` is a Pandas Dataframe where columns are hyperparameters a
 * :code:`timestamp_submit` is the time (in seconds) when the hyperparameter configuration was submitted by the :code:`Evaluator` relative to the creation of the evaluator.
 * code:`timestamp_gather` is the time (in seconds) when the hyperparameter configuration was collected by the :code:`Evaluator` relative to the creation of the evaluator.
 
-.. GENERATED FROM PYTHON SOURCE LINES 370-372
+.. GENERATED FROM PYTHON SOURCE LINES 376-378
 
 .. code-block:: Python
 
     results
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 373-377
+
+
+
+
+.. raw:: html
+
+    <div class="output_subarea output_html rendered_html output_result">
+    <div>
+    <style scoped>
+        .dataframe tbody tr th:only-of-type {
+            vertical-align: middle;
+        }
+
+        .dataframe tbody tr th {
+            vertical-align: top;
+        }
+
+        .dataframe thead th {
+            text-align: right;
+        }
+    </style>
+    <table border="1" class="dataframe">
+      <thead>
+        <tr style="text-align: right;">
+          <th></th>
+          <th>p:batch_size</th>
+          <th>p:learning_rate</th>
+          <th>p:num_epochs</th>
+          <th>objective</th>
+          <th>job_id</th>
+          <th>job_status</th>
+          <th>m:timestamp_submit</th>
+          <th>m:timestamp_gather</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>0</th>
+          <td>28</td>
+          <td>3.180198</td>
+          <td>17</td>
+          <td>0.839048</td>
+          <td>0</td>
+          <td>DONE</td>
+          <td>2.045134</td>
+          <td>49.397765</td>
+        </tr>
+        <tr>
+          <th>1</th>
+          <td>277</td>
+          <td>7.506221</td>
+          <td>19</td>
+          <td>0.820952</td>
+          <td>1</td>
+          <td>DONE</td>
+          <td>49.468933</td>
+          <td>60.468742</td>
+        </tr>
+        <tr>
+          <th>2</th>
+          <td>120</td>
+          <td>1.247418</td>
+          <td>8</td>
+          <td>0.535952</td>
+          <td>2</td>
+          <td>DONE</td>
+          <td>60.507373</td>
+          <td>68.747665</td>
+        </tr>
+        <tr>
+          <th>3</th>
+          <td>78</td>
+          <td>4.604973</td>
+          <td>19</td>
+          <td>0.830595</td>
+          <td>3</td>
+          <td>DONE</td>
+          <td>68.789817</td>
+          <td>93.357485</td>
+        </tr>
+        <tr>
+          <th>4</th>
+          <td>397</td>
+          <td>0.176952</td>
+          <td>5</td>
+          <td>0.275714</td>
+          <td>4</td>
+          <td>DONE</td>
+          <td>93.396249</td>
+          <td>96.835377</td>
+        </tr>
+        <tr>
+          <th>5</th>
+          <td>32</td>
+          <td>0.379851</td>
+          <td>10</td>
+          <td>0.532857</td>
+          <td>5</td>
+          <td>DONE</td>
+          <td>96.874095</td>
+          <td>122.090753</td>
+        </tr>
+        <tr>
+          <th>6</th>
+          <td>426</td>
+          <td>2.702454</td>
+          <td>9</td>
+          <td>0.493929</td>
+          <td>6</td>
+          <td>DONE</td>
+          <td>122.129135</td>
+          <td>127.255149</td>
+        </tr>
+        <tr>
+          <th>7</th>
+          <td>472</td>
+          <td>0.176558</td>
+          <td>7</td>
+          <td>0.280000</td>
+          <td>7</td>
+          <td>DONE</td>
+          <td>127.293379</td>
+          <td>131.415744</td>
+        </tr>
+        <tr>
+          <th>8</th>
+          <td>461</td>
+          <td>0.157574</td>
+          <td>9</td>
+          <td>0.268690</td>
+          <td>8</td>
+          <td>DONE</td>
+          <td>131.453472</td>
+          <td>136.382093</td>
+        </tr>
+        <tr>
+          <th>9</th>
+          <td>351</td>
+          <td>0.650274</td>
+          <td>8</td>
+          <td>0.351071</td>
+          <td>9</td>
+          <td>DONE</td>
+          <td>136.424067</td>
+          <td>141.102831</td>
+        </tr>
+        <tr>
+          <th>10</th>
+          <td>14</td>
+          <td>0.158960</td>
+          <td>17</td>
+          <td>0.566190</td>
+          <td>10</td>
+          <td>DONE</td>
+          <td>141.287558</td>
+          <td>232.837932</td>
+        </tr>
+        <tr>
+          <th>11</th>
+          <td>463</td>
+          <td>1.839482</td>
+          <td>17</td>
+          <td>0.541190</td>
+          <td>11</td>
+          <td>DONE</td>
+          <td>233.015508</td>
+          <td>238.853708</td>
+        </tr>
+        <tr>
+          <th>12</th>
+          <td>27</td>
+          <td>3.136822</td>
+          <td>15</td>
+          <td>0.829643</td>
+          <td>12</td>
+          <td>DONE</td>
+          <td>239.035976</td>
+          <td>269.665918</td>
+        </tr>
+        <tr>
+          <th>13</th>
+          <td>29</td>
+          <td>1.727085</td>
+          <td>17</td>
+          <td>0.829881</td>
+          <td>13</td>
+          <td>DONE</td>
+          <td>269.848722</td>
+          <td>299.298470</td>
+        </tr>
+        <tr>
+          <th>14</th>
+          <td>12</td>
+          <td>3.353219</td>
+          <td>17</td>
+          <td>0.841667</td>
+          <td>14</td>
+          <td>DONE</td>
+          <td>299.482132</td>
+          <td>365.571226</td>
+        </tr>
+        <tr>
+          <th>15</th>
+          <td>9</td>
+          <td>9.556947</td>
+          <td>17</td>
+          <td>0.835595</td>
+          <td>15</td>
+          <td>DONE</td>
+          <td>365.753545</td>
+          <td>449.307518</td>
+        </tr>
+        <tr>
+          <th>16</th>
+          <td>12</td>
+          <td>2.218559</td>
+          <td>17</td>
+          <td>0.847857</td>
+          <td>16</td>
+          <td>DONE</td>
+          <td>449.490570</td>
+          <td>513.268782</td>
+        </tr>
+        <tr>
+          <th>17</th>
+          <td>12</td>
+          <td>0.960438</td>
+          <td>17</td>
+          <td>0.814881</td>
+          <td>17</td>
+          <td>DONE</td>
+          <td>513.453957</td>
+          <td>577.334958</td>
+        </tr>
+        <tr>
+          <th>18</th>
+          <td>13</td>
+          <td>1.918420</td>
+          <td>17</td>
+          <td>0.844405</td>
+          <td>18</td>
+          <td>DONE</td>
+          <td>577.518723</td>
+          <td>638.614655</td>
+        </tr>
+        <tr>
+          <th>19</th>
+          <td>12</td>
+          <td>1.555204</td>
+          <td>18</td>
+          <td>0.837976</td>
+          <td>19</td>
+          <td>DONE</td>
+          <td>638.803762</td>
+          <td>707.167193</td>
+        </tr>
+        <tr>
+          <th>20</th>
+          <td>11</td>
+          <td>2.114905</td>
+          <td>16</td>
+          <td>0.830833</td>
+          <td>20</td>
+          <td>DONE</td>
+          <td>707.356653</td>
+          <td>772.038910</td>
+        </tr>
+        <tr>
+          <th>21</th>
+          <td>13</td>
+          <td>1.694694</td>
+          <td>17</td>
+          <td>0.829286</td>
+          <td>21</td>
+          <td>DONE</td>
+          <td>772.227431</td>
+          <td>831.439179</td>
+        </tr>
+        <tr>
+          <th>22</th>
+          <td>17</td>
+          <td>2.241728</td>
+          <td>17</td>
+          <td>0.832381</td>
+          <td>22</td>
+          <td>DONE</td>
+          <td>831.625684</td>
+          <td>877.822261</td>
+        </tr>
+        <tr>
+          <th>23</th>
+          <td>12</td>
+          <td>1.867903</td>
+          <td>17</td>
+          <td>0.837500</td>
+          <td>23</td>
+          <td>DONE</td>
+          <td>878.007876</td>
+          <td>941.900397</td>
+        </tr>
+        <tr>
+          <th>24</th>
+          <td>13</td>
+          <td>2.239973</td>
+          <td>17</td>
+          <td>0.835000</td>
+          <td>24</td>
+          <td>DONE</td>
+          <td>942.090852</td>
+          <td>1001.307896</td>
+        </tr>
+        <tr>
+          <th>25</th>
+          <td>10</td>
+          <td>2.232873</td>
+          <td>17</td>
+          <td>0.840714</td>
+          <td>25</td>
+          <td>DONE</td>
+          <td>1001.493906</td>
+          <td>1076.662888</td>
+        </tr>
+        <tr>
+          <th>26</th>
+          <td>12</td>
+          <td>2.195921</td>
+          <td>20</td>
+          <td>0.836071</td>
+          <td>26</td>
+          <td>DONE</td>
+          <td>1076.849365</td>
+          <td>1152.531099</td>
+        </tr>
+        <tr>
+          <th>27</th>
+          <td>15</td>
+          <td>1.909130</td>
+          <td>17</td>
+          <td>0.842262</td>
+          <td>27</td>
+          <td>DONE</td>
+          <td>1152.721400</td>
+          <td>1205.769078</td>
+        </tr>
+        <tr>
+          <th>28</th>
+          <td>12</td>
+          <td>2.318459</td>
+          <td>17</td>
+          <td>0.844881</td>
+          <td>28</td>
+          <td>DONE</td>
+          <td>1205.958717</td>
+          <td>1271.458640</td>
+        </tr>
+        <tr>
+          <th>29</th>
+          <td>15</td>
+          <td>1.789154</td>
+          <td>17</td>
+          <td>0.835952</td>
+          <td>29</td>
+          <td>DONE</td>
+          <td>1271.654467</td>
+          <td>1331.955873</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    </div>
+    <br />
+    <br />
+
+.. GENERATED FROM PYTHON SOURCE LINES 379-383
 
 Evaluate the best configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that the search is over, let us print the best configuration found during this run and evaluate it on the full training dataset.
 
-.. GENERATED FROM PYTHON SOURCE LINES 379-389
+.. GENERATED FROM PYTHON SOURCE LINES 385-395
 
 .. code-block:: Python
 
@@ -682,12 +987,32 @@ Now that the search is over, let us print the best configuration found during th
 
     print(f"The default configuration has an accuracy of {objective_default:.3f}. \n" 
           f"The best configuration found by DeepHyper has an accuracy {results['objective'].iloc[i_max]:.3f}, \n" 
-          f"finished after {results['timestamp_gather'].iloc[i_max]:.2f} secondes of search.\n")
+          f"finished after {results['m:timestamp_gather'].iloc[i_max]:.2f} secondes of search.\n")
 
     print(json.dumps(best_config, indent=4))
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 390-394
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    The default configuration has an accuracy of 0.882. 
+    The best configuration found by DeepHyper has an accuracy 0.848, 
+    finished after 513.27 secondes of search.
+
+    {
+        "batch_size": 12,
+        "learning_rate": 2.218559383059108,
+        "num_epochs": 17
+    }
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 396-400
 
 .. code-block:: Python
 
@@ -697,9 +1022,21 @@ Now that the search is over, let us print the best configuration found during th
 
 
 
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    Accuracy Best Configuration:  0.882
+
+
+
+
+
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 15.129 seconds)
+   **Total running time of the script:** (28 minutes 11.206 seconds)
 
 
 .. _sphx_glr_download_examples_examples_hpo_plot_hpo_text_classification.py:
