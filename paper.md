@@ -76,6 +76,8 @@ The early-discarding strategies include asynchronous successive halving and a ro
 
 The ensemble strategies is modular to allow: exploring models tested during hyperparameter optimization, classification and regression problems to be treated, disentangled uncertainty quantification [@egele2022autodeuq].
 
+A transfer-learning strategy for hyperparameter optimization [@dorier2022transferlearning] is also available. This strategy used to be based on variational auto-encoders for tabular data. It is now based on Gaussian mixture-model for tabular data.
+
 # Acknowledgements
 
 We acknowledge contributions from Misha Salim, Romit Maulik, Venkat Vishwanath, Stefan Wild, Joceran Gouneau, Dipendra Jha, Kyle Felker, Matthieu Dorier, Felix Perez, Bethany Lush, Gavin M. Wiggins, Tyler H. Chang, Yixuan Sun, Shengli Jiang, rmjcs2020, Albert Lam, Taylor Childers, Z223I, Zachariah Carmichael, Hongyuan Liu, Sam Foreman, Akalanka Galappaththi, Brett Eiffert, Sun Haozhe, Sandeep Madireddy, Adrian Perez Dieguez, and Nesar Ramachandra. 
