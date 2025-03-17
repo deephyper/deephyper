@@ -85,17 +85,6 @@ class PyMOOMixedElementWiseProblem(ElementwiseProblem):
         out["F"] = y
 
 
-class PyMOORealProblem(Problem):
-    def __init__(self, n_var, xl, xu, acq_func, **kwargs):
-        super().__init__(n_var=n_var, n_obj=1, xl=xl, xu=xu)
-        self.acq_func = acq_func
-
-    def _evaluate(self, x, out, *args, **kwargs):
-        y = self.acq_func(x).reshape(-1)
-
-        out["F"] = y
-
-
 class DefaultMixedTermination(Termination):
     def __init__(self, f, n_max_gen=1000, n_max_evals=100000) -> None:
         super().__init__()
