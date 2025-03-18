@@ -210,9 +210,8 @@ class MixedGAPymooAcqOptimizer:
         if termination_kwargs is None:
             termination_kwargs = {}
         default_termination_kwargs = {
-            "xtol": 1e-3,
-            "ftol": 1e-3,
-            "period": 15,
+            "ftol": 1e-6,
+            "period": 30,
             "n_max_gen": 1000,
         }
         default_termination_kwargs.update(termination_kwargs)

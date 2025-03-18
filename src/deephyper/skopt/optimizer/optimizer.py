@@ -362,9 +362,9 @@ class Optimizer(object):
         # PyMOO
         self._pymoo_pop_size = acq_optimizer_kwargs.get("pop_size", 100)
         self._pymoo_termination_kwargs = {
-            "xtol": acq_optimizer_kwargs.get("xtol", 1e-3),
-            "ftol": acq_optimizer_kwargs.get("ftol", 1e-3),
-            "period": acq_optimizer_kwargs.get("period", 15),
+            "xtol": acq_optimizer_kwargs.get("xtol", 1e-8),
+            "ftol": acq_optimizer_kwargs.get("ftol", 1e-6),
+            "period": acq_optimizer_kwargs.get("period", 30),
             "n_max_gen": acq_optimizer_kwargs.get("n_max_gen", 1000),
         }
 
