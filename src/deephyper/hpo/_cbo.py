@@ -55,7 +55,7 @@ class AcqFuncKwargsScheduler(BaseModel):
 class AcqFuncKwargs(BaseModel):
     kappa: Optional[float] = 1.96
     xi: Optional[float] = 0.1
-    scheduler: Optional[AcqFuncKwargsScheduler] = dict(AcqFuncKwargsScheduler())
+    scheduler: Optional[AcqFuncKwargsScheduler] = AcqFuncKwargsScheduler()
 
 
 class AcqOptimizerKwargs(BaseModel):
@@ -85,7 +85,7 @@ class SurrogateModelScheduler(BaseModel):
 
 
 class SurrogateModelKwargs(BaseModel):
-    scheduler: Optional[SurrogateModelScheduler] = dict(SurrogateModelScheduler())
+    scheduler: Optional[SurrogateModelScheduler] = SurrogateModelScheduler()
 
 
 # schedulers
@@ -332,7 +332,7 @@ class CBO(Search):
         ]
 
         surrogate_model_kwargs = {} if surrogate_model_kwargs is None else surrogate_model_kwargs
-        self._surrogate_model_kwargs = dict(SurrogateModelKwargs(**surrogate_model_kwargs))
+        self._surrogate_model_kwargs = SurrogateModelKwargs(**surrogate_model_kwargs).model_dump()
 
         base_estimator_scheduler = self._surrogate_model_kwargs.pop("scheduler")
 
@@ -368,10 +368,10 @@ class CBO(Search):
             )
 
         acq_func_kwargs = {} if acq_func_kwargs is None else acq_func_kwargs
-        self._acq_func_kwargs = dict(AcqFuncKwargs(**acq_func_kwargs))
+        self._acq_func_kwargs = AcqFuncKwargs(**acq_func_kwargs).model_dump()
 
         acq_optimizer_kwargs = {} if acq_optimizer_kwargs is None else acq_optimizer_kwargs
-        self._acq_optimizer_kwargs = dict(AcqOptimizerKwargs(**acq_optimizer_kwargs))
+        self._acq_optimizer_kwargs = AcqOptimizerKwargs(**acq_optimizer_kwargs).model_dump()
 
         # Initialize lower bounds for objectives
         if moo_lower_bounds is None:
@@ -470,7 +470,7 @@ class CBO(Search):
         scheduler = {"type": "bandit"} if scheduler is None else scheduler
         if scheduler["delay"] == "n-initial-points":
             scheduler["delay"] = self._n_initial_points
-        
+
         self.scheduler = None
         if isinstance(scheduler, dict):
             scheduler = scheduler.copy()
