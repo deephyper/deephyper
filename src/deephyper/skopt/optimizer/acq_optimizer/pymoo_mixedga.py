@@ -201,9 +201,6 @@ class MixedGAPymooAcqOptimizer:
         self.space = space
         self.x_init = np.array(x_init)
         self.y_init = np.array(y_init).reshape(-1)
-        assert len(y_init) == pop_size
-        if len(y_init) != pop_size:
-            raise ValueError("The initial x_init and y_init should have a size equal to pop_size.")
         self.pop_size = pop_size
         self.random_state = check_random_state(random_state)
 

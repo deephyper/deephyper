@@ -66,6 +66,11 @@ OBJECTIVE_VALUE_FAILURE = "F"
 # TODO: add check to notify that optimizer="ga" cannot work with categorical or integer values
 
 
+def is_not_improving(scores, patience):
+    """Check if scores have improved over 'patience' length."""
+    return len(scores) > (patience + 1) and scores[-patience - 1] < min(scores[-patience:])
+
+
 class Optimizer(object):
     r"""Run bayesian optimisation loop in DeepHyper.
 
@@ -190,7 +195,7 @@ class Optimizer(object):
         custom_sampler (Model or None, optional): Default None
             A Model from Synthetic-Data-Vault.
 
-        moo_scalarization_strategy (string, optional): Default is `"Chebyshev"`
+        moo_scalarization_strategy (string, optional): Default is ``"Chebyshev"``.
             Function to convert multiple objectives into a single scalar value. Can be either
 
             - `"Linear"` for linear/convex combination.
@@ -222,20 +227,19 @@ class Optimizer(object):
         self,
         dimensions,
         base_estimator="gp",
+        base_estimator_scheduler=None,
         n_random_starts=None,
         n_initial_points=10,
         initial_points=None,
         initial_point_generator="random",
         n_jobs=1,
         acq_func="gp_hedge",
+        acq_func_kwargs=None,
         acq_optimizer="auto",
+        acq_optimizer_kwargs=None,
         random_state=None,
         model_queue_size=None,
-        acq_func_kwargs=None,
-        acq_optimizer_kwargs=None,
         custom_sampler=None,
-        sample_max_size=-1,
-        sample_strategy="quantile",
         moo_upper_bounds=None,
         moo_scalarization_strategy="Chebyshev",
         moo_scalarization_weight=None,
@@ -324,6 +328,12 @@ class Optimizer(object):
         else:
             self.base_estimator_ = base_estimator
 
+        self.base_estimator_scheduler = base_estimator_scheduler
+        if self.base_estimator_scheduler is not None and not isinstance(
+            self.base_estimator_scheduler, dict
+        ):
+            raise ValueError("base_estimator_schedule should be a dict")
+
         # preprocessing of target variable
         self.objective_scaler_ = objective_scaler
         self.objective_scaler = cook_objective_scaler(objective_scaler, self.base_estimator_)
@@ -360,12 +370,12 @@ class Optimizer(object):
         self.n_jobs = acq_optimizer_kwargs.get("n_jobs", 1)
 
         # PyMOO
-        self._pymoo_pop_size = acq_optimizer_kwargs.get("pop_size", 100)
+        self._pymoo_pop_size = acq_optimizer_kwargs.get("ga_pop_size", 100)
         self._pymoo_termination_kwargs = {
-            "xtol": acq_optimizer_kwargs.get("xtol", 1e-8),
-            "ftol": acq_optimizer_kwargs.get("ftol", 1e-6),
-            "period": acq_optimizer_kwargs.get("period", 30),
-            "n_max_gen": acq_optimizer_kwargs.get("n_max_gen", 1000),
+            "xtol": acq_optimizer_kwargs.get("ga_xtol", 1e-8),
+            "ftol": acq_optimizer_kwargs.get("ga_ftol", 1e-6),
+            "period": acq_optimizer_kwargs.get("ga_period", 30),
+            "n_max_gen": acq_optimizer_kwargs.get("ga_n_max_gen", 1000),
         }
 
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
@@ -470,10 +480,6 @@ class Optimizer(object):
         self._min_value = 0
         self._max_value = 0
 
-        # parameters to stabilize the size of the dataset used to fit the surrogate model
-        self._sample_max_size = sample_max_size
-        self._sample_strategy = sample_strategy
-
         # Count number of surrogate model fittings
         self._counter_fit = 0
 
@@ -498,8 +504,6 @@ class Optimizer(object):
             acq_optimizer_kwargs=self.acq_optimizer_kwargs,
             random_state=random_state,
             custom_sampler=self.custom_sampler,
-            sample_max_size=self._sample_max_size,
-            sample_strategy=self._sample_strategy,
             moo_upper_bounds=self._moo_upper_bounds,
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
@@ -779,39 +783,6 @@ class Optimizer(object):
 
         return yi
 
-    def _sample(self, X, y):
-        X = np.asarray(X, dtype="O")
-        y = np.asarray(y)
-        size = y.shape[0]
-
-        if self._sample_max_size > 0 and size > self._sample_max_size:
-            if self._sample_strategy == "quantile":
-                quantiles = np.quantile(y, [0.10, 0.25, 0.50, 0.75, 0.90])
-                int_size = self._sample_max_size // (len(quantiles) + 1)
-
-                Xs, ys = [], []
-                for i in range(len(quantiles) + 1):
-                    if i == 0:
-                        s = y < quantiles[i]
-                    elif i == len(quantiles):
-                        s = quantiles[i - 1] <= y
-                    else:
-                        s = (quantiles[i - 1] <= y) & (y < quantiles[i])
-
-                    idx = np.where(s)[0]
-                    idx = np.random.choice(idx, size=int_size, replace=True)
-                    Xi = X[idx]
-                    yi = y[idx]
-                    Xs.append(Xi)
-                    ys.append(yi)
-
-                X = np.concatenate(Xs, axis=0)
-                y = np.concatenate(ys, axis=0)
-
-        X = X.tolist()
-        y = y.tolist()
-        return X, y
-
     def _ask_random_points(self, size=None):
         Xsamples = self.space.rvs(
             n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
@@ -944,9 +915,8 @@ class Optimizer(object):
         if fit and self._n_initial_points <= 0 and self.base_estimator_ is not None:
             transformed_bounds = self.space.transformed_bounds
 
-            est = clone(self.base_estimator_)
-
-            yi = self.yi
+            yi = self.yi[:]
+            Xi = self.Xi[:]
 
             # Convert multiple objectives to single scalar
             with warnings.catch_warnings():
@@ -960,9 +930,19 @@ class Optimizer(object):
                 else:
                     # Single-Objective Optimization
 
+                    # replace outliers (large values) using interquantile range
+                    yi = np.asarray(yi, dtype="O")
+                    mask_no_failures = np.where(yi != "F")
+                    q1 = np.quantile(yi[mask_no_failures], q=0.25)
+                    q3 = np.quantile(yi[mask_no_failures], q=0.75)
+                    threshold = q3 + 1.5 * (q3 - q1)
+                    mask = np.where(
+                        (yi != "F") & np.array([v != "F" and v > threshold for v in yi])
+                    )
+                    yi[mask] = threshold
+
                     if "F" in yi:
                         # ! dtype="O" is key to avoid converting data to string
-                        yi = np.asarray(yi, dtype="O")
                         mask_no_failures = np.where(yi != "F")
                         yi[mask_no_failures] = (
                             self.objective_scaler.fit_transform(
@@ -982,53 +962,18 @@ class Optimizer(object):
             # Handle failures
             yi = self._filter_failures(yi)
 
-            # handle size of the sample fit to the estimator
-            Xi, yi = self._sample(self.Xi, yi)
-
             # Preprocessing of input space
             Xtransformed = np.asarray(self.space.transform(Xi))
 
-            # TODO: feature importance
-            # if len(Xi) % 25 == 0 and len(Xi) >= 25:
-            #     from sklearn.model_selection import train_test_split
+            # Update surrogate kwargs
+            self._update_base_estimator_params(yi)
 
-            #     Xtransformed, Xval, yi, yval = train_test_split(
-            #         Xtransformed,
-            #         yi,
-            #         test_size=0.2,
-            #         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
-            #     )
+            est = clone(self.base_estimator_)
 
             # Fit surrogate model on transformed data
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-
                 self._last_est = est.fit(Xtransformed, yi)
-
-            # TODO: feature importance
-            # if len(Xi) % 25 == 0 and len(Xi) >= 25:
-            #     from sklearn.inspection import permutation_importance
-
-            #     est_score = est.score(Xval, yval)
-            #     print(f"Score: {est_score}")
-            #     var_importance = permutation_importance(
-            #         est,
-            #         Xval,
-            #         yval,
-            #         n_repeats=10,
-            #         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
-            #     )
-
-            #    var_importance_upper_bound = (
-            # var_importance.importances_mean + 1.96 * var_importance.importances_std)
-            #     # var_importance_fraction = var_importance_upper_bound / est_score
-            #     var_importance_fraction = var_importance.importances_mean / est_score
-            #     for i in range(len(var_importance_fraction)):
-            #         # if var_importance_fraction[i] < 0.05:
-            #         print(
-            #             f"dim {self.space.dimension_names[i]}: {var_importance_fraction[i]:.4f}"
-            #         )
-            #     print()
 
             if self.max_model_queue_size is None:
                 self.models.append(est)
@@ -1096,8 +1041,6 @@ class Optimizer(object):
                                     has_gradients(self.base_estimator_),
                                 ),
                                 bounds=transformed_bounds,
-                                # TODO: Use approximated gradient when not available
-                                # approx_grad=False,
                                 approx_grad=not (has_gradients(self.base_estimator_)),
                                 maxiter=20,
                             )
@@ -1123,12 +1066,13 @@ class Optimizer(object):
                             x_init,
                         )
                     )
+                    y_init = values[idx_sorted[:pop_size]]
 
                     acq_opt = MixedGAPymooAcqOptimizer(
                         space=self.space,
                         x_init=x_init,
-                        y_init=values[idx_sorted[:pop_size]],
-                        pop_size=self._pymoo_pop_size,
+                        y_init=y_init,
+                        pop_size=pop_size,
                         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
                         termination_kwargs=self._pymoo_termination_kwargs,
                     )
@@ -1248,60 +1192,14 @@ class Optimizer(object):
         # Penality
         if self._moo_upper_bounds is not None:
             y_max = yi_filtered.max(axis=0)
-            # y_min = yi_filtered.min(axis=0)
             upper_bounds = [m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)]
 
             # ! Strategy 1: penalty after scaling
             upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
             yi_filtered = self.objective_scaler.transform(yi_filtered)
             penalty = np.sum(2 * np.maximum(yi_filtered - upper_bounds, 0), axis=1)
-            # print("-> y:", yi_filtered[-1])
-            # print("-> p:", penalty[-1])
-            # print()
             yi_filtered = np.add(yi_filtered.T, penalty).T
 
-            # ! Strategy 2: penalty before scaling
-            # penalty = np.maximum(yi_filtered - upper_bounds, 0)
-            # yi_filtered = yi_filtered + penalty
-            # yi_filtered = self.objective_scaler.transform(yi_filtered)
-
-            # ! Strategy 3: replace values above upper bounds with y_max
-            # yi_filtered = self.objective_scaler.transform(yi_filtered)
-            # y_max_scaled = self.objective_scaler.transform([y_max])[0]
-            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
-
-            # *S.3.A: Replacing only the objective which breaks the bound
-            # mask = yi_filtered > upper_bounds
-            # yi_filtered[mask] = np.tile(y_max_scaled, yi_filtered.shape[0]).reshape(
-            #     yi_filtered.shape
-            # )[mask]
-
-            # *S.3.B: Replacing all objectives if any of them breaks the bound
-            # mask = (yi_filtered > upper_bounds).any(axis=1)
-            # yi_filtered[mask] = y_max_scaled
-
-            # Strategy 4: "leaky" penalty after scaling
-            # upper_bounds = [0.0 if b is None else b for b in self._moo_upper_bounds]
-            # penalty_param = 2.0
-            # leak_param = self.rng.uniform()
-
-            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
-            # augmented_lower_bounds = upper_bounds.copy()
-            # for i, b in enumerate(self._moo_upper_bounds):
-            #     if b is None:
-            #         upper_bounds[i] = np.infty  # Allow to go higher
-            #         augmented_lower_bounds[i] = -np.infty  # No leaky rewards
-            # yi_filtered = self.objective_scaler.transform(yi_filtered)
-            # penalty = np.sum(
-            #     penalty_param * np.maximum(yi_filtered - upper_bounds, 0), axis=1
-            # ) + np.sum(
-            #     leak_param * np.minimum(yi_filtered - augmented_lower_bounds, 0), axis=1
-            # )
-            # # print("-> y:", yi_filtered[-1])
-            # # print("-> b:", upper_bounds)
-            # # print("-> p:", penalty[-1])
-            # # print()
-            # yi_filtered = np.add(yi_filtered.T, penalty).T
         else:
             yi_filtered = self.objective_scaler.transform(yi_filtered)
 
@@ -1328,3 +1226,25 @@ class Optimizer(object):
             return yi.tolist()
         else:
             return yi_filtered
+
+    def _update_base_estimator_params(self, yi):
+        """Updates the configuration of the surrogate model.
+
+        The configuration is updating according to the history of yi.
+        """
+        if self.base_estimator_scheduler is None:
+            return
+
+        patience = self.base_estimator_scheduler["patience"]
+        params = self.base_estimator_scheduler["params"]
+
+        if is_not_improving(scores=yi, patience=patience):
+            base_estimator_params = self.base_estimator_.get_params()
+            for param_name, param_config in params.items():
+                if param_name in base_estimator_params:
+                    param_value = base_estimator_params[param_name]
+                    param_type = type(param_value)
+                    param_value = param_type(param_value * param_config["factor"])
+                    print(f"{param_name} updated: {param_value}")
+                    base_estimator_params.update({param_name: param_value})
+            self.base_estimator_.set_params(**base_estimator_params)
