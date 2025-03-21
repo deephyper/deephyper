@@ -8,6 +8,7 @@ SEARCH_KWARGS_DEFAULTS = dict(
     surrogate_model="ET",
     surrogate_model_kwargs={"n_estimators": 25, "min_samples_split": 8},
     acq_func_kwargs={"kappa": "toto"},
+    acq_optimizer="sampling",
     acq_optimizer_kwargs={"n_points": 100},
 )
 
@@ -28,6 +29,7 @@ def test_cbo_random_seed(tmp_path):
     search = CBO(
         problem,
         create_evaluator(),
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -40,6 +42,7 @@ def test_cbo_random_seed(tmp_path):
     search = CBO(
         problem,
         create_evaluator(),
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -60,6 +63,7 @@ def test_cbo_random_seed(tmp_path):
     search = CBO(
         problem,
         create_evaluator(),
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -72,6 +76,7 @@ def test_cbo_random_seed(tmp_path):
     search = CBO(
         problem,
         create_evaluator(),
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -103,6 +108,7 @@ def test_sample_types(tmp_path):
         problem,
         run,
         n_initial_points=5,
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -115,6 +121,7 @@ def test_sample_types(tmp_path):
         problem,
         run,
         n_initial_points=5,
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
@@ -143,6 +150,7 @@ def test_sample_types_no_cat(tmp_path):
         problem,
         run,
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         n_initial_points=5,
         surrogate_model="DUMMY",
@@ -155,6 +163,7 @@ def test_sample_types_no_cat(tmp_path):
         problem,
         run,
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         n_initial_points=5,
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
@@ -180,6 +189,7 @@ def test_gp(tmp_path):
     results = CBO(
         problem,
         Evaluator.create(run, method="serial"),
+        acq_optimizer="lbfgs",
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="GP",
@@ -195,6 +205,7 @@ def test_gp(tmp_path):
     results = CBO(
         problem,
         Evaluator.create(run, method="serial"),
+        acq_optimizer="lbfgs",
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="GP",
@@ -213,6 +224,7 @@ def test_gp(tmp_path):
     results = CBO(
         problem,
         Evaluator.create(run_cast_output_int, method="serial"),
+        acq_optimizer="lbfgs",
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="GP",
@@ -264,6 +276,7 @@ def test_sample_types_conditional(tmp_path):
     search = CBO(
         problem,
         run,
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -277,6 +290,7 @@ def test_sample_types_conditional(tmp_path):
     results = CBO(
         problem,
         run,
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         n_initial_points=5,
@@ -306,6 +320,7 @@ def test_max_evals_strict(tmp_path):
     search = CBO(
         problem,
         evaluator,
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -330,6 +345,7 @@ def test_initial_points(tmp_path):
         problem,
         run,
         initial_points=[problem.default_configuration],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -360,6 +376,7 @@ def test_cbo_checkpoint_restart(tmp_path):
         evaluator=run,
         initial_points=[problem.default_configuration],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
     )
 
@@ -452,6 +469,7 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
         log_dir=get_log_dir("search_b"),
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         **search_kwargs,
     )
 
@@ -464,6 +482,7 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
         log_dir=get_log_dir("search_c"),
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         **search_kwargs,
     )
     search_c.fit_surrogate(os.path.join(get_log_dir("search_b"), "results.csv"))
@@ -493,6 +512,7 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
         evaluator=run,
         initial_points=[problem.default_configuration],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
     )
 
@@ -612,6 +632,7 @@ def test_cbo_categorical_variable(tmp_path):
         problem,
         SerialEvaluator(run, callbacks=[]),
         initial_points=[problem.default_configuration],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
@@ -638,10 +659,10 @@ def test_cbo_multi_point_strategy(tmp_path):
         search = CBO(
             problem,
             Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}),
+            acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
             acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
             random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
-            surrogate_model="ET",
-            surrogate_model_kwargs={"n_estimators": 25, "min_samples_split": 8},
+            surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
             multi_point_strategy=multi_point_strategy,
             log_dir=tmp_path,
         )
@@ -659,11 +680,12 @@ def test_cbo_multi_point_strategy(tmp_path):
         search = CBO(
             problem,
             Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}),
+            acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
             acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
             acq_func="EI",
             random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
-            surrogate_model="ET",
-            surrogate_model_kwargs={"n_estimators": 25, "min_samples_split": 8},
+            surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
+            surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
             multi_point_strategy=multi_point_strategy,
             log_dir=tmp_path,
         )
