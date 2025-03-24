@@ -3,18 +3,18 @@ import logging
 import numbers
 import time
 import warnings
-from typing import Dict, List, Optional, Literal, Union
-from pydantic import BaseModel, field_validator, ValidationInfo
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel, ValidationInfo, field_validator
 from sklearn.base import is_regressor
 
 import deephyper.skopt
-import deephyper.evaluator
 from deephyper.analysis.hpo import filter_failed_objectives
+from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
 from deephyper.hpo.gmm import GMMSampler
@@ -24,6 +24,7 @@ from deephyper.skopt.moo import (
     non_dominated_set,
     non_dominated_set_ranked,
 )
+from deephyper.stopper import Stopper
 
 __all__ = ["CBO"]
 
@@ -296,7 +297,7 @@ class CBO(Search):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
-        stopper=None,
+        stopper: Optional[Stopper] = None,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -304,9 +305,9 @@ class CBO(Search):
         acq_optimizer: str = "mixedga",
         acq_optimizer_kwargs: Optional[AcqOptimizerKwargs] = None,
         multi_point_strategy: str = "cl_max",
-        n_initial_points: int = None,
+        n_initial_points: Optional[int] = None,
         initial_point_generator: str = "random",
-        initial_points=None,
+        initial_points: Optional[List[Dict[str, Any]]] = None,
         moo_lower_bounds=None,
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
@@ -556,7 +557,7 @@ class CBO(Search):
         self._num_asked += n
         return new_samples
 
-    def _tell(self, results: List[deephyper.evaluator.HPOJob]):
+    def _tell(self, results: List[HPOJob]):
         """Tell the search the results of the evaluations.
 
         Args:
