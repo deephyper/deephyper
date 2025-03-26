@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:21.313** total execution time for 11 files **from all galleries**:
+**02:33.674** total execution time for 11 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_multi_objective_optimization.py` (``../examples/examples_bbo/plot_multi_objective_optimization.py``)
-     - 00:21.313
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py` (``../examples/examples_bbo/plot_transfer_learning_for_hpo.py``)
+     - 02:33.674
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
@@ -41,10 +41,10 @@ Computation times
    * - :ref:`sphx_glr_examples_examples_bbo_plot_experimental_design.py` (``../examples/examples_bbo/plot_experimental_design.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_notify_failures_hpo.py` (``../examples/examples_bbo/plot_notify_failures_hpo.py``)
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_multi_objective_optimization.py` (``../examples/examples_bbo/plot_multi_objective_optimization.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py` (``../examples/examples_bbo/plot_transfer_learning_for_hpo.py``)
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_notify_failures_hpo.py` (``../examples/examples_bbo/plot_notify_failures_hpo.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_for_rf_and_overfitting.py` (``../examples/examples_hpo/plot_hpo_for_rf_and_overfitting.py``)
