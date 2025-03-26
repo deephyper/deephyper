@@ -1,5 +1,6 @@
 """Sickit-Optimize optimizer class."""
 
+import logging
 import numbers
 import sys
 import warnings
@@ -66,9 +67,11 @@ OBJECTIVE_VALUE_FAILURE = "F"
 # TODO: add check to notify that optimizer="ga" cannot work with categorical or integer values
 
 
-def is_not_improving(scores, patience):
+def is_not_improving(scores, patience: int, delay: int):
     """Check if scores have improved over 'patience' length."""
-    return len(scores) > (patience + 1) and scores[-patience - 1] < min(scores[-patience:])
+    return len(scores[delay:]) > (patience + 1) and scores[-patience - 1] < min(
+        scores[delay:][-patience:]
+    )
 
 
 class Optimizer(object):
@@ -1085,12 +1088,12 @@ class Optimizer(object):
 
                     pop_size = self._pymoo_pop_size
 
-                    idx_sorted = np.argsort(values)
+                    idx_sorted = np.argsort(values)[:pop_size]
 
                     acq_opt = GAPymooAcqOptimizer(
                         space=self.space,
-                        x_init=Xsample_transformed[idx_sorted[:pop_size]],
-                        y_init=values[idx_sorted[:pop_size]],
+                        x_init=Xsample_transformed[idx_sorted],
+                        y_init=values[idx_sorted],
                         pop_size=self._pymoo_pop_size,
                         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
                         termination_kwargs=self._pymoo_termination_kwargs,
@@ -1238,13 +1241,13 @@ class Optimizer(object):
         patience = self.base_estimator_scheduler["patience"]
         params = self.base_estimator_scheduler["params"]
 
-        if is_not_improving(scores=yi, patience=patience):
+        if is_not_improving(scores=yi, patience=patience, delay=self.n_initial_points_):
             base_estimator_params = self.base_estimator_.get_params()
             for param_name, param_config in params.items():
                 if param_name in base_estimator_params:
                     param_value = base_estimator_params[param_name]
                     param_type = type(param_value)
                     param_value = param_type(param_value * param_config["factor"])
-                    print(f"{param_name} updated: {param_value}")
+                    logging.info(f"{param_name} updated: {param_value}")
                     base_estimator_params.update({param_name: param_value})
             self.base_estimator_.set_params(**base_estimator_params)
