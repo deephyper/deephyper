@@ -74,10 +74,11 @@ class AcqOptimizerKwargs(BaseModel):
     ga_period: Optional[int] = 30
     ga_n_max_gen: Optional[int] = 1000
 
-    @field_validator("filter_failures")
+    @field_validator("filter_failures", mode="before")
     @classmethod
     def map_filter_failures(cls, v: str, info: ValidationInfo) -> str:
-        return MAP_filter_failures.get(v, v)
+        v = MAP_filter_failures.get(v, v)
+        return v
 
 
 class SurrogateModelScheduler(BaseModel):
