@@ -29,30 +29,21 @@ We will look at the DTLZ benchmark suite, a classic in multi-objective optimizat
 #     pip install -e "git+https://github.com/deephyper/benchmark.git@main#egg=deephyper-benchmark"
 
 # .. dropdown:: Import statements
-import os
-
 import matplotlib.pyplot as plt
+
+from deephyper.hpo import CBO
+from deephyper_benchmark.benchmarks.dtlz import DTLZBenchmark
 
 WIDTH_PLOTS = 8
 HEIGHT_PLOTS = WIDTH_PLOTS / 1.618
 
 n_objectives = 2
-
-# Configuration of the DTLZ Benchmark
-os.environ["DEEPHYPER_BENCHMARK_DTLZ_PROB"] = str(2)
-os.environ["DEEPHYPER_BENCHMARK_NDIMS"] = str(8)
-os.environ["DEEPHYPER_BENCHMARK_NOBJS"] = str(n_objectives)
-os.environ["DEEPHYPER_BENCHMARK_DTLZ_OFFSET"] = str(0.6)
-os.environ["DEEPHYPER_BENCHMARK_FAILURES"] = str(0)
-
-# Loading the DTLZ Benchmark
-import deephyper_benchmark as dhb; dhb.load("DTLZ");
-from deephyper_benchmark.lib.dtlz import hpo, metrics
+bench = DTLZBenchmark(nobj=n_objectives)
 
 # %%
 # We can display the variable search space of the benchmark we just loaded:
 
-hpo.problem
+bench.problem
 
 # %%
 # To define a black-box for multi-objective optimization it is very similar to single-objective optimization at the difference that the ``objective`` can now be a list of values. A first possibility is:
@@ -81,49 +72,22 @@ hpo.problem
 # each of the metadata needs to be JSON serializable and will be returned in the final results with a column name formatted as ``m:metadata_key`` such as ``m:duration``.
 
 # %%
-# Now we can load Centralized Bayesian Optimization search:
-
-from deephyper.hpo import CBO
-from deephyper.evaluator import Evaluator
-from deephyper.evaluator.callback import TqdmCallback
-
-# %%
-# Interface to submit/gather parallel evaluations of the black-box function.
-# The method argument is used to specify the parallelization method, in our case we use threads.
-# The method_kwargs argument is used to specify the number of workers and the callbacks.
-# The TqdmCallback is used to display a progress bar during the search.
-
-evaluator = Evaluator.create(
-    hpo.run,
-    method="thread",
-    method_kwargs={"num_workers": 4, "callbacks": [TqdmCallback()]},
-)
-
-# %%
+# For the search algorithm, we use the centralized Bayesian Optimization search (CBO).
 # Search algorithm
-# The acq_func argument is used to specify the acquisition function.
-# The multi_point_strategy argument is used to specify the multi-point strategy,
-# in our case we use qUCB instead of the default cl_max (constant-liar) to reduce overheads.
-# The update_prior argument is used to specify whether the sampling-prior should
-# be updated during the search.
-# The update_prior_quantile argument is used to specify the quantile of the lower-bound
-# used to update the sampling-prior.
-# The moo_scalarization_strategy argument is used to specify the scalarization strategy.
-# Chebyshev is capable of generating a diverse set of solutions for non-convex problems.
-# The moo_scalarization_weight argument is used to specify the weight of the scalarization.
-# random is used to generate a random weight vector for each iteration.
+#
+# The arguments specific to multi-objective optimization are:
+# 
+# - ``moo_scalarization_strategy`` is used to specify the scalarization strategy. 
+#   Chebyshev  scalarizationis capable of generating a diverse set of solutions for non-convex problems.
+# - ``moo_scalarization_weight`` argument is used to specify the weight of objectives in the scalarization.
+#   ``"random"`` is used to generate a random weight vector at each iteration.
 
 search = CBO(
-    hpo.problem,
-    evaluator,
-    acq_func="UCBd",
-    multi_point_strategy="qUCB",
-    acq_optimizer="ga",
-    acq_optimizer_freq=1,
+    bench.problem,
+    bench.run_function,
+    acq_optimizer="sampling",
     moo_scalarization_strategy="AugChebyshev",
     moo_scalarization_weight="random",
-    objective_scaler="identity",
-    n_jobs=-1,
     verbose=1,
 )
 
@@ -145,8 +109,11 @@ results
 # - the ``job_id`` is the identifier of the executed evaluations.
 # - columns starting by ``m:`` are metadata returned by the black-box function.
 # - ``pareto_efficient`` is a column only returned for MOO which specify if the evaluation is part of the set of optimal solutions.
-# 
-# Let us use this table to visualized evaluated objectives:
+#
+
+# %%
+# Let us use this table to visualize evaluated objectives.
+# The estimated optimal solutions will be colored in red.
 
 # .. dropdown:: Plot evaluated objectives
 fig, ax = plt.subplots(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS), tight_layout=True)
@@ -170,3 +137,17 @@ _ = ax.grid()
 _ = ax.legend()
 _ = ax.set_xlabel("Objective 0")
 _ = ax.set_ylabel("Objective 1")
+
+# %%
+# Let us look the evolution of the hypervolume indicator.
+# This metric should increase over time.
+
+# .. dropdown:: Plot hypervolume
+scorer = bench.scorer
+hvi = scorer.hypervolume(results[["objective_0", "objective_1"]].values)
+x = list(range(1, len(hvi)+1))
+fig, ax = plt.subplots(figsize=(WIDTH_PLOTS, HEIGHT_PLOTS), tight_layout=True)
+_ = ax.plot(x, hvi)
+_ = ax.grid()
+_ = ax.set_xlabel("Evaluations")
+_ = ax.set_ylabel("Hypervolume Indicator")

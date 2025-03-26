@@ -56,7 +56,7 @@ Then, we can import it and check the installed version:
 
  .. code-block:: none
 
-    0.9.2
+    0.9.3
 
 
 
@@ -181,7 +181,7 @@ Search Algorithm
 
 The next step is to define the search algorithm that we want to use. Here, we choose :class:`deephyper.hpo.CBO` (Centralized Bayesian Optimization) which is a sampling based Bayesian optimization strategy. This algorithm has the advantage of being asynchronous thanks to a constant liar strategy which is crutial to keep a good utilization of the resources when the number of available workers increases.
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-107
+.. GENERATED FROM PYTHON SOURCE LINES 95-105
 
 .. code-block:: Python
 
@@ -192,9 +192,7 @@ The next step is to define the search algorithm that we want to use. Here, we ch
     search = CBO(
         problem,
         evaluator,
-        acq_func="UCB",  # Acquisition function to Upper Confidence Bound
-        multi_point_strategy="qUCB",  # Fast Multi-point strategy with q-Upper Confidence Bound
-        n_jobs=2,  # Number of threads to fit surrogate models in parallel
+        acq_optimizer="ga",
     )
 
 
@@ -205,16 +203,16 @@ The next step is to define the search algorithm that we want to use. Here, we ch
 
  .. code-block:: none
 
-    WARNING:root:Results file already exists, it will be renamed to /Users/35e/Projects/DeepHyper/deephyper/examples/examples_bbo/results_20250228-121430.csv
+    WARNING:root:Results file already exists, it will be renamed to /Users/romainegele/Documents/DeepHyper/deephyper/examples/examples_bbo/results_20250324-091742.csv
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 108-109
+.. GENERATED FROM PYTHON SOURCE LINES 106-107
 
 Then, we can execute the search for a given number of iterations by using the ``search.search(max_evals=...)``. It is also possible to use the ``timeout`` parameter if one needs a specific time budget (e.g., restricted computational time in machine learning competitions, allocation time in HPC).
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-113
+.. GENERATED FROM PYTHON SOURCE LINES 109-111
 
 .. code-block:: Python
 
@@ -228,11 +226,14 @@ Then, we can execute the search for a given number of iterations by using the ``
 
  .. code-block:: none
 
-      0%|          | 0/100 [00:00<?, ?it/s]      1%|          | 1/100 [00:00<00:00, 11491.24it/s, failures=0, objective=-30.8]      2%|▏         | 2/100 [00:00<00:00, 5588.68it/s, failures=0, objective=-11.6]       3%|▎         | 3/100 [00:00<00:00, 5236.33it/s, failures=0, objective=-11.6]      4%|▍         | 4/100 [00:00<00:00, 5147.96it/s, failures=0, objective=-11.6]      5%|▌         | 5/100 [00:00<00:00, 145.20it/s, failures=0, objective=-11.6]       6%|▌         | 6/100 [00:00<00:00, 172.73it/s, failures=0, objective=-11.6]      7%|▋         | 7/100 [00:00<00:00, 200.29it/s, failures=0, objective=-11.6]      8%|▊         | 8/100 [00:00<00:00, 227.43it/s, failures=0, objective=-11.6]      9%|▉         | 9/100 [00:00<00:00, 147.76it/s, failures=0, objective=-2.22]     10%|█         | 10/100 [00:00<00:00, 163.39it/s, failures=0, objective=-2.22]     11%|█         | 11/100 [00:00<00:00, 179.14it/s, failures=0, objective=-2.22]     12%|█▏        | 12/100 [00:00<00:00, 194.81it/s, failures=0, objective=-2.22]     13%|█▎        | 13/100 [00:00<00:03, 27.77it/s, failures=0, objective=-2.22]      13%|█▎        | 13/100 [00:00<00:03, 27.77it/s, failures=0, objective=-2.22]     14%|█▍        | 14/100 [00:00<00:03, 27.77it/s, failures=0, objective=-2.22]     15%|█▌        | 15/100 [00:00<00:03, 27.77it/s, failures=0, objective=-2.21]     16%|█▌        | 16/100 [00:00<00:03, 27.77it/s, failures=0, objective=-2.21]     17%|█▋        | 17/100 [00:00<00:03, 21.57it/s, failures=0, objective=-2.21]     17%|█▋        | 17/100 [00:00<00:03, 21.57it/s, failures=0, objective=-0.0168]     18%|█▊        | 18/100 [00:00<00:03, 21.57it/s, failures=0, objective=-0.0168]     19%|█▉        | 19/100 [00:00<00:03, 21.57it/s, failures=0, objective=-0.0168]     20%|██        | 20/100 [00:00<00:03, 21.57it/s, failures=0, objective=-0.0168]     21%|██        | 21/100 [00:01<00:04, 16.56it/s, failures=0, objective=-0.0168]     21%|██        | 21/100 [00:01<00:04, 16.56it/s, failures=0, objective=-0.0168]     22%|██▏       | 22/100 [00:01<00:04, 16.56it/s, failures=0, objective=-0.0168]     23%|██▎       | 23/100 [00:01<00:04, 16.56it/s, failures=0, objective=-0.0168]     24%|██▍       | 24/100 [00:01<00:04, 16.56it/s, failures=0, objective=-0.0168]     25%|██▌       | 25/100 [00:01<00:04, 15.52it/s, failures=0, objective=-0.0168]     25%|██▌       | 25/100 [00:01<00:04, 15.52it/s, failures=0, objective=-0.0168]     26%|██▌       | 26/100 [00:01<00:04, 15.52it/s, failures=0, objective=-0.0168]     27%|██▋       | 27/100 [00:01<00:04, 15.52it/s, failures=0, objective=-0.0168]     28%|██▊       | 28/100 [00:01<00:04, 15.52it/s, failures=0, objective=-0.0168]     29%|██▉       | 29/100 [00:01<00:04, 15.00it/s, failures=0, objective=-0.0168]     29%|██▉       | 29/100 [00:01<00:04, 15.00it/s, failures=0, objective=-0.014]      30%|███       | 30/100 [00:01<00:04, 15.00it/s, failures=0, objective=-0.000418]     31%|███       | 31/100 [00:01<00:04, 15.00it/s, failures=0, objective=-0.000418]     32%|███▏      | 32/100 [00:01<00:04, 15.00it/s, failures=0, objective=-0.000418]     33%|███▎      | 33/100 [00:02<00:05, 13.30it/s, failures=0, objective=-0.000418]     33%|███▎      | 33/100 [00:02<00:05, 13.30it/s, failures=0, objective=-0.000418]     34%|███▍      | 34/100 [00:02<00:04, 13.30it/s, failures=0, objective=-0.000418]     35%|███▌      | 35/100 [00:02<00:04, 13.30it/s, failures=0, objective=-0.000418]     36%|███▌      | 36/100 [00:02<00:04, 13.30it/s, failures=0, objective=-0.000418]     37%|███▋      | 37/100 [00:02<00:04, 13.38it/s, failures=0, objective=-0.000418]     37%|███▋      | 37/100 [00:02<00:04, 13.38it/s, failures=0, objective=-0.000169]     38%|███▊      | 38/100 [00:02<00:04, 13.38it/s, failures=0, objective=-0.000169]     39%|███▉      | 39/100 [00:02<00:04, 13.38it/s, failures=0, objective=-0.000169]     40%|████      | 40/100 [00:02<00:04, 13.38it/s, failures=0, objective=-0.000146]     41%|████      | 41/100 [00:02<00:05, 11.55it/s, failures=0, objective=-0.000146]     41%|████      | 41/100 [00:02<00:05, 11.55it/s, failures=0, objective=-0.000146]     42%|████▏     | 42/100 [00:02<00:05, 11.55it/s, failures=0, objective=-0.000146]     43%|████▎     | 43/100 [00:02<00:04, 11.55it/s, failures=0, objective=-4.51e-5]      44%|████▍     | 44/100 [00:02<00:04, 11.55it/s, failures=0, objective=-4.51e-5]     45%|████▌     | 45/100 [00:03<00:04, 12.19it/s, failures=0, objective=-4.51e-5]     45%|████▌     | 45/100 [00:03<00:04, 12.19it/s, failures=0, objective=-6.18e-7]     46%|████▌     | 46/100 [00:03<00:04, 12.19it/s, failures=0, objective=-6.18e-7]     47%|████▋     | 47/100 [00:03<00:04, 12.19it/s, failures=0, objective=-6.18e-7]     48%|████▊     | 48/100 [00:03<00:04, 12.19it/s, failures=0, objective=-6.18e-7]     49%|████▉     | 49/100 [00:03<00:04, 11.43it/s, failures=0, objective=-6.18e-7]     49%|████▉     | 49/100 [00:03<00:04, 11.43it/s, failures=0, objective=-6.18e-7]     50%|█████     | 50/100 [00:03<00:04, 11.43it/s, failures=0, objective=-6.18e-7]     51%|█████     | 51/100 [00:03<00:04, 11.43it/s, failures=0, objective=-6.18e-7]     52%|█████▏    | 52/100 [00:03<00:04, 11.43it/s, failures=0, objective=-6.18e-7]     53%|█████▎    | 53/100 [00:03<00:03, 12.13it/s, failures=0, objective=-6.18e-7]     53%|█████▎    | 53/100 [00:03<00:03, 12.13it/s, failures=0, objective=-6.18e-7]     54%|█████▍    | 54/100 [00:03<00:03, 12.13it/s, failures=0, objective=-6.18e-7]     55%|█████▌    | 55/100 [00:03<00:03, 12.13it/s, failures=0, objective=-6.18e-7]     56%|█████▌    | 56/100 [00:03<00:03, 12.13it/s, failures=0, objective=-6.18e-7]     57%|█████▋    | 57/100 [00:04<00:03, 13.13it/s, failures=0, objective=-6.18e-7]     57%|█████▋    | 57/100 [00:04<00:03, 13.13it/s, failures=0, objective=-8.36e-9]     58%|█████▊    | 58/100 [00:04<00:03, 13.13it/s, failures=0, objective=-8.36e-9]     59%|█████▉    | 59/100 [00:04<00:03, 13.13it/s, failures=0, objective=-8.36e-9]     60%|██████    | 60/100 [00:04<00:03, 13.13it/s, failures=0, objective=-8.36e-9]     61%|██████    | 61/100 [00:04<00:03, 12.55it/s, failures=0, objective=-8.36e-9]     61%|██████    | 61/100 [00:04<00:03, 12.55it/s, failures=0, objective=-8.36e-9]     62%|██████▏   | 62/100 [00:04<00:03, 12.55it/s, failures=0, objective=-3.72e-9]     63%|██████▎   | 63/100 [00:04<00:02, 12.55it/s, failures=0, objective=-3.72e-9]     64%|██████▍   | 64/100 [00:04<00:02, 12.55it/s, failures=0, objective=-3.72e-9]     65%|██████▌   | 65/100 [00:04<00:02, 13.27it/s, failures=0, objective=-3.72e-9]     65%|██████▌   | 65/100 [00:04<00:02, 13.27it/s, failures=0, objective=-3.72e-9]     66%|██████▌   | 66/100 [00:04<00:02, 13.27it/s, failures=0, objective=-3.72e-9]     67%|██████▋   | 67/100 [00:04<00:02, 13.27it/s, failures=0, objective=-3.72e-9]     68%|██████▊   | 68/100 [00:04<00:02, 13.27it/s, failures=0, objective=-3.72e-9]     69%|██████▉   | 69/100 [00:05<00:02, 12.70it/s, failures=0, objective=-3.72e-9]     69%|██████▉   | 69/100 [00:05<00:02, 12.70it/s, failures=0, objective=-3.72e-9]     70%|███████   | 70/100 [00:05<00:02, 12.70it/s, failures=0, objective=-3.72e-9]     71%|███████   | 71/100 [00:05<00:02, 12.70it/s, failures=0, objective=-3.72e-9]     72%|███████▏  | 72/100 [00:05<00:02, 12.70it/s, failures=0, objective=-3.72e-9]     73%|███████▎  | 73/100 [00:05<00:02, 13.43it/s, failures=0, objective=-3.72e-9]     73%|███████▎  | 73/100 [00:05<00:02, 13.43it/s, failures=0, objective=-3.72e-9]     74%|███████▍  | 74/100 [00:05<00:01, 13.43it/s, failures=0, objective=-3.72e-9]     75%|███████▌  | 75/100 [00:05<00:01, 13.43it/s, failures=0, objective=-3.72e-9]     76%|███████▌  | 76/100 [00:05<00:01, 13.43it/s, failures=0, objective=-3.72e-9]     77%|███████▋  | 77/100 [00:05<00:01, 12.50it/s, failures=0, objective=-3.72e-9]     77%|███████▋  | 77/100 [00:05<00:01, 12.50it/s, failures=0, objective=-3.72e-9]     78%|███████▊  | 78/100 [00:05<00:01, 12.50it/s, failures=0, objective=-3.72e-9]     79%|███████▉  | 79/100 [00:05<00:01, 12.50it/s, failures=0, objective=-3.72e-9]     80%|████████  | 80/100 [00:05<00:01, 12.50it/s, failures=0, objective=-3.72e-9]     81%|████████  | 81/100 [00:05<00:01, 12.86it/s, failures=0, objective=-3.72e-9]     81%|████████  | 81/100 [00:05<00:01, 12.86it/s, failures=0, objective=-3.72e-9]     82%|████████▏ | 82/100 [00:05<00:01, 12.86it/s, failures=0, objective=-3.72e-9]     83%|████████▎ | 83/100 [00:05<00:01, 12.86it/s, failures=0, objective=-3.72e-9]     84%|████████▍ | 84/100 [00:05<00:01, 12.86it/s, failures=0, objective=-3.72e-9]     85%|████████▌ | 85/100 [00:06<00:01, 12.47it/s, failures=0, objective=-3.72e-9]     85%|████████▌ | 85/100 [00:06<00:01, 12.47it/s, failures=0, objective=-3.72e-9]     86%|████████▌ | 86/100 [00:06<00:01, 12.47it/s, failures=0, objective=-3.72e-9]     87%|████████▋ | 87/100 [00:06<00:01, 12.47it/s, failures=0, objective=-3.72e-9]     88%|████████▊ | 88/100 [00:06<00:00, 12.47it/s, failures=0, objective=-3.72e-9]     89%|████████▉ | 89/100 [00:06<00:00, 11.02it/s, failures=0, objective=-3.72e-9]     89%|████████▉ | 89/100 [00:06<00:00, 11.02it/s, failures=0, objective=-3.72e-9]     90%|█████████ | 90/100 [00:06<00:00, 11.02it/s, failures=0, objective=-3.72e-9]     91%|█████████ | 91/100 [00:06<00:00, 11.02it/s, failures=0, objective=-3.72e-9]     92%|█████████▏| 92/100 [00:06<00:00, 11.02it/s, failures=0, objective=-3.72e-9]     93%|█████████▎| 93/100 [00:06<00:00, 11.96it/s, failures=0, objective=-3.72e-9]     93%|█████████▎| 93/100 [00:06<00:00, 11.96it/s, failures=0, objective=-3.72e-9]     94%|█████████▍| 94/100 [00:06<00:00, 11.96it/s, failures=0, objective=-3.72e-9]     95%|█████████▌| 95/100 [00:06<00:00, 11.96it/s, failures=0, objective=-3.72e-9]     96%|█████████▌| 96/100 [00:06<00:00, 11.96it/s, failures=0, objective=-3.72e-9]     97%|█████████▋| 97/100 [00:07<00:00, 11.76it/s, failures=0, objective=-3.72e-9]     97%|█████████▋| 97/100 [00:07<00:00, 11.76it/s, failures=0, objective=-3.72e-9]     98%|█████████▊| 98/100 [00:07<00:00, 11.76it/s, failures=0, objective=-3.72e-9]     99%|█████████▉| 99/100 [00:07<00:00, 11.76it/s, failures=0, objective=-3.72e-9]    100%|██████████| 100/100 [00:07<00:00, 11.76it/s, failures=0, objective=-3.72e-9]
+      0%|          | 0/100 [00:00<?, ?it/s]      1%|          | 1/100 [00:00<00:00, 4563.99it/s, failures=0, objective=-19.1]      2%|▏         | 2/100 [00:00<00:00, 3184.74it/s, failures=0, objective=-1.19]      3%|▎         | 3/100 [00:00<00:00, 4212.56it/s, failures=0, objective=-1.19]      4%|▍         | 4/100 [00:00<00:00, 5166.99it/s, failures=0, objective=-1.19]      5%|▌         | 5/100 [00:00<00:18,  5.24it/s, failures=0, objective=-1.19]        5%|▌         | 5/100 [00:00<00:18,  5.24it/s, failures=0, objective=-1.19]      6%|▌         | 6/100 [00:00<00:17,  5.24it/s, failures=0, objective=-1.19]      7%|▋         | 7/100 [00:00<00:17,  5.24it/s, failures=0, objective=-1.19]      8%|▊         | 8/100 [00:00<00:17,  5.24it/s, failures=0, objective=-1.19]      9%|▉         | 9/100 [00:01<00:18,  4.97it/s, failures=0, objective=-1.19]      9%|▉         | 9/100 [00:01<00:18,  4.97it/s, failures=0, objective=-1.19]     10%|█         | 10/100 [00:01<00:18,  4.97it/s, failures=0, objective=-1.19]     11%|█         | 11/100 [00:01<00:17,  4.97it/s, failures=0, objective=-1.19]     12%|█▏        | 12/100 [00:01<00:17,  4.97it/s, failures=0, objective=-1.19]min_impurity_decrease updated: 0.001
+     13%|█▎        | 13/100 [00:02<00:18,  4.72it/s, failures=0, objective=-1.19]     13%|█▎        | 13/100 [00:02<00:18,  4.72it/s, failures=0, objective=-0.983]     14%|█▍        | 14/100 [00:02<00:18,  4.72it/s, failures=0, objective=-0.746]     15%|█▌        | 15/100 [00:02<00:18,  4.72it/s, failures=0, objective=-0.746]     16%|█▌        | 16/100 [00:02<00:17,  4.72it/s, failures=0, objective=-0.278]     17%|█▋        | 17/100 [00:03<00:17,  4.73it/s, failures=0, objective=-0.278]     17%|█▋        | 17/100 [00:03<00:17,  4.73it/s, failures=0, objective=-0.278]     18%|█▊        | 18/100 [00:03<00:17,  4.73it/s, failures=0, objective=-0.278]     19%|█▉        | 19/100 [00:03<00:17,  4.73it/s, failures=0, objective=-0.278]     20%|██        | 20/100 [00:03<00:16,  4.73it/s, failures=0, objective=-0.278]     21%|██        | 21/100 [00:04<00:17,  4.59it/s, failures=0, objective=-0.278]     21%|██        | 21/100 [00:04<00:17,  4.59it/s, failures=0, objective=-0.173]     22%|██▏       | 22/100 [00:04<00:17,  4.59it/s, failures=0, objective=-0.0164]     23%|██▎       | 23/100 [00:04<00:16,  4.59it/s, failures=0, objective=-0.0164]     24%|██▍       | 24/100 [00:04<00:16,  4.59it/s, failures=0, objective=-0.0164]     25%|██▌       | 25/100 [00:05<00:16,  4.51it/s, failures=0, objective=-0.0164]     25%|██▌       | 25/100 [00:05<00:16,  4.51it/s, failures=0, objective=-0.0164]     26%|██▌       | 26/100 [00:05<00:16,  4.51it/s, failures=0, objective=-0.0164]     27%|██▋       | 27/100 [00:05<00:16,  4.51it/s, failures=0, objective=-0.0164]     28%|██▊       | 28/100 [00:05<00:15,  4.51it/s, failures=0, objective=-0.0164]     29%|██▉       | 29/100 [00:06<00:15,  4.57it/s, failures=0, objective=-0.0164]     29%|██▉       | 29/100 [00:06<00:15,  4.57it/s, failures=0, objective=-0.0147]     30%|███       | 30/100 [00:06<00:15,  4.57it/s, failures=0, objective=-0.0146]     31%|███       | 31/100 [00:06<00:15,  4.57it/s, failures=0, objective=-0.0146]     32%|███▏      | 32/100 [00:06<00:14,  4.57it/s, failures=0, objective=-4.82e-5]     33%|███▎      | 33/100 [00:07<00:14,  4.50it/s, failures=0, objective=-4.82e-5]     33%|███▎      | 33/100 [00:07<00:14,  4.50it/s, failures=0, objective=-4.82e-5]     34%|███▍      | 34/100 [00:07<00:14,  4.50it/s, failures=0, objective=-4.82e-5]     35%|███▌      | 35/100 [00:07<00:14,  4.50it/s, failures=0, objective=-4.82e-5]     36%|███▌      | 36/100 [00:07<00:14,  4.50it/s, failures=0, objective=-4.82e-5]     37%|███▋      | 37/100 [00:07<00:13,  4.58it/s, failures=0, objective=-4.82e-5]     37%|███▋      | 37/100 [00:07<00:13,  4.58it/s, failures=0, objective=-4.82e-5]     38%|███▊      | 38/100 [00:07<00:13,  4.58it/s, failures=0, objective=-4.82e-5]     39%|███▉      | 39/100 [00:07<00:13,  4.58it/s, failures=0, objective=-4.82e-5]     40%|████      | 40/100 [00:07<00:13,  4.58it/s, failures=0, objective=-4.82e-5]     41%|████      | 41/100 [00:08<00:13,  4.51it/s, failures=0, objective=-4.82e-5]     41%|████      | 41/100 [00:08<00:13,  4.51it/s, failures=0, objective=-4.82e-5]     42%|████▏     | 42/100 [00:08<00:12,  4.51it/s, failures=0, objective=-4.82e-5]     43%|████▎     | 43/100 [00:08<00:12,  4.51it/s, failures=0, objective=-4.82e-5]     44%|████▍     | 44/100 [00:08<00:12,  4.51it/s, failures=0, objective=-4.82e-5]     45%|████▌     | 45/100 [00:09<00:12,  4.54it/s, failures=0, objective=-4.82e-5]     45%|████▌     | 45/100 [00:09<00:12,  4.54it/s, failures=0, objective=-4.82e-5]     46%|████▌     | 46/100 [00:09<00:11,  4.54it/s, failures=0, objective=-4.82e-5]     47%|████▋     | 47/100 [00:09<00:11,  4.54it/s, failures=0, objective=-4.82e-5]     48%|████▊     | 48/100 [00:09<00:11,  4.54it/s, failures=0, objective=-4.82e-5]     49%|████▉     | 49/100 [00:10<00:11,  4.50it/s, failures=0, objective=-4.82e-5]     49%|████▉     | 49/100 [00:10<00:11,  4.50it/s, failures=0, objective=-4.82e-5]     50%|█████     | 50/100 [00:10<00:11,  4.50it/s, failures=0, objective=-4.82e-5]     51%|█████     | 51/100 [00:10<00:10,  4.50it/s, failures=0, objective=-4.82e-5]     52%|█████▏    | 52/100 [00:10<00:10,  4.50it/s, failures=0, objective=-4.82e-5]     53%|█████▎    | 53/100 [00:11<00:10,  4.56it/s, failures=0, objective=-4.82e-5]     53%|█████▎    | 53/100 [00:11<00:10,  4.56it/s, failures=0, objective=-4.82e-5]     54%|█████▍    | 54/100 [00:11<00:10,  4.56it/s, failures=0, objective=-4.82e-5]     55%|█████▌    | 55/100 [00:11<00:09,  4.56it/s, failures=0, objective=-4.82e-5]     56%|█████▌    | 56/100 [00:11<00:09,  4.56it/s, failures=0, objective=-4.82e-5]     57%|█████▋    | 57/100 [00:12<00:09,  4.62it/s, failures=0, objective=-4.82e-5]     57%|█████▋    | 57/100 [00:12<00:09,  4.62it/s, failures=0, objective=-4.82e-5]     58%|█████▊    | 58/100 [00:12<00:09,  4.62it/s, failures=0, objective=-4.82e-5]     59%|█████▉    | 59/100 [00:12<00:08,  4.62it/s, failures=0, objective=-4.82e-5]     60%|██████    | 60/100 [00:12<00:08,  4.62it/s, failures=0, objective=-4.82e-5]min_impurity_decrease updated: 0.0002
+     61%|██████    | 61/100 [00:13<00:08,  4.54it/s, failures=0, objective=-4.82e-5]     61%|██████    | 61/100 [00:13<00:08,  4.54it/s, failures=0, objective=-4.82e-5]     62%|██████▏   | 62/100 [00:13<00:08,  4.54it/s, failures=0, objective=-4.82e-5]     63%|██████▎   | 63/100 [00:13<00:08,  4.54it/s, failures=0, objective=-4.82e-5]     64%|██████▍   | 64/100 [00:13<00:07,  4.54it/s, failures=0, objective=-4.82e-5]     65%|██████▌   | 65/100 [00:14<00:07,  4.60it/s, failures=0, objective=-4.82e-5]     65%|██████▌   | 65/100 [00:14<00:07,  4.60it/s, failures=0, objective=-4.82e-5]     66%|██████▌   | 66/100 [00:14<00:07,  4.60it/s, failures=0, objective=-4.82e-5]     67%|██████▋   | 67/100 [00:14<00:07,  4.60it/s, failures=0, objective=-4.82e-5]     68%|██████▊   | 68/100 [00:14<00:06,  4.60it/s, failures=0, objective=-4.82e-5]     69%|██████▉   | 69/100 [00:15<00:06,  4.53it/s, failures=0, objective=-4.82e-5]     69%|██████▉   | 69/100 [00:15<00:06,  4.53it/s, failures=0, objective=-1.85e-5]     70%|███████   | 70/100 [00:15<00:06,  4.53it/s, failures=0, objective=-1.85e-5]     71%|███████   | 71/100 [00:15<00:06,  4.53it/s, failures=0, objective=-1.85e-5]     72%|███████▏  | 72/100 [00:15<00:06,  4.53it/s, failures=0, objective=-1.85e-5]     73%|███████▎  | 73/100 [00:15<00:05,  4.58it/s, failures=0, objective=-1.85e-5]     73%|███████▎  | 73/100 [00:15<00:05,  4.58it/s, failures=0, objective=-1.85e-5]     74%|███████▍  | 74/100 [00:15<00:05,  4.58it/s, failures=0, objective=-1.85e-5]     75%|███████▌  | 75/100 [00:15<00:05,  4.58it/s, failures=0, objective=-1.85e-5]     76%|███████▌  | 76/100 [00:15<00:05,  4.58it/s, failures=0, objective=-1.85e-5]     77%|███████▋  | 77/100 [00:16<00:05,  4.50it/s, failures=0, objective=-1.85e-5]     77%|███████▋  | 77/100 [00:16<00:05,  4.50it/s, failures=0, objective=-1.85e-5]     78%|███████▊  | 78/100 [00:16<00:04,  4.50it/s, failures=0, objective=-1.85e-5]     79%|███████▉  | 79/100 [00:16<00:04,  4.50it/s, failures=0, objective=-1.85e-5]     80%|████████  | 80/100 [00:16<00:04,  4.50it/s, failures=0, objective=-1.85e-5]     81%|████████  | 81/100 [00:17<00:04,  4.57it/s, failures=0, objective=-1.85e-5]     81%|████████  | 81/100 [00:17<00:04,  4.57it/s, failures=0, objective=-1.85e-5]     82%|████████▏ | 82/100 [00:17<00:03,  4.57it/s, failures=0, objective=-1.85e-5]     83%|████████▎ | 83/100 [00:17<00:03,  4.57it/s, failures=0, objective=-1.85e-5]     84%|████████▍ | 84/100 [00:17<00:03,  4.57it/s, failures=0, objective=-1.85e-5]min_impurity_decrease updated: 4e-05
+     85%|████████▌ | 85/100 [00:18<00:03,  4.49it/s, failures=0, objective=-1.85e-5]     85%|████████▌ | 85/100 [00:18<00:03,  4.49it/s, failures=0, objective=-1.85e-5]     86%|████████▌ | 86/100 [00:18<00:03,  4.49it/s, failures=0, objective=-1.85e-5]     87%|████████▋ | 87/100 [00:18<00:02,  4.49it/s, failures=0, objective=-1.85e-5]     88%|████████▊ | 88/100 [00:18<00:02,  4.49it/s, failures=0, objective=-1.85e-5]     89%|████████▉ | 89/100 [00:19<00:02,  4.57it/s, failures=0, objective=-1.85e-5]     89%|████████▉ | 89/100 [00:19<00:02,  4.57it/s, failures=0, objective=-1.85e-5]     90%|█████████ | 90/100 [00:19<00:02,  4.57it/s, failures=0, objective=-1.85e-5]     91%|█████████ | 91/100 [00:19<00:01,  4.57it/s, failures=0, objective=-1.85e-5]     92%|█████████▏| 92/100 [00:19<00:01,  4.57it/s, failures=0, objective=-1.85e-5]     93%|█████████▎| 93/100 [00:20<00:01,  4.50it/s, failures=0, objective=-1.85e-5]     93%|█████████▎| 93/100 [00:20<00:01,  4.50it/s, failures=0, objective=-1.85e-5]     94%|█████████▍| 94/100 [00:20<00:01,  4.50it/s, failures=0, objective=-1.85e-5]     95%|█████████▌| 95/100 [00:20<00:01,  4.50it/s, failures=0, objective=-1.85e-5]     96%|█████████▌| 96/100 [00:20<00:00,  4.50it/s, failures=0, objective=-1.85e-5]     97%|█████████▋| 97/100 [00:21<00:00,  4.57it/s, failures=0, objective=-1.85e-5]     97%|█████████▋| 97/100 [00:21<00:00,  4.57it/s, failures=0, objective=-1.85e-5]     98%|█████████▊| 98/100 [00:21<00:00,  4.57it/s, failures=0, objective=-1.85e-5]     99%|█████████▉| 99/100 [00:21<00:00,  4.57it/s, failures=0, objective=-1.85e-5]    100%|██████████| 100/100 [00:21<00:00,  4.57it/s, failures=0, objective=-1.85e-5]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-122
+.. GENERATED FROM PYTHON SOURCE LINES 112-120
 
 Finally, let us visualize the results. The ``search(...)`` returns a DataFrame also saved locally under ``results.csv`` (in case of crash we don't want to lose the possibly expensive evaluations already performed).
 
@@ -243,7 +244,7 @@ The DataFrame contains as columns:
 3. the ``job_id`` of each evaluated function (increased incrementally following the order of created evaluations).
 4. the time of creation/collection of each task ``timestamp_submit`` and ``timestamp_gather`` respectively (in secondes, since the creation of the Evaluator).
 
-.. GENERATED FROM PYTHON SOURCE LINES 124-126
+.. GENERATED FROM PYTHON SOURCE LINES 122-124
 
 .. code-block:: Python
 
@@ -286,48 +287,48 @@ The DataFrame contains as columns:
       <tbody>
         <tr>
           <th>0</th>
-          <td>-5.553139</td>
-          <td>-3.083736e+01</td>
-          <td>1</td>
+          <td>-4.375545</td>
+          <td>-19.145392</td>
+          <td>0</td>
           <td>DONE</td>
-          <td>0.054208</td>
-          <td>0.055617</td>
+          <td>0.008249</td>
+          <td>0.008734</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>3.411852</td>
-          <td>-1.164074e+01</td>
-          <td>0</td>
+          <td>1.090036</td>
+          <td>-1.188179</td>
+          <td>1</td>
           <td>DONE</td>
-          <td>0.054146</td>
-          <td>0.057126</td>
+          <td>0.008265</td>
+          <td>0.015338</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>-6.826507</td>
-          <td>-4.660119e+01</td>
+          <td>9.009590</td>
+          <td>-81.172715</td>
           <td>2</td>
           <td>DONE</td>
-          <td>0.054227</td>
-          <td>0.057351</td>
+          <td>0.008272</td>
+          <td>0.015476</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>-6.686544</td>
-          <td>-4.470987e+01</td>
+          <td>8.568972</td>
+          <td>-73.427281</td>
           <td>3</td>
           <td>DONE</td>
-          <td>0.054243</td>
-          <td>0.057552</td>
+          <td>0.008276</td>
+          <td>0.015541</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>5.998550</td>
-          <td>-3.598260e+01</td>
-          <td>4</td>
+          <td>2.919459</td>
+          <td>-8.523240</td>
+          <td>5</td>
           <td>DONE</td>
-          <td>0.090079</td>
-          <td>0.091179</td>
+          <td>0.969010</td>
+          <td>0.969412</td>
         </tr>
         <tr>
           <th>...</th>
@@ -340,48 +341,48 @@ The DataFrame contains as columns:
         </tr>
         <tr>
           <th>95</th>
-          <td>-0.000437</td>
-          <td>-1.911849e-07</td>
-          <td>94</td>
+          <td>0.120686</td>
+          <td>-0.014565</td>
+          <td>93</td>
           <td>DONE</td>
-          <td>7.054623</td>
-          <td>7.055794</td>
+          <td>20.369269</td>
+          <td>20.369850</td>
         </tr>
         <tr>
           <th>96</th>
-          <td>-0.000294</td>
-          <td>-8.648508e-08</td>
-          <td>96</td>
+          <td>0.127925</td>
+          <td>-0.016365</td>
+          <td>99</td>
           <td>DONE</td>
-          <td>7.407744</td>
-          <td>7.408347</td>
+          <td>21.212798</td>
+          <td>21.213076</td>
         </tr>
         <tr>
           <th>97</th>
-          <td>-0.000582</td>
-          <td>-3.384953e-07</td>
-          <td>97</td>
+          <td>0.135909</td>
+          <td>-0.018471</td>
+          <td>96</td>
           <td>DONE</td>
-          <td>7.407769</td>
-          <td>7.408717</td>
+          <td>21.212777</td>
+          <td>21.213264</td>
         </tr>
         <tr>
           <th>98</th>
-          <td>-0.000582</td>
-          <td>-3.384953e-07</td>
-          <td>99</td>
+          <td>0.128395</td>
+          <td>-0.016485</td>
+          <td>98</td>
           <td>DONE</td>
-          <td>7.407792</td>
-          <td>7.408890</td>
+          <td>21.212795</td>
+          <td>21.213325</td>
         </tr>
         <tr>
           <th>99</th>
-          <td>-0.000582</td>
-          <td>-3.384953e-07</td>
-          <td>98</td>
+          <td>0.134130</td>
+          <td>-0.017991</td>
+          <td>97</td>
           <td>DONE</td>
-          <td>7.407781</td>
-          <td>7.409058</td>
+          <td>21.212791</td>
+          <td>21.213377</td>
         </tr>
       </tbody>
     </table>
@@ -391,11 +392,11 @@ The DataFrame contains as columns:
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 127-128
+.. GENERATED FROM PYTHON SOURCE LINES 125-126
 
 To get the parameters at the observed maximum value we can use the :func:`deephyper.analysis.hpo.parameters_at_max`:
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-137
+.. GENERATED FROM PYTHON SOURCE LINES 126-135
 
 .. code-block:: Python
 
@@ -418,17 +419,17 @@ To get the parameters at the observed maximum value we can use the :func:`deephy
 
 
     Optimum values
-    x: -6.098006986832161e-05
-    objective: -3.7185689211453846e-09
+    x: -0.0042995960267848
+    objective: -1.848652599354423e-05
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 138-139
+.. GENERATED FROM PYTHON SOURCE LINES 136-137
 
 We can also plot the evolution of the objective to verify that we converge correctly toward :math:`0`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 139-151
+.. GENERATED FROM PYTHON SOURCE LINES 137-149
 
 .. code-block:: Python
 
@@ -459,7 +460,7 @@ We can also plot the evolution of the objective to verify that we converge corre
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 10.886 seconds)
+   **Total running time of the script:** (0 minutes 23.380 seconds)
 
 
 .. _sphx_glr_download_examples_examples_bbo_plot_black_box_optimization.py:
