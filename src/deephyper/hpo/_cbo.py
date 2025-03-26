@@ -9,7 +9,7 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, ValidationInfo, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator, ConfigDict
 from sklearn.base import is_regressor
 
 import deephyper.skopt
@@ -87,6 +87,7 @@ class SurrogateModelScheduler(BaseModel):
 
 class SurrogateModelKwargs(BaseModel):
     scheduler: Optional[SurrogateModelScheduler] = SurrogateModelScheduler()
+    model_config = ConfigDict(extra="allow")
 
 
 # schedulers
@@ -539,7 +540,7 @@ class CBO(Search):
         """Apply scheduler policy and update corresponding values in Optimizer."""
         if self.scheduler is not None:
             kappa, xi = self.scheduler(i)
-            values = {"kappa": kappa, "xi": xi}
+            values = {"kappa": float(kappa), "xi": float(xi)}
             logging.info(f"Updated exploration-exploitation policy with {values} from scheduler")
             self._opt.acq_func_kwargs.update(values)
 
