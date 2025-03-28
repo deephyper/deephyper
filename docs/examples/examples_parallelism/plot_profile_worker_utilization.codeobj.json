@@ -161,6 +161,15 @@
    "name": "TqdmCallback"
   }
  ],
+ "_": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "tuple"
+  }
+ ],
  "__name__": [
   {
    "is_class": false,
@@ -405,22 +414,6 @@
    "module": "deephyper.analysis.hpo",
    "module_short": "deephyper.analysis.hpo",
    "name": "plot_worker_utilization"
-  }
- ],
- "plt.show": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "matplotlib.pyplot",
-   "module_short": "matplotlib.pyplot",
-   "name": "show"
   }
  ],
  "plt.subplots": [

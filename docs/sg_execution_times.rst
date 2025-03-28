@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**06:08.206** total execution time for 11 files **from all galleries**:
+**00:26.823** total execution time for 11 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_for_rf_and_overfitting.py` (``../examples/examples_hpo/plot_hpo_for_rf_and_overfitting.py``)
-     - 06:08.206
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_profile_worker_utilization.py` (``../examples/examples_parallelism/plot_profile_worker_utilization.py``)
+     - 00:26.823
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
@@ -50,10 +50,10 @@ Computation times
    * - :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py` (``../examples/examples_bbo/plot_transfer_learning_for_hpo.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_parallelism_plot_from_serial_to_parallel_hpo.py` (``../examples/examples_parallelism/plot_from_serial_to_parallel_hpo.py``)
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_for_rf_and_overfitting.py` (``../examples/examples_hpo/plot_hpo_for_rf_and_overfitting.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_parallelism_plot_profile_worker_utilization.py` (``../examples/examples_parallelism/plot_profile_worker_utilization.py``)
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_from_serial_to_parallel_hpo.py` (``../examples/examples_parallelism/plot_from_serial_to_parallel_hpo.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)

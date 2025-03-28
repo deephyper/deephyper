@@ -934,18 +934,18 @@ class Optimizer(object):
                     # Single-Objective Optimization
 
                     # replace outliers (large values) using interquantile range
+                    # dtype="O" is key to avoid converting data to string
                     yi = np.asarray(yi, dtype="O")
                     mask_no_failures = np.where(yi != "F")
                     q1 = np.quantile(yi[mask_no_failures], q=0.25)
                     q3 = np.quantile(yi[mask_no_failures], q=0.75)
-                    threshold = q3 + 1.5 * (q3 - q1)
+                    threshold = q3 + 1.5 * (q3 - q1) # TODO: 1.5 could be a parameter
                     mask = np.where(
                         (yi != "F") & np.array([v != "F" and v > threshold for v in yi])
                     )
                     yi[mask] = threshold
 
                     if "F" in yi:
-                        # ! dtype="O" is key to avoid converting data to string
                         mask_no_failures = np.where(yi != "F")
                         yi[mask_no_failures] = (
                             self.objective_scaler.fit_transform(

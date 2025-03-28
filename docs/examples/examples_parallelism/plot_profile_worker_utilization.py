@@ -97,6 +97,7 @@ def execute_search(timeout, num_workers):
     search = CBO(
         problem,
         evaluator,
+        multi_point_strategy="qUCBd",
         random_state=42,
     )
 
@@ -127,11 +128,10 @@ if __name__ == "__main__":
         tight_layout=True,
     )
 
-    plot_search_trajectory_single_objective_hpo(
+    _ = plot_search_trajectory_single_objective_hpo(
         results, mode="min", x_units="seconds", ax=axes[0],
     )
 
-    plot_worker_utilization(
+    _ = plot_worker_utilization(
         results, num_workers=num_workers, profile_type="start/end", ax=axes[1],
     )
-    plt.show()
