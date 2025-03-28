@@ -76,7 +76,7 @@ def run_ackley(config, sleep_loc=2, sleep_scale=0.5):
 # optimize Ackley in a N-dimensional search space. Each dimension in the continuous range
 # [-32.768, 32.768]. The true minimum is located at ``(0, ..., 0)``.
 
-nb_dim = 5
+nb_dim = 10
 problem = HpProblem()
 for i in range(nb_dim):
     problem.add_hyperparameter((-32.768, 32.768), f"x{i}")
@@ -88,22 +88,14 @@ problem
 # classic constant-liar strategy (a.k.a, Krigging Believer) `"cl_min/max/mean` in our setting
 # would totally freeze the execution (you can try!).
 search_kwargs = {
-    "n_initial_points": 2 * nb_dim + 1,  # Number of initial random points
-    "surrogate_model": "ET",  # Use Extra Trees as surrogate model
-    "surrogate_model_kwargs": {
-        "n_estimators": 25,  # Relatively small number of trees in the surrogate to make it "fast"
-        "min_samples_split": 8,  # Larger number to avoid small leaf nodes (smoothing the response)
+    "acq_func_kwargs": {
+        "kappa": 2.0,
+    },
+    "acq_optimizer": "ga",  # Use continuous Genetic Algorithm for the acquisition function optimizer
+    "acq_optimizer_kwargs": {
+        "filter_duplicated": False, # Deactivate filtration of duplicated new points
     },
     "multi_point_strategy": "qUCBd",  # Multi-point strategy for asynchronous batch generations (explained later)
-    "acq_optimizer": "ga",  # Use continuous Genetic Algorithm for the acquisition function optimizer
-    "acq_optimizer_freq": 1,  # Frequency of the acquisition function optimizer (1 = each new batch generation) increasing this value can help amortize the computational cost of acquisition function optimization
-    "filter_duplicated": False,  # Deactivate filtration of duplicated new points
-    "kappa": 10.0,  # Initial value of exploration-exploitation parameter for the acquisition function
-    "scheduler": {  # Scheduler for the exploration-exploitation parameter "kappa"
-        "type": "periodic-exp-decay",  # Periodic exponential decay
-        "period": 50,  # Period over which the decay is applied. It is useful to escape local solutions.
-        "kappa_final": 0.001,  # Value of kappa at the end of each "period"
-    },
     "random_state": 42,  # Random seed
 }
 
@@ -225,7 +217,7 @@ def execute_centralized_bo_with_share_memory(
         },
     )
 
-    search_kwargs["kappa"] = kappa
+    search_kwargs["acq_func_kwargs"]["kappa"] = kappa
     search_kwargs["random_state"] = search_random_state
     search = CBO(problem, evaluator, log_dir=log_dir, **search_kwargs)
 
@@ -266,7 +258,9 @@ def execute_decentralized_bo(
     storage = SharedMemoryStorage()
     search_id = storage.create_new_search()
     kappa = ss.expon.rvs(
-        size=n_processes, scale=search_kwargs["kappa"], random_state=search_kwargs["random_state"]
+        size=n_processes, 
+        scale=search_kwargs["acq_func_kwargs"]["kappa"], 
+        random_state=search_kwargs["random_state"],
     )
 
     executor = get_reusable_executor(max_workers=n_processes, context="spawn")
