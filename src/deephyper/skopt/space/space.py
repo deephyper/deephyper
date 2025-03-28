@@ -7,11 +7,9 @@ import numpy as np
 import scipy.stats as ss
 import yaml
 from ConfigSpace.util import deactivate_inactive_hyperparameters
-from scipy.stats import gaussian_kde
 from sklearn.utils import check_random_state
 
-from deephyper.core.utils.joblib_utils import Parallel, delayed
-from deephyper.core.utils import CaptureSTD
+from deephyper.skopt.joblib import Parallel, delayed
 
 from .transformers import (
     CategoricalEncoder,
@@ -24,6 +22,7 @@ from .transformers import (
     ToInteger,
 )
 
+__all__ = []
 
 # helper class to be able to print [1, ..., 4] instead of [1, '...', 4]
 class _Ellipsis:
@@ -469,24 +468,6 @@ class Real(Dimension):
                 "the space, not %s and %s." % (a, b)
             )
         return abs(a - b)
-
-    def update_prior(self, X, y, q=0.9):
-        """Fit a Kernel Density Estimator to the data to increase density of samples around regions of interest instead of uniform random-sampling."""
-        X = np.array(X)
-        y = np.array(y)
-
-        y_ = np.quantile(y, q)  # threshold
-        X_low = X[y <= y_]
-
-        # It is possible that fitting the Gaussian Kernel Density Estimator
-        # triggers an error, for example if all values of X_low are the same.
-        # In this case, we fall back to uniform sampling or we reuse the last
-        # fitted self._kde.
-        try:
-            kde = gaussian_kde(X_low)
-            self._kde = kde
-        except np.linalg.LinAlgError:
-            pass
 
     def rvs(self, n_samples=1, random_state=None):
         """Draw random samples.
@@ -979,9 +960,9 @@ class Space:
             dimensions.
     """
 
-    def __init__(self, dimensions, model_sdv=None, config_space=None):
+    def __init__(self, dimensions, custom_sampler=None, config_space=None):
         # attribute used when a generative model is used to sample
-        self.model_sdv = model_sdv
+        self.custom_sampler = custom_sampler
 
         # attribute use when a config space is used to sample
         assert config_space is None or isinstance(config_space, CS.ConfigurationSpace)
@@ -1106,14 +1087,13 @@ class Space:
 
             hps_names = list(self.config_space.keys())
 
-            if self.model_sdv is None:
+            if self.custom_sampler is None:
                 confs = self.config_space.sample_configuration(n_samples)
 
                 if n_samples == 1:
                     confs = [confs]
             else:
-                with CaptureSTD():
-                    confs = self.model_sdv.sample(n_samples)
+                confs = self.custom_sampler.sample(n_samples)
 
                 sdv_names = confs.columns
 
@@ -1149,7 +1129,7 @@ class Space:
 
             return req_points
         else:
-            if self.model_sdv is None:
+            if self.custom_sampler is None:
                 # Regular sampling without transfer learning from flat search space
                 # Joblib parallel optimization
                 # Draw
@@ -1171,8 +1151,7 @@ class Space:
 
                 return columns.tolist()
             else:
-                with CaptureSTD():
-                    confs = self.model_sdv.sample(n_samples)  # sample from SDV
+                confs = self.custom_sampler.sample(n_samples)
 
                 columns = []
                 for dim in self.dimensions:
@@ -1397,20 +1376,7 @@ class Space:
 
         return distance
 
-    def update_prior(self, X, y, q=0.9):
-        """Update the prior of the dimensions.
-
-        Instead of doing random-sampling, a kernel density estimation is fit on the region of interest and
-        sampling is performed from this distribution.
-        """
-        y = np.array(y)
-
-        for i, dim in enumerate(self.dimensions):
-            Xi = [x[i] for x in X]
-            if hasattr(dim, "update_prior"):
-                dim.update_prior(Xi, y, q=q)
-
-    def deactivate_inactive_dimensions(self, x):
+    def deactivate_inactive_dimensions(self, x: list) -> list:
         """When ConfigSpace is used, it will return the "lower" bound of inactive parameters."""
         x = x[:]
         if self.config_space is not None:

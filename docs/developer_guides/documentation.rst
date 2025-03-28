@@ -3,13 +3,10 @@ Documentation
 
 To build the documentation we use the `Sphinx <https://www.sphinx-doc.org/en/master/>`_ package. The theme used is `Sphinx Book Theme <https://sphinx-book-theme.readthedocs.io/en/latest/>`_.
 
-Developer Installation
-======================
-
-Follow the :ref:`local-dev-installation`. and have `Pandoc <https://pandoc.org/installing.html>`_ installed.
-
 Build the Documentation
 =======================
+
+Follow the :ref:`install-developer`.
 
 Once your virtual environment with DeepHyper is activated run the following commands:
 
@@ -84,7 +81,7 @@ The blank line between ``# Some text here...`` and ``# .. dropdown:: A title for
 
 
 Setting the Preview Figure
--------------------------
+--------------------------
 
 To set the figure from the example that should be displayed on the gallery page as preview use:
 

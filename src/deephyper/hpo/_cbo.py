@@ -3,15 +3,15 @@ import logging
 import numbers
 import time
 import warnings
-from typing import Dict, List
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel, ValidationInfo, field_validator, ConfigDict
 from sklearn.base import is_regressor
 
-import deephyper.core.exceptions
 import deephyper.skopt
 from deephyper.analysis.hpo import filter_failed_objectives
 from deephyper.evaluator import HPOJob
@@ -24,6 +24,9 @@ from deephyper.skopt.moo import (
     non_dominated_set,
     non_dominated_set_ranked,
 )
+from deephyper.stopper import Stopper
+
+__all__ = ["CBO"]
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {
@@ -36,6 +39,56 @@ MAP_multi_point_strategy = {
 MAP_acq_func = {"UCB": "LCB", "UCBd": "LCBd"}
 
 MAP_filter_failures = {"min": "max"}
+
+
+class AcqFuncKwargsScheduler(BaseModel):
+    type: Optional[Literal["bandit", "periodic-exp-decay"]] = "periodic-exp-decay"
+    delay: Optional[Union[int, Literal["n-initial-points"]]] = "n-initial-points"
+    # "periodic-exp-decay" parameters
+    kappa_final: Optional[float] = 0.01
+    xi_final: Optional[float] = 1e-4
+    period: Optional[int] = 10
+    # "bandit" parameters
+    delta: Optional[float] = 0.05
+    lamb: Optional[float] = 0.2
+
+
+class AcqFuncKwargs(BaseModel):
+    kappa: Optional[float] = 1.96
+    xi: Optional[float] = 0.1
+    scheduler: Optional[AcqFuncKwargsScheduler] = AcqFuncKwargsScheduler()
+
+
+class AcqOptimizerKwargs(BaseModel):
+    n_points: Optional[int] = 10_000
+    filter_duplicated: Optional[bool] = True
+    filter_failures: Optional[Literal["ignore", "max", "mean"]] = "max"
+    max_failures: Optional[int] = 100
+    acq_optimizer_freq: Optional[int] = 1
+    n_jobs: Optional[int] = 1
+    n_restarts_optimizer: Optional[int] = 1
+    # Genetic algorithms parameters
+    ga_pop_size: Optional[int] = 100
+    ga_xtol: Optional[float] = 1e-8
+    ga_ftol: Optional[float] = 1e-6
+    ga_period: Optional[int] = 30
+    ga_n_max_gen: Optional[int] = 1000
+
+    @field_validator("filter_failures", mode="before")
+    @classmethod
+    def map_filter_failures(cls, v: str, info: ValidationInfo) -> str:
+        v = MAP_filter_failures.get(v, v)
+        return v
+
+
+class SurrogateModelScheduler(BaseModel):
+    patience: Optional[int] = 10
+    params: Optional[dict] = dict(min_impurity_decrease=dict(factor=0.2))
+
+
+class SurrogateModelKwargs(BaseModel):
+    scheduler: Optional[SurrogateModelScheduler] = SurrogateModelScheduler()
+    model_config = ConfigDict(extra="allow")
 
 
 # schedulers
@@ -119,7 +172,7 @@ class CBO(Search):
             function. Defaults to ``None`` which does not use any stopper.
 
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
-            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "MF", "GBRT",
+            the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
             "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
             the best compromise between speed and quality when performing a lot of parallel
             evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-
@@ -137,32 +190,52 @@ class CBO(Search):
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a
             value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
 
-        acq_optimizer (str, optional): Method used to minimze the acquisition function. Can be a
-            value in ``["sampling", "lbfgs", "ga", "mixedga"]``. Defaults to ``"auto"``.
+        acq_func_kwargs (dict, optional):
+            A dictionnary of parameters for the acquisition function:
 
-        acq_optimizer_freq (int, optional): Frequency of optimization calls for the acquisition
-            function. Defaults to ``10``, using optimizer every ``10`` surrogate model updates.
+            - ``"kappa"`` (float)
+                Manage the exploration/exploitation tradeoff for the ``"UCB"`` acquisition function.
+                Defaults to ``1.96`` which corresponds to 95% of the confidence interval.
 
-        kappa (float, optional): Manage the exploration/exploitation tradeoff for the "UCB"
-            acquisition function. Defaults to ``1.96`` which corresponds to 95% of the confidence
-            interval.
+            - ``"xi"`` (float)
+                Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"``
+                acquisition function. Defaults to ``0.001``.
 
-        xi (float, optional): Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"``
-            acquisition function. Defaults to ``0.001``.
+        acq_optimizer (str, optional):
+            Method used to minimze the acquisition function. Can be a value in
+            ``["sampling", "lbfgs", "ga", "mixedga"]``. Defaults to ``"auto"``.
 
-        n_points (int, optional): The number of configurations sampled from the search space to
-            infer each batch of new evaluated configurations.
+        acq_optimizer_kwargs (dict, optional):
+            A dictionnary of parameters for the acquisition function optimizer:
 
-        filter_duplicated (bool, optional): Force the optimizer to sample unique points until the
-            search space is "exhausted" in the sens that no new unique points can be found given
-            the sampling size ``n_points``. Defaults to ``True``.
+            - ``"acq_optimizer_freq"`` (int)
+                Frequency of optimization calls for the acquisition function. Defaults
+                to ``10``, using optimizer every ``10`` surrogate model updates.
 
-        update_prior (bool, optional): Update the prior of the surrogate model with the new
-            evaluated points. Defaults to ``False``. Should be set to ``True`` when all objectives
-            and parameters are continuous.
+            - ``"n_points"`` (int)
+                The number of configurations sampled from the search space to infer each
+                batch of new evaluated configurations.
 
-        update_prior_quantile (float, optional): The quantile used to update the prior.
-            Defaults to ``0.1``.
+            - ``"filter_duplicated"`` (bool)
+                Force the optimizer to sample unique points until the search space is "exhausted"
+                in the sens that no new unique points can be found given the sampling size
+                ``n_points``. Defaults to ``True``.
+
+            - ``"n_jobs"`` (int)
+                Number of parallel processes used when possible. Defaults to ``1``.
+
+            - ``"filter_failures"`` (str)
+                Replace objective of failed configurations by ``"min"`` or ``"mean"``. If
+                ``"ignore"`` is passed then failed configurations will be filtered-out and not
+                passed to the surrogate model. For multiple objectives,
+                failure of any single objective will lead to treating that configuration as failed
+                and each of these multiple objective will be replaced by their individual ``"min"``
+                or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed
+                configurations objectives by the running min of all objectives.
+
+            - ``"max_failures"`` (int)
+                Maximum number of failed configurations allowed before observing a valid objective
+                value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
 
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
             strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]``. All
@@ -174,12 +247,9 @@ class CBO(Search):
             fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value
             for each new requested point without re-fitting the model.
 
-        n_jobs (int, optional): Number of parallel processes used to fit the surrogate model of the
-            Bayesian optimization. A value of ``-1`` will use all available cores. Not used in
-            ``surrogate_model`` if passed as own sklearn regressor. Defaults to ``1``.
-
         n_initial_points (int, optional): Number of collected objectives required before fitting
-            the surrogate-model. Defaults to ``10``.
+            the surrogate-model. Defaults to ``None`` that will use ``2 * N + 1`` where ``N`` is
+            the number of parameters in the ``problem``.
 
         initial_point_generator (str, optional): Sets an initial points generator. Can be either
             ``["random", "sobol", "halton", "hammersly", "lhs", "grid"]``. Defaults to ``"random"``.
@@ -188,18 +258,6 @@ class CBO(Search):
             point is a dictionnary where keys are names of hyperparameters and values their
             corresponding choice. Defaults to ``None`` for them to be generated randomly from
             the search space.
-
-        filter_failures (str, optional): Replace objective of failed configurations by ``"min"``
-            or ``"mean"``. If ``"ignore"`` is passed then failed configurations will be
-            filtered-out and not passed to the surrogate model. For multiple objectives, failure of
-            any single objective will lead to treating that configuration as failed and each of
-            these multiple objective will be replaced by their individual ``"min"`` or ``"mean"``
-            of past configurations. Defaults to ``"min"`` to replace failed configurations
-            objectives by the running min of all objectives.
-
-        max_failures (int, optional): Maximum number of failed configurations allowed before
-            observing a valid objective value when ``filter_failures`` is not equal to
-            ``"ignore"``. Defaults to ``100``.
 
         moo_lower_bounds (list, optional): List of lower bounds on the interesting range of
             objective values. Must be the same length as the number of obejctives. Defaults to
@@ -241,39 +299,26 @@ class CBO(Search):
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
-        stopper=None,
+        stopper: Optional[Stopper] = None,
         surrogate_model="ET",
-        surrogate_model_kwargs: dict = None,  # TODO: documentation
+        surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
-        acq_optimizer: str = "auto",
-        acq_optimizer_freq: int = 10,
-        kappa: float = 1.96,
-        xi: float = 0.001,
-        n_points: int = 10_000,
-        filter_duplicated: bool = True,
-        update_prior: bool = False,
-        update_prior_quantile: float = 0.1,
+        acq_func_kwargs: Optional[AcqFuncKwargs] = None,
+        acq_optimizer: str = "mixedga",
+        acq_optimizer_kwargs: Optional[AcqOptimizerKwargs] = None,
         multi_point_strategy: str = "cl_max",
-        n_jobs: int = 1,  # 32 is good for Theta
-        n_initial_points: int = 10,
+        n_initial_points: Optional[int] = None,
         initial_point_generator: str = "random",
-        initial_points=None,
-        filter_failures: str = "min",
-        max_failures: int = 100,
+        initial_points: Optional[List[Dict[str, Any]]] = None,
         moo_lower_bounds=None,
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
-        scheduler=None,
-        objective_scaler="auto",
+        objective_scaler="minmax",
         **kwargs,
     ):
         super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
         # get the __init__ parameters
         self._init_params = locals()
-
-        # check input parameters
-        if type(n_jobs) is not int:
-            raise ValueError(f"Parameter n_jobs={n_jobs} should be an integer value!")
 
         surrogate_model_allowed = [
             # Trees
@@ -281,7 +326,6 @@ class CBO(Search):
             "ET",
             "TB",
             "RS",
-            "MF",
             # Other models
             "GBRT",
             "GP",
@@ -289,12 +333,17 @@ class CBO(Search):
             # Random Search
             "DUMMY",
         ]
+
+        surrogate_model_kwargs = {} if surrogate_model_kwargs is None else surrogate_model_kwargs
+        self._surrogate_model_kwargs = SurrogateModelKwargs(**surrogate_model_kwargs).model_dump()
+
+        base_estimator_scheduler = self._surrogate_model_kwargs.pop("scheduler")
+
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
-                n_jobs=n_jobs,
                 random_state=self._random_state.randint(0, 2**31),
-                surrogate_model_kwargs=surrogate_model_kwargs,
+                surrogate_model_kwargs=self._surrogate_model_kwargs,
             )
         elif is_regressor(surrogate_model):
             base_estimator = surrogate_model
@@ -321,22 +370,11 @@ class CBO(Search):
                 f"Parameter 'acq_func={acq_func}' should have a value in {acq_func_allowed}!"
             )
 
-        if not (np.isscalar(kappa)):
-            raise ValueError("Parameter 'kappa' should be a scalar value!")
+        acq_func_kwargs = {} if acq_func_kwargs is None else acq_func_kwargs
+        self._acq_func_kwargs = AcqFuncKwargs(**acq_func_kwargs).model_dump()
 
-        if not (np.isscalar(xi)):
-            raise ValueError("Parameter 'xi' should be a scalar value!")
-
-        if type(n_points) is not int:
-            raise ValueError("Parameter 'n_points' shoud be an integer value!")
-
-        if type(filter_duplicated) is not bool:
-            raise ValueError(
-                f"Parameter filter_duplicated={filter_duplicated} should be a boolean value!"
-            )
-
-        if type(max_failures) is not int:
-            raise ValueError(f"Parameter max_failures={max_failures} should be an integer value!")
+        acq_optimizer_kwargs = {} if acq_optimizer_kwargs is None else acq_optimizer_kwargs
+        self._acq_optimizer_kwargs = AcqOptimizerKwargs(**acq_optimizer_kwargs).model_dump()
 
         # Initialize lower bounds for objectives
         if moo_lower_bounds is None:
@@ -381,7 +419,10 @@ class CBO(Search):
                 f"in {multi_point_strategy_allowed}!"
             )
 
-        self._n_initial_points = n_initial_points
+        if n_initial_points is None:
+            self._n_initial_points = 2 * len(problem) + 1
+        else:
+            self._n_initial_points = n_initial_points
         self._initial_points = []
         if initial_points is not None and len(initial_points) > 0:
             for point in initial_points:
@@ -410,22 +451,14 @@ class CBO(Search):
         self._opt_kwargs = dict(
             dimensions=self._opt_space,
             base_estimator=base_estimator,
+            base_estimator_scheduler=base_estimator_scheduler,
             # optimizer
             initial_point_generator=initial_point_generator,
             acq_optimizer=acq_optimizer,
-            acq_optimizer_kwargs={
-                "n_points": n_points,
-                "filter_duplicated": filter_duplicated,
-                "update_prior": update_prior,
-                "update_prior_quantile": 1 - update_prior_quantile,
-                "n_jobs": n_jobs,
-                "filter_failures": MAP_filter_failures.get(filter_failures, filter_failures),
-                "max_failures": max_failures,
-                "acq_optimizer_freq": acq_optimizer_freq,
-            },
+            acq_optimizer_kwargs=self._acq_optimizer_kwargs,
             # acquisition function
             acq_func=MAP_acq_func.get(acq_func, acq_func),
-            acq_func_kwargs={"xi": xi, "kappa": kappa},
+            acq_func_kwargs=self._acq_func_kwargs,
             n_initial_points=self._n_initial_points,
             initial_points=self._initial_points,
             random_state=self._random_state,
@@ -436,9 +469,13 @@ class CBO(Search):
         )
 
         # Scheduler policy
+        scheduler = self._acq_func_kwargs["scheduler"]
         scheduler = {"type": "bandit"} if scheduler is None else scheduler
+        if scheduler["delay"] == "n-initial-points":
+            scheduler["delay"] = self._n_initial_points
+
         self.scheduler = None
-        if type(scheduler) is dict:
+        if isinstance(scheduler, dict):
             scheduler = scheduler.copy()
             scheduler_type = scheduler.pop("type", None)
             assert scheduler_type in ["periodic-exp-decay", "bandit"]
@@ -451,9 +488,11 @@ class CBO(Search):
                 # the equation: eta_0 * exp(-rate * period) = eta_final
                 if rate is None:
                     if "UCB" in acq_func:
+                        kappa = self._acq_func_kwargs["kappa"]
                         kappa_final = scheduler.pop("kappa_final", 0.1)
                         rate = -1 / period * np.log(kappa_final / kappa)
                     elif "EI" in acq_func or "PI" in acq_func:
+                        xi = self._acq_func_kwargs["xi"]
                         xi_final = scheduler.pop("xi_final", 0.0001)
                         rate = -1 / period * np.log(xi_final / xi)
                     else:
@@ -462,7 +501,7 @@ class CBO(Search):
                 scheduler_params = {
                     "period": period,
                     "rate": rate,
-                    "delay": n_initial_points,
+                    "delay": self._n_initial_points,
                 }
                 scheduler_func = scheduler_periodic_exponential_decay
 
@@ -470,12 +509,11 @@ class CBO(Search):
                 scheduler_params = {
                     "delta": 0.05,
                     "lamb": 0.2,
-                    "delay": n_initial_points,
+                    "delay": self._n_initial_points,
                 }
                 scheduler_func = scheduler_bandit
 
-            scheduler_params.update(scheduler)
-            eta_0 = np.array([kappa, xi])
+            eta_0 = np.array([self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]])
             self.scheduler = functools.partial(
                 scheduler_func,
                 eta_0=eta_0,
@@ -486,7 +524,10 @@ class CBO(Search):
                 f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
             )
         elif callable(scheduler):
-            self.scheduler = functools.partial(scheduler, eta_0=np.array([kappa, xi]))
+            self.scheduler = functools.partial(
+                scheduler,
+                eta_0=np.array([self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]]),
+            )
             logging.info(f"Set up scheduler '{scheduler}'")
 
         self._num_asked = 0
@@ -500,7 +541,7 @@ class CBO(Search):
         """Apply scheduler policy and update corresponding values in Optimizer."""
         if self.scheduler is not None:
             kappa, xi = self.scheduler(i)
-            values = {"kappa": kappa, "xi": xi}
+            values = {"kappa": float(kappa), "xi": float(xi)}
             logging.info(f"Updated exploration-exploitation policy with {values} from scheduler")
             self._opt.acq_func_kwargs.update(values)
 
@@ -569,7 +610,6 @@ class CBO(Search):
     def _get_surrogate_model(
         self,
         name: str,
-        n_jobs: int = 1,
         random_state: int = None,
         surrogate_model_kwargs: dict = None,
     ):
@@ -589,7 +629,7 @@ class CBO(Search):
             ValueError: when the name of the surrogate model is unknown.
         """
         # Check if the surrogate model is supported
-        accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "MF", "HGBRT"]
+        accepted_names = ["RF", "ET", "TB", "RS", "GBRT", "DUMMY", "GP", "HGBRT"]
         if name not in accepted_names:
             raise ValueError(
                 f"Unknown surrogate model {name}, please choose among {accepted_names}."
@@ -599,12 +639,12 @@ class CBO(Search):
             surrogate_model_kwargs = {}
 
         # Define default surrogate model parameters
-        if name in ["RF", "ET", "TB", "RS", "MF"]:
+        if name in ["RF", "ET", "TB", "RS"]:
             default_surrogate_model_kwargs = dict(
-                n_estimators=100,
+                n_estimators=10,
                 max_samples=0.8,
                 min_samples_split=2,  # Aleatoric Variance will be 0
-                n_jobs=n_jobs,
+                min_impurity_decrease=0.005,
                 random_state=random_state,
             )
 
@@ -631,19 +671,14 @@ class CBO(Search):
                 default_surrogate_model_kwargs["bootstrap"] = False
                 default_surrogate_model_kwargs["max_samples"] = None
                 default_surrogate_model_kwargs["max_features"] = "sqrt"
-            elif name == "MF":
-                default_surrogate_model_kwargs["bootstrap"] = False
-                default_surrogate_model_kwargs["max_samples"] = None
 
         elif name == "GBRT":
             default_surrogate_model_kwargs = dict(
                 n_estimtaors=10,
-                n_jobs=n_jobs,
                 random_state=random_state,
             )
         elif name == "HGBRT":
             default_surrogate_model_kwargs = dict(
-                n_jobs=n_jobs,
                 random_state=random_state,
             )
         else:
@@ -656,17 +691,6 @@ class CBO(Search):
                 **default_surrogate_model_kwargs,
             )
 
-        # Model: Mondrian Forest
-        elif name == "MF":
-            try:
-                surrogate = deephyper.skopt.learning.MondrianForestRegressor(
-                    **default_surrogate_model_kwargs,
-                )
-            except AttributeError:
-                raise deephyper.core.exceptions.MissingRequirementError(
-                    "Installing 'deephyper/scikit-garden' is required to use MondrianForest (MF) "
-                    "regressor as a surrogate model!"
-                )
         # Model: Gradient Boosting Regression Tree (based on quantiles)
         # https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html
         elif name == "GBRT":
@@ -726,7 +750,7 @@ class CBO(Search):
             values = cond.values
             cond_new = CS.GreaterThanCondition(child, parent, values)
         else:
-            print("Not supported type" + str(type(cond)))
+            logging.warning("Not supported type" + str(type(cond)))
         return cond_new
 
     def _return_forbid(self, cond, cst_new):
@@ -739,7 +763,7 @@ class CBO(Search):
                 values = cond.values
                 cond_new = CS.ForbiddenInClause(hp, values)
             else:
-                print("Not supported type" + str(type(cond)))
+                logging.warning("Not supported type" + str(type(cond)))
         return cond_new
 
     def fit_surrogate(self, df):
@@ -856,13 +880,13 @@ class CBO(Search):
             top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
             req_df = df.loc[top]
 
-        req_df = req_df[["job_id"] + hp_cols]
+        req_df = req_df[hp_cols]
         req_df = req_df.rename(columns={k: k[2:] for k in hp_cols if k.startswith("p:")})
 
         model = GMMSampler(self._problem.space, random_state=self._random_state)
         model.fit(req_df)
 
-        self._opt_kwargs["model_sdv"] = model
+        self._opt_kwargs["custom_sampler"] = model
 
         return model
 

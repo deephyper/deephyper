@@ -1,5 +1,7 @@
 from deephyper.hpo._cbo import CBO
 
+__all__ = ["ExperimentalDesignSearch"]
+
 
 class ExperimentalDesignSearch(CBO):
     """Centralized Experimental Design Search.

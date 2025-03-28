@@ -4,7 +4,7 @@
    :recursive:
 
    deephyper.analysis 
-   deephyper.core
+   deephyper.cli
    deephyper.ensemble
    deephyper.evaluator
    deephyper.hpo

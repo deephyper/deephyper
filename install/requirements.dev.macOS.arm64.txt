@@ -1,5 +1,0 @@
---index-url https://pypi.python.org/simple/
-
-tensorflow-probability>=0.14.1
-jupyter
--e ..[default,mpi,redis,dev,analytics]

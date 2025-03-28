@@ -57,73 +57,62 @@
    "name": "CBO"
   }
  ],
- "Evaluator.create": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.evaluator.Evaluator",
-   "module_short": "deephyper.evaluator.Evaluator",
-   "name": "create"
-  }
- ],
- "HEIGHT_PLOTS": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "float"
-  }
- ],
- "TqdmCallback": [
+ "DTLZBenchmark": [
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "deephyper.evaluator.callback",
-   "module_short": "deephyper.evaluator.callback",
-   "name": "TqdmCallback"
+   "module": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark"
   },
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "deephyper.evaluator",
-   "module_short": "deephyper.evaluator",
-   "name": "TqdmCallback"
+   "module": "deephyper_benchmark.benchmarks.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark"
   },
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "TqdmCallback"
+   "module": "deephyper_benchmark.benchmarks",
+   "module_short": "deephyper_benchmark.benchmarks",
+   "name": "DTLZBenchmark"
   },
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "deephyper.evaluator.callback",
-   "module_short": "deephyper.evaluator.callback",
-   "name": "Callback"
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "DTLZBenchmark"
   },
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "deephyper.evaluator",
-   "module_short": "deephyper.evaluator",
-   "name": "Callback"
+   "module": "deephyper_benchmark._benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "HPOBenchmark"
   },
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "Callback"
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "HPOBenchmark"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "Benchmark"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "Benchmark"
   },
   {
    "is_class": true,
@@ -135,9 +124,18 @@
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator.callback",
-   "module_short": "deephyper.evaluator.callback",
-   "name": "TqdmCallback"
+   "module": "deephyper_benchmark.benchmarks.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark"
+  }
+ ],
+ "HEIGHT_PLOTS": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
   }
  ],
  "WIDTH_PLOTS": [
@@ -478,43 +476,229 @@
    "name": "Artist.set_ylabel"
   }
  ],
- "dhb.load": [
+ "bench": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
+   "module": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks",
+   "module_short": "deephyper_benchmark.benchmarks",
+   "name": "DTLZBenchmark"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "deephyper_benchmark",
    "module_short": "deephyper_benchmark",
-   "name": "load"
+   "name": "DTLZBenchmark"
   }
  ],
- "evaluator": [
+ "bench.problem": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator._thread_pool",
-   "module_short": "deephyper.evaluator",
-   "name": "ThreadPoolEvaluator"
+   "module": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark.problem"
   },
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.evaluator",
-   "module_short": "deephyper.evaluator",
-   "name": "ThreadPoolEvaluator"
+   "module": "deephyper_benchmark.benchmarks.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark.problem"
   },
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "ThreadPoolEvaluator"
+   "module": "deephyper_benchmark.benchmarks",
+   "module_short": "deephyper_benchmark.benchmarks",
+   "name": "DTLZBenchmark.problem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "DTLZBenchmark.problem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "HPOBenchmark.problem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "HPOBenchmark.problem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._benchmark",
+   "module_short": "deephyper_benchmark._benchmark",
+   "name": "Benchmark.problem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "Benchmark.problem"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.problem"
+  }
+ ],
+ "bench.run_function": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark.run_function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark.run_function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks",
+   "module_short": "deephyper_benchmark.benchmarks",
+   "name": "DTLZBenchmark.run_function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "DTLZBenchmark.run_function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "HPOBenchmark.run_function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "HPOBenchmark.run_function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._benchmark",
+   "module_short": "deephyper_benchmark._benchmark",
+   "name": "Benchmark.run_function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "Benchmark.run_function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.run_function"
+  }
+ ],
+ "bench.scorer": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark.scorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZBenchmark.scorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks",
+   "module_short": "deephyper_benchmark.benchmarks",
+   "name": "DTLZBenchmark.scorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "DTLZBenchmark.scorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "HPOBenchmark.scorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "HPOBenchmark.scorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._benchmark",
+   "module_short": "deephyper_benchmark._benchmark",
+   "name": "Benchmark.scorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "Benchmark.scorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.scorer"
   }
  ],
  "fig": [
@@ -533,50 +717,13 @@
    "name": "Figure"
   }
  ],
- "hpo.problem": [
+ "hvi": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "deephyper.hpo._problem",
-   "module_short": "deephyper.hpo",
-   "name": "HpProblem"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper.hpo",
-   "module_short": "deephyper.hpo",
-   "name": "HpProblem"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper",
-   "module_short": "deephyper",
-   "name": "HpProblem"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper_benchmark.lib.dtlz.hpo",
-   "module_short": "deephyper_benchmark.lib.dtlz.hpo",
-   "name": "problem"
-  }
- ],
- "hpo.run": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "function"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "deephyper_benchmark.lib.dtlz.hpo",
-   "module_short": "deephyper_benchmark.lib.dtlz.hpo",
-   "name": "run"
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
   }
  ],
  "n_objectives": [
@@ -586,22 +733,6 @@
    "module": "builtins",
    "module_short": "builtins",
    "name": "int"
-  }
- ],
- "os.environ": [
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "os",
-   "module_short": "os",
-   "name": "_Environ"
-  },
-  {
-   "is_class": false,
-   "is_explicit": false,
-   "module": "os",
-   "module_short": "os",
-   "name": "environ"
   }
  ],
  "plt.subplots": [
@@ -641,6 +772,101 @@
    "module": "pandas",
    "module_short": "pandas",
    "name": "DataFrame"
+  }
+ ],
+ "scorer": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "name": "DTLZScorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZScorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks",
+   "module_short": "deephyper_benchmark.benchmarks",
+   "name": "DTLZScorer"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "DTLZScorer"
+  }
+ ],
+ "scorer.hypervolume": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz.dtlz",
+   "name": "DTLZScorer.hypervolume"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks.dtlz",
+   "module_short": "deephyper_benchmark.benchmarks.dtlz",
+   "name": "DTLZScorer.hypervolume"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark.benchmarks",
+   "module_short": "deephyper_benchmark.benchmarks",
+   "name": "DTLZScorer.hypervolume"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "DTLZScorer.hypervolume"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._scorer",
+   "module_short": "deephyper_benchmark",
+   "name": "MultiObjHPOScorer.hypervolume"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "MultiObjHPOScorer.hypervolume"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark._scorer",
+   "module_short": "deephyper_benchmark._scorer",
+   "name": "Scorer.hypervolume"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "deephyper_benchmark",
+   "module_short": "deephyper_benchmark",
+   "name": "Scorer.hypervolume"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "abc",
+   "module_short": "abc",
+   "name": "ABC.hypervolume"
   }
  ],
  "search": [
@@ -715,6 +941,15 @@
    "module": "abc",
    "module_short": "abc",
    "name": "ABC.search"
+  }
+ ],
+ "x": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
   }
  ]
 }

@@ -4,7 +4,7 @@ Hyperparameter Optimized Ensemble of Random Decision Trees with Uncertainty for 
 
 **Author(s)**: Romain Egele.
 
-In this tutorial, you will learn about how to use hyperparameter optimization to generate ensemble of `Scikit-Learn <https://scikit-learn.org/stable/>`_ models that can be used for uncertainty quantification.
+In this tutorial, you will learn about how to use hyperparameter optimization to generate an ensemble of `Scikit-Learn <https://scikit-learn.org/stable/>`_ models that can be used for uncertainty quantification.
 """
 
 # %%
@@ -114,7 +114,7 @@ _ = plt.legend(loc="upper center", ncol=3, fontsize=12)
 # We define a function that trains and evaluate a random decision tree from given parameters ``job.parameters``.
 # These parameters will be optimized in the next steps by DeepHyper.
 #
-# The score we minimize with respect to hyperparameters $\theta$ is the validation log loss (a.k.a., binary cross entropy) as we want to have calibrated uncertainty estimates of :math:`P(Y|X=x)` and :math:`1-P(Y|X=x)`:
+# The score we minimize with respect to hyperparameters :math:`\theta` is the validation log loss (a.k.a., binary cross entropy) as we want to have calibrated uncertainty estimates of :math:`P(Y|X=x)` and :math:`1-P(Y|X=x)`:
 #
 # .. math::
 #
@@ -414,7 +414,8 @@ disp = CalibrationDisplay.from_predictions(ty, best_model.predict_proba(tx)[:, 1
 # Ensemble of decision trees
 # --------------------------
 #
-# We now move to ensembling checkpointed models and we start by importing utilities from :module:`deephyper.ensemble` and `deephyper.predictor`.
+# We now move to ensembling checkpointed models and we start by importing utilities from :mod:`deephyper.ensemble` 
+# and :mod:`deephyper.predictor`.
 from deephyper.ensemble import EnsemblePredictor
 from deephyper.ensemble.aggregator import MixedCategoricalAggregator
 from deephyper.ensemble.loss import CategoricalCrossEntropy 
@@ -501,7 +502,7 @@ def plot_decision_boundary_and_uncertainty(
 # %%
 # We define a function that will create an ensemble with TopK or Greedy selection strategies.
 # This function also has a parameter ``k`` that sets the number of unique member in the ensemble.
-def create_ensemble_from_checkpoints(ensemble_selector: str = "topk", k=20):
+def create_ensemble_from_checkpoints(ensemble_selector: str = "topk", k=50):
 
     # 0. Load data
     _, (vx, vy), _ = load_data()
@@ -534,13 +535,13 @@ def create_ensemble_from_checkpoints(ensemble_selector: str = "topk", k=20):
     if ensemble_selector == "topk":
         selector = TopKSelector(
             loss_func=CategoricalCrossEntropy(),
-            k=20,
+            k=k,
         )
     elif ensemble_selector == "greedy":
         selector = GreedySelector(
             loss_func=CategoricalCrossEntropy(),
             aggregator=MixedCategoricalAggregator(),
-            k=20,
+            k=k,
             k_init=5,
             max_it=100,
             early_stopping=False,
@@ -571,6 +572,8 @@ print(f"Test scores: {cce=:.3f}, {acc=:.3f}")
 
 # %%
 
+# sphinx_gallery_thumbnail_number = 6
+
 # .. dropdown:: Plot decision boundary and uncertainty for ensemble
 plot_decision_boundary_and_uncertainty(tx, ty, ensemble, steps=1000, color_map="viridis")
 
@@ -589,7 +592,6 @@ acc = accuracy_score(ty, np.argmax(ty_pred, axis=1))
 print(f"Test scores: {cce=:.3f}, {acc=:.3f}")
 
 # %%
-# sphinx_gallery_thumbnail_number = 8
 
 # .. dropdown:: Plot decision boundary and uncertainty for ensemble
 plot_decision_boundary_and_uncertainty(tx, ty, ensemble, steps=1000, color_map="viridis")
