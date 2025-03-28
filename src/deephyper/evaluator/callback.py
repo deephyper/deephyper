@@ -186,7 +186,7 @@ class TqdmCallback(Callback):
                 else:
                     self._n_failures += 1
                 self._tqdm.set_postfix(objective=self._best_objective, failures=self._n_failures)
-        
+
         if self._max_evals == self._n_done:
             self._tqdm.close()
 
