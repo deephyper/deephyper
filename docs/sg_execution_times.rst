@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:19.651** total execution time for 11 files **from all galleries**:
+**07:12.166** total execution time for 12 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``../examples/examples_uq/plot_nas_deep_ensemble_uq_regression_pytorch.py``)
-     - 00:19.651
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification.py` (``../examples/examples_hpo/plot_hpo_text_classification.py``)
+     - 07:12.166
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
