@@ -455,9 +455,8 @@ def dimensions_aslist(search_space):
     Returns:
         params_space_list (list): list of deephyper.skopt.space.Dimension instances.
 
-    Examples
+    Examples:
     --------
-
     >>> from deephyper.skopt.space.space import Real, Integer
     >>> from deephyper.skopt.utils import dimensions_aslist
     >>> search_space = {'name1': Real(0,1),
@@ -493,9 +492,8 @@ def point_asdict(search_space, point_as_list):
         params_dict (OrderedDict): dictionary with parameter names as keys to which corresponding
             parameter values are assigned.
 
-    Examples
+    Examples:
     --------
-
     >>> from deephyper.skopt.space.space import Real, Integer
     >>> from deephyper.skopt.utils import point_asdict
     >>> search_space = {'name1': Real(0,1),
@@ -529,9 +527,8 @@ def point_aslist(search_space, point_as_dict):
         point_as_list (list): list with point values.The order of parameters in the list is given
             by sorted(params_space.keys()).
 
-    Examples
+    Examples:
     --------
-    
     >>> from deephyper.skopt.space.space import Real, Integer
     >>> from deephyper.skopt.utils import point_aslist
     >>> search_space = {'name1': Real(0,1),
@@ -643,9 +640,8 @@ def use_named_args(dimensions):
     also reduces the risk of bugs if you change the number of dimensions
     or their order in the search-space.
 
-    Examples
+    Examples:
     --------
-
     >>> # Define the search-space dimensions. They must all have names!
     >>> from deephyper.skopt.space import Real
     >>> from deephyper.skopt import forest_minimize

@@ -7,7 +7,6 @@ import numpy as np
 import scipy.stats as ss
 import yaml
 from ConfigSpace.util import deactivate_inactive_hyperparameters
-from scipy.stats import gaussian_kde
 from sklearn.utils import check_random_state
 
 from deephyper.skopt.joblib import Parallel, delayed
@@ -469,24 +468,6 @@ class Real(Dimension):
                 "the space, not %s and %s." % (a, b)
             )
         return abs(a - b)
-
-    def update_prior(self, X, y, q=0.9):
-        """Fit a Kernel Density Estimator to the data to increase density of samples around regions of interest instead of uniform random-sampling."""
-        X = np.array(X)
-        y = np.array(y)
-
-        y_ = np.quantile(y, q)  # threshold
-        X_low = X[y <= y_]
-
-        # It is possible that fitting the Gaussian Kernel Density Estimator
-        # triggers an error, for example if all values of X_low are the same.
-        # In this case, we fall back to uniform sampling or we reuse the last
-        # fitted self._kde.
-        try:
-            kde = gaussian_kde(X_low)
-            self._kde = kde
-        except np.linalg.LinAlgError:
-            pass
 
     def rvs(self, n_samples=1, random_state=None):
         """Draw random samples.
@@ -1395,20 +1376,7 @@ class Space:
 
         return distance
 
-    def update_prior(self, X, y, q=0.9):
-        """Update the prior of the dimensions.
-
-        Instead of doing random-sampling, a kernel density estimation is fit on the region of interest and
-        sampling is performed from this distribution.
-        """
-        y = np.array(y)
-
-        for i, dim in enumerate(self.dimensions):
-            Xi = [x[i] for x in X]
-            if hasattr(dim, "update_prior"):
-                dim.update_prior(Xi, y, q=q)
-
-    def deactivate_inactive_dimensions(self, x):
+    def deactivate_inactive_dimensions(self, x: list) -> list:
         """When ConfigSpace is used, it will return the "lower" bound of inactive parameters."""
         x = x[:]
         if self.config_space is not None:

@@ -357,11 +357,6 @@ max_evals = 100
 search = CBO(
     problem,
     evaluator,
-    acq_func="UCBd",
-    acq_func_optimizer="mixedga",
-    acq_optimizer_freq=1,
-    multi_point_strategy="qUCBd",
-    objective_scaler="identity",
     random_state=42,
 )
 results = search.search(max_evals=max_evals)

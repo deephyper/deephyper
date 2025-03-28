@@ -20,6 +20,7 @@ dependencies = [
     "scipy>=1.10",
     "tqdm>=4.64.0",
     "psutil",
+    "pydantic>=2.10",
     "pymoo>=0.6.0",
     "pyyaml",
 ]
@@ -125,7 +126,6 @@ exclude = [
     "examples",
     "src/deephyper/skopt",
     "src/deephyper/analysis/hpo/_paxplot.py",
-    "tests/skopt",
 ]
 line-length = 100
 

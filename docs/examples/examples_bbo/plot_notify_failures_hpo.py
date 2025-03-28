@@ -77,11 +77,11 @@ for failure_strategy in ["ignore", "mean", "min"]:
     search = CBO(
         problem,
         evaluator,
-        acq_func="UCBd",
         acq_optimizer="ga",
-        acq_optimizer_freq=1,
-        filter_duplicated=False,
-        filter_failures=failure_strategy,
+        acq_optimizer_kwargs=dict(
+            filter_duplicated=False,
+            filter_failures=failure_strategy,
+        ),
         log_dir=f"search_{failure_strategy}",
         random_state=42,
     )

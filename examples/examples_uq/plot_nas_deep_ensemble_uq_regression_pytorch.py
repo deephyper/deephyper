@@ -728,23 +728,8 @@ _ = plt.grid(which="both", linestyle=":")
 # - ``objective_scaler``: is a parameter that can be used to rescale the observed objectives (e.g., identity, min-max, log).
 search_kwargs = {
     "initial_points": [problem.default_configuration],
-    "n_initial_points": 2 * len(problem) + 1,  # Number of initial random points
-    "surrogate_model": "ET",  # Use Extra Trees as surrogate model
-    "surrogate_model_kwargs": {
-        "n_estimators": 50,  # Relatively small number of trees in the surrogate to make it "fast"
-        "min_samples_split": 8,  # Larger number to avoid small leaf nodes (smoothing the objective response)
-    },
     "multi_point_strategy": "qUCBd",  # Multi-point strategy for asynchronous batch generations (explained later)
     "acq_optimizer": "mixedga",  # Use continuous Genetic Algorithm for the acquisition function optimizer
-    "acq_optimizer_freq": 1,  # Frequency of the acquisition function optimizer (1 = each new batch generation) increasing this value can help amortize the computational cost of acquisition function optimization
-    "filter_duplicated": False,  # Deactivate filtration of duplicated new points
-    "kappa": 10.0,  # Initial value of exploration-exploitation parameter for the acquisition function
-    "scheduler": {  # Scheduler for the exploration-exploitation parameter "kappa"
-        "type": "periodic-exp-decay",  # Periodic exponential decay
-        "period": 50,  # Period over which the decay is applied. It is useful to escape local solutions.
-        "kappa_final": 0.001,  # Value of kappa at the end of each "period"
-    },
-    "objective_scaler": "identity",
     "random_state": 42,  # Random seed
 }
 # %%

@@ -65,6 +65,3 @@ Computation times
    * - :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py` (``../examples/examples_uq/plot_hpo_tree_ensemble_uq_classification_sklearn.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``../examples/examples_uq/plot_nas_deep_ensemble_uq_regression_pytorch.py``)
-     - 00:00.000
-     - 0.0

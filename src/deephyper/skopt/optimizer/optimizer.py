@@ -1,3 +1,6 @@
+"""Sickit-Optimize optimizer class."""
+
+import logging
 import numbers
 import sys
 import warnings
@@ -30,20 +33,30 @@ from ..utils import (
 
 
 class ExhaustedSearchSpace(RuntimeError):
-    """ "Raised when the search cannot sample new points from the ConfigSpace."""
+    """Raised when the search cannot sample new points from the ConfigSpace."""
 
-    def __str__(self):
+    def __str__(self):  # noqa: D105
         return "The search space is exhausted and cannot sample new unique points!"
 
 
 class ExhaustedFailures(RuntimeError):
-    """Raised when the search has seen ``max_failures`` failures without any valid objective value."""
+    """Raised when search has seen ``max_failures`` failures without any valid objective value."""
 
-    def __str__(self):
-        return "The search has reached its quota of failures! Check if the type of failure is expected or the value of ``max_failures`` in the search algorithm."
+    def __str__(self):  # noqa: D105
+        out = (
+            "The search has reached its quota of failures!"
+            "Check if the type of failure is expected or the value of ``max_failures`` "
+            "in the search algorithm."
+        )
+        return out
 
 
 def boltzmann_distribution(x, beta=1):
+    """Boltzmann distribution function.
+
+    It is a softmax function with a parameter beta that controls the entropy
+    over probabilities.
+    """
     x = np.exp(beta * x)
     x = x / np.sum(x)
     return x
@@ -53,8 +66,16 @@ OBJECTIVE_VALUE_FAILURE = "F"
 
 # TODO: add check to notify that optimizer="ga" cannot work with categorical or integer values
 
+
+def is_not_improving(scores, patience: int, delay: int):
+    """Check if scores have improved over 'patience' length."""
+    return len(scores[delay:]) > (patience + 1) and scores[-patience - 1] < min(
+        scores[delay:][-patience:]
+    )
+
+
 class Optimizer(object):
-    """Run bayesian optimisation loop in DeepHyper.
+    r"""Run bayesian optimisation loop in DeepHyper.
 
     An ``Optimizer`` represents the steps of a bayesian optimisation loop. To
     use it you need to provide your own loop mechanism. The various
@@ -124,9 +145,9 @@ class Optimizer(object):
                 - Each acquisition function is optimised independently to
                   propose an candidate point `X_i`.
                 - Out of all these candidate points, the next point `X_best` is
-                  chosen by :math:`softmax(\\eta g_i)`
+                  chosen by :math:`softmax(\eta g_i)`
                 - After fitting the surrogate model with `(X_best, y_best)`,
-                  the gains are updated such that :math:`g_i -= \\mu(X_i)`
+                  the gains are updated such that :math:`g_i -= \mu(X_i)`
 
             - `"EIps"` for negated expected improvement per second to take into
               account the function compute time. Then, the objective function is
@@ -177,7 +198,7 @@ class Optimizer(object):
         custom_sampler (Model or None, optional): Default None
             A Model from Synthetic-Data-Vault.
 
-        moo_scalarization_strategy (string, optional): Default is `"Chebyshev"`
+        moo_scalarization_strategy (string, optional): Default is ``"Chebyshev"``.
             Function to convert multiple objectives into a single scalar value. Can be either
 
             - `"Linear"` for linear/convex combination.
@@ -186,8 +207,9 @@ class Optimizer(object):
             - `"PBI"` for penalized boundary intersection.
             - `"Quadratic"` for quadratic combination (2-norm).
 
-        moo_scalarization_weight (array, optional) Default is `None`.
-            Scalarization weights to be used in multiobjective optimization with length equal to the number of objective functions.
+        moo_scalarization_weight (array, optional): Default is `None`.
+            Scalarization weights to be used in multiobjective optimization with length equal to
+            the number of objective functions.
             When set to `None`, a uniform weighting is generated.
 
     Attributes:
@@ -208,20 +230,19 @@ class Optimizer(object):
         self,
         dimensions,
         base_estimator="gp",
+        base_estimator_scheduler=None,
         n_random_starts=None,
         n_initial_points=10,
         initial_points=None,
         initial_point_generator="random",
         n_jobs=1,
         acq_func="gp_hedge",
+        acq_func_kwargs=None,
         acq_optimizer="auto",
+        acq_optimizer_kwargs=None,
         random_state=None,
         model_queue_size=None,
-        acq_func_kwargs=None,
-        acq_optimizer_kwargs=None,
         custom_sampler=None,
-        sample_max_size=-1,
-        sample_strategy="quantile",
         moo_upper_bounds=None,
         moo_scalarization_strategy="Chebyshev",
         moo_scalarization_weight=None,
@@ -278,15 +299,13 @@ class Optimizer(object):
         # Check `n_random_starts` deprecation first
         if n_random_starts is not None:
             warnings.warn(
-                ("n_random_starts will be removed in favour of " "n_initial_points."),
+                ("n_random_starts will be removed in favour of n_initial_points."),
                 DeprecationWarning,
             )
             n_initial_points = n_random_starts
 
         if n_initial_points < 0:
-            raise ValueError(
-                "Expected `n_initial_points` >= 0, got %d" % n_initial_points
-            )
+            raise ValueError("Expected `n_initial_points` >= 0, got %d" % n_initial_points)
         self._n_initial_points = n_initial_points
         self.n_initial_points_ = n_initial_points
 
@@ -312,11 +331,15 @@ class Optimizer(object):
         else:
             self.base_estimator_ = base_estimator
 
+        self.base_estimator_scheduler = base_estimator_scheduler
+        if self.base_estimator_scheduler is not None and not isinstance(
+            self.base_estimator_scheduler, dict
+        ):
+            raise ValueError("base_estimator_schedule should be a dict")
+
         # preprocessing of target variable
         self.objective_scaler_ = objective_scaler
-        self.objective_scaler = cook_objective_scaler(
-            objective_scaler, self.base_estimator_
-        )
+        self.objective_scaler = cook_objective_scaler(objective_scaler, self.base_estimator_)
 
         # Configure optimizer
 
@@ -334,8 +357,9 @@ class Optimizer(object):
             "ga",
         ]:
             raise ValueError(
-                "Expected acq_optimizer to be 'lbfgs' or "
-                "'sampling' or 'ga', got {0}".format(acq_optimizer)
+                "Expected acq_optimizer to be 'lbfgs' or 'sampling' or 'ga', got {0}".format(
+                    acq_optimizer
+                )
             )
 
         self.acq_optimizer = acq_optimizer
@@ -349,19 +373,14 @@ class Optimizer(object):
         self.n_jobs = acq_optimizer_kwargs.get("n_jobs", 1)
 
         # PyMOO
-        self._pymoo_pop_size = acq_optimizer_kwargs.get("pop_size", 100)
+        self._pymoo_pop_size = acq_optimizer_kwargs.get("ga_pop_size", 100)
         self._pymoo_termination_kwargs = {
-            "xtol": acq_optimizer_kwargs.get("xtol", 1e-3),
-            "ftol": acq_optimizer_kwargs.get("ftol", 1e-3),
-            "period": acq_optimizer_kwargs.get("period", 15),
-            "n_max_gen": acq_optimizer_kwargs.get("n_max_gen", 1000),
+            "xtol": acq_optimizer_kwargs.get("ga_xtol", 1e-8),
+            "ftol": acq_optimizer_kwargs.get("ga_ftol", 1e-6),
+            "period": acq_optimizer_kwargs.get("ga_period", 30),
+            "n_max_gen": acq_optimizer_kwargs.get("ga_n_max_gen", 1000),
         }
 
-        # TODO: "update_prior" to be removed, this mechanism is too prone to "overfitting" (local minima problems)
-        self.update_prior = acq_optimizer_kwargs.get("update_prior", False)
-        self.update_prior_quantile = acq_optimizer_kwargs.get(
-            "update_prior_quantile", 0.9
-        )
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
         self.filter_failures = acq_optimizer_kwargs.get("filter_failures", "mean")
         self.max_failures = acq_optimizer_kwargs.get("max_failures", 100)
@@ -391,18 +410,13 @@ class Optimizer(object):
             self.space.config_space.seed(self.rng.get_state()[1][0])
 
         self._initial_samples = [] if initial_points is None else initial_points[:]
-        self._initial_point_generator = cook_initial_point_generator(
-            initial_point_generator
-        )
+        self._initial_point_generator = cook_initial_point_generator(initial_point_generator)
 
         if self._initial_point_generator is not None:
-            self._initial_samples = (
-                self._initial_samples
-                + self._initial_point_generator.generate(
-                    self.space.dimensions,
-                    n_initial_points - len(self._initial_samples),
-                    random_state=self.rng.randint(0, np.iinfo(np.int32).max),
-                )
+            self._initial_samples = self._initial_samples + self._initial_point_generator.generate(
+                self.space.dimensions,
+                n_initial_points - len(self._initial_samples),
+                random_state=self.rng.randint(0, np.iinfo(np.int32).max),
             )
 
         # record categorical and non-categorical indices
@@ -417,9 +431,7 @@ class Optimizer(object):
         # Initialize storage for optimization
         if not isinstance(model_queue_size, (int, type(None))):
             raise TypeError(
-                "model_queue_size should be an int or None, " "got {}".format(
-                    type(model_queue_size)
-                )
+                "model_queue_size should be an int or None, got {}".format(type(model_queue_size))
             )
 
         # For multiobjective optimization
@@ -434,7 +446,8 @@ class Optimizer(object):
             self._moo_upper_bounds = moo_upper_bounds
         else:
             raise ValueError(
-                f"Parameter 'moo_upper_bounds={moo_upper_bounds}' is invalid. Must be None or a list"
+                f"Parameter 'moo_upper_bounds={moo_upper_bounds}' is invalid. "
+                "Must be None or a list"
             )
 
         # Initialize the moo scalarization strategy
@@ -446,7 +459,8 @@ class Optimizer(object):
             or isinstance(moo_scalarization_strategy, MoScalarFunction)
         ):
             raise ValueError(
-                f"Parameter 'moo_scalarization_strategy={acq_func}' should have a value in {moo_scalarization_strategy_allowed}!"
+                f"Parameter 'moo_scalarization_strategy={acq_func}' "
+                f"should have a value in {moo_scalarization_strategy_allowed}!"
             )
         self._moo_scalarization_strategy = moo_scalarization_strategy
         self._moo_scalarization_weight = moo_scalarization_weight
@@ -468,10 +482,6 @@ class Optimizer(object):
         # for botlzmann strategy
         self._min_value = 0
         self._max_value = 0
-
-        # parameters to stabilize the size of the dataset used to fit the surrogate model
-        self._sample_max_size = sample_max_size
-        self._sample_strategy = sample_strategy
 
         # Count number of surrogate model fittings
         self._counter_fit = 0
@@ -497,8 +507,6 @@ class Optimizer(object):
             acq_optimizer_kwargs=self.acq_optimizer_kwargs,
             random_state=random_state,
             custom_sampler=self.custom_sampler,
-            sample_max_size=self._sample_max_size,
-            sample_strategy=self._sample_strategy,
             moo_upper_bounds=self._moo_upper_bounds,
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
@@ -561,9 +569,7 @@ class Optimizer(object):
 
         strategy_kwargs = strategy_kwargs or {}
 
-        if n_points > 0 and (
-            self._n_initial_points > 0 or self.base_estimator_ is None
-        ):
+        if n_points > 0 and (self._n_initial_points > 0 or self.base_estimator_ is None):
             if len(self._initial_samples) == 0:
                 X = self._ask_random_points(size=n_points)
             else:
@@ -631,21 +637,13 @@ class Optimizer(object):
                     if t == 0:
                         beta = 0
                     else:
-                        beta = (
-                            gamma
-                            * np.log(t)
-                            / np.abs(self._max_value - self._min_value)
-                        )
+                        beta = gamma * np.log(t) / np.abs(self._max_value - self._min_value)
 
                     probs = boltzmann_distribution(values, beta)
 
                     new_idx = np.argmax(self.rng.multinomial(1, probs))
 
-                    if (
-                        self.filter_duplicated
-                        and new_idx in idx
-                        and trials < max_trials
-                    ):
+                    if self.filter_duplicated and new_idx in idx and trials < max_trials:
                         trials += 1
                     else:
                         idx.append(new_idx)
@@ -653,9 +651,7 @@ class Optimizer(object):
 
                 return self._last_X[idx].tolist()
             else:
-                raise ValueError(
-                    f"'{strategy}' is not a valid multi-point acquisition strategy!"
-                )
+                raise ValueError(f"'{strategy}' is not a valid multi-point acquisition strategy!")
 
         # q-ACQ multi point acquisition for centralized setting
         if len(self.models) > 0 and strategy.startswith("qLCB"):
@@ -790,39 +786,6 @@ class Optimizer(object):
 
         return yi
 
-    def _sample(self, X, y):
-        X = np.asarray(X, dtype="O")
-        y = np.asarray(y)
-        size = y.shape[0]
-
-        if self._sample_max_size > 0 and size > self._sample_max_size:
-            if self._sample_strategy == "quantile":
-                quantiles = np.quantile(y, [0.10, 0.25, 0.50, 0.75, 0.90])
-                int_size = self._sample_max_size // (len(quantiles) + 1)
-
-                Xs, ys = [], []
-                for i in range(len(quantiles) + 1):
-                    if i == 0:
-                        s = y < quantiles[i]
-                    elif i == len(quantiles):
-                        s = quantiles[i - 1] <= y
-                    else:
-                        s = (quantiles[i - 1] <= y) & (y < quantiles[i])
-
-                    idx = np.where(s)[0]
-                    idx = np.random.choice(idx, size=int_size, replace=True)
-                    Xi = X[idx]
-                    yi = y[idx]
-                    Xs.append(Xi)
-                    ys.append(yi)
-
-                X = np.concatenate(Xs, axis=0)
-                y = np.concatenate(ys, axis=0)
-
-        X = X.tolist()
-        y = y.tolist()
-        return X, y
-
     def _ask_random_points(self, size=None):
         Xsamples = self.space.rvs(
             n_samples=self.n_points, random_state=self.rng, n_jobs=self.n_jobs
@@ -855,17 +818,13 @@ class Optimizer(object):
 
         else:
             if not self.models:
-                raise RuntimeError(
-                    "Random evaluations exhausted and no " "model has been fit."
-                )
+                raise RuntimeError("Random evaluations exhausted and no model has been fit.")
 
             next_x = self._next_x
             if next_x is not None:
                 min_delta_x = min([self.space.distance(next_x, xi) for xi in self.Xi])
                 if abs(min_delta_x) <= 1e-8:
-                    warnings.warn(
-                        "The objective has been evaluated " "at this point before."
-                    )
+                    warnings.warn("The objective has been evaluated at this point before.")
 
             # return point computed from last call to tell()
             return next_x
@@ -912,6 +871,7 @@ class Optimizer(object):
 
     def _tell(self, x, y, fit=True):
         """Perform the actual work of incorporating one or more new points.
+
         See `tell()` for the full description.
 
         This method exists to give access to the internals of adding points
@@ -947,8 +907,7 @@ class Optimizer(object):
                 n_new_points = 0
         else:
             raise ValueError(
-                "Type of arguments `x` (%s) and `y` (%s) "
-                "not compatible." % (type(x), type(y))
+                "Type of arguments `x` (%s) and `y` (%s) not compatible." % (type(x), type(y))
             )
 
         # optimizer learned something new - discard cache
@@ -959,9 +918,8 @@ class Optimizer(object):
         if fit and self._n_initial_points <= 0 and self.base_estimator_ is not None:
             transformed_bounds = self.space.transformed_bounds
 
-            est = clone(self.base_estimator_)
-
-            yi = self.yi
+            yi = self.yi[:]
+            Xi = self.Xi[:]
 
             # Convert multiple objectives to single scalar
             with warnings.catch_warnings():
@@ -975,9 +933,19 @@ class Optimizer(object):
                 else:
                     # Single-Objective Optimization
 
+                    # replace outliers (large values) using interquantile range
+                    # dtype="O" is key to avoid converting data to string
+                    yi = np.asarray(yi, dtype="O")
+                    mask_no_failures = np.where(yi != "F")
+                    q1 = np.quantile(yi[mask_no_failures], q=0.25)
+                    q3 = np.quantile(yi[mask_no_failures], q=0.75)
+                    threshold = q3 + 1.5 * (q3 - q1) # TODO: 1.5 could be a parameter
+                    mask = np.where(
+                        (yi != "F") & np.array([v != "F" and v > threshold for v in yi])
+                    )
+                    yi[mask] = threshold
+
                     if "F" in yi:
-                        # ! dtype="O" is key to avoid converting data to string
-                        yi = np.asarray(yi, dtype="O")
                         mask_no_failures = np.where(yi != "F")
                         yi[mask_no_failures] = (
                             self.objective_scaler.fit_transform(
@@ -997,62 +965,18 @@ class Optimizer(object):
             # Handle failures
             yi = self._filter_failures(yi)
 
-            # handle size of the sample fit to the estimator
-            Xi, yi = self._sample(self.Xi, yi)
-
             # Preprocessing of input space
             Xtransformed = np.asarray(self.space.transform(Xi))
 
-            # TODO: feature importance
-            # if len(Xi) % 25 == 0 and len(Xi) >= 25:
-            #     from sklearn.model_selection import train_test_split
+            # Update surrogate kwargs
+            self._update_base_estimator_params(yi)
 
-            #     Xtransformed, Xval, yi, yval = train_test_split(
-            #         Xtransformed,
-            #         yi,
-            #         test_size=0.2,
-            #         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
-            #     )
+            est = clone(self.base_estimator_)
 
             # Fit surrogate model on transformed data
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-
                 self._last_est = est.fit(Xtransformed, yi)
-
-            # TODO: to be removed
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-
-                # Update sampling prior
-                if self.update_prior:
-                    self.space.update_prior(
-                        Xtransformed, yi, q=self.update_prior_quantile
-                    )
-
-            # TODO: feature importance
-            # if len(Xi) % 25 == 0 and len(Xi) >= 25:
-            #     from sklearn.inspection import permutation_importance
-
-            #     est_score = est.score(Xval, yval)
-            #     print(f"Score: {est_score}")
-            #     var_importance = permutation_importance(
-            #         est,
-            #         Xval,
-            #         yval,
-            #         n_repeats=10,
-            #         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
-            #     )
-
-            #     # var_importance_upper_bound = var_importance.importances_mean + 1.96 * var_importance.importances_std
-            #     # var_importance_fraction = var_importance_upper_bound / est_score
-            #     var_importance_fraction = var_importance.importances_mean / est_score
-            #     for i in range(len(var_importance_fraction)):
-            #         # if var_importance_fraction[i] < 0.05:
-            #         print(
-            #             f"dim {self.space.dimension_names[i]}: {var_importance_fraction[i]:.4f}"
-            #         )
-            #     print()
 
             if self.max_model_queue_size is None:
                 self.models.append(est)
@@ -1104,9 +1028,7 @@ class Optimizer(object):
                 # minimization starts from `n_restarts_optimizer` different
                 # points and the best minimum is used
                 elif self.acq_optimizer == "lbfgs":
-                    x0 = Xsample_transformed[
-                        np.argsort(values)[: self.n_restarts_optimizer]
-                    ]
+                    x0 = Xsample_transformed[np.argsort(values)[: self.n_restarts_optimizer]]
 
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
@@ -1122,8 +1044,6 @@ class Optimizer(object):
                                     has_gradients(self.base_estimator_),
                                 ),
                                 bounds=transformed_bounds,
-                                # TODO: Use approximated gradient when not available
-                                # approx_grad=False,
                                 approx_grad=not (has_gradients(self.base_estimator_)),
                                 maxiter=20,
                             )
@@ -1135,122 +1055,52 @@ class Optimizer(object):
                     next_x = cand_xs[np.argmin(cand_acqs)]
 
                 elif self.acq_optimizer == "mixedga":
-                    # TODO: vectorized differential evolution
-                    # https://pymoo.org/customization/mixed.html
-                    # https://pymoo.org/interface/problem.html
-
-                    from pymoo.core.mixed import (
-                        MixedVariableGA,
-                        MixedVariableDuplicateElimination,
-                        MixedVariableMating,
-                    )
-                    from pymoo.core.population import Population
-                    from pymoo.optimize import minimize
-                    from pymoo.termination.default import (
-                        DefaultSingleObjectiveTermination,
+                    from deephyper.skopt.optimizer.acq_optimizer.pymoo_mixedga import (
+                        MixedGAPymooAcqOptimizer,
                     )
 
-                    from deephyper.skopt.optimizer._pymoo import (
-                        DefaultSingleObjectiveMixedTermination,
-                        PyMOOMixedVectorizedProblem,
-                        ConfigSpaceRepair,
-                    )
+                    pop_size = self._pymoo_pop_size
 
-                    pop = self._pymoo_pop_size
                     idx_sorted = np.argsort(values)
-                    initial_sampling = [Xsample[i] for i in idx_sorted[:pop]]
-                    initial_sampling = list(
+                    x_init = [Xsample[i] for i in idx_sorted[:pop_size]]
+                    x_init = list(
                         map(
                             lambda x: dict(zip(self.space.dimension_names, x)),
-                            initial_sampling,
+                            x_init,
                         )
                     )
-                    init_pop = Population.new(
-                        "X",
-                        initial_sampling,
-                        "F",
-                        values[idx_sorted[:pop]].reshape(-1),
+                    y_init = values[idx_sorted[:pop_size]]
+
+                    acq_opt = MixedGAPymooAcqOptimizer(
+                        space=self.space,
+                        x_init=x_init,
+                        y_init=y_init,
+                        pop_size=pop_size,
+                        random_state=self.rng.randint(0, np.iinfo(np.int32).max),
+                        termination_kwargs=self._pymoo_termination_kwargs,
                     )
 
                     args = (est, np.min(yi), cand_acq_func, False, self.acq_func_kwargs)
-                    problem = PyMOOMixedVectorizedProblem(
-                        space=self.space,
-                        acq_func=lambda x: _gaussian_acquisition(
-                            self.space.transform(x), *args
-                        ),
-                    )
-                    repair = ConfigSpaceRepair(self.space)
-                    eliminate_duplicates = MixedVariableDuplicateElimination()
-                    algorithm = MixedVariableGA(
-                        pop=pop,
-                        sampling=init_pop,
-                        mating=MixedVariableMating(
-                            eliminate_duplicates=eliminate_duplicates,
-                            repair=repair,
-                        ),
-                        repair=repair,
-                        eliminate_duplicates=eliminate_duplicates,
-                    )
-
-                    res_ga = minimize(
-                        problem,
-                        algorithm,
-                        termination=DefaultSingleObjectiveMixedTermination(
-                            **self._pymoo_termination_kwargs
-                        ),
-                        seed=self.rng.randint(0, np.iinfo(np.int32).max),
-                        verbose=False,
-                    )
-
-                    next_x = [res_ga.X[name] for name in self.space.dimension_names]
-                    next_x = self.space.transform([next_x])[0]
+                    next_x = acq_opt.minimize(acq_func=lambda x: _gaussian_acquisition(x, *args))
 
                 elif self.acq_optimizer == "ga":
-                    from pymoo.algorithms.soo.nonconvex.ga import GA
-                    from pymoo.core.population import Population
-                    from pymoo.optimize import minimize
-                    from pymoo.termination.default import (
-                        DefaultSingleObjectiveTermination,
+                    from deephyper.skopt.optimizer.acq_optimizer.pymoo_ga import GAPymooAcqOptimizer
+
+                    pop_size = self._pymoo_pop_size
+
+                    idx_sorted = np.argsort(values)[:pop_size]
+
+                    acq_opt = GAPymooAcqOptimizer(
+                        space=self.space,
+                        x_init=Xsample_transformed[idx_sorted],
+                        y_init=values[idx_sorted],
+                        pop_size=self._pymoo_pop_size,
+                        random_state=self.rng.randint(0, np.iinfo(np.int32).max),
+                        termination_kwargs=self._pymoo_termination_kwargs,
                     )
-
-                    from deephyper.skopt.optimizer._pymoo import PyMOORealProblem
-
-                    xl, xu = list(zip(*transformed_bounds))
-                    xl, xu = np.asarray(xl), np.asarray(xu)
 
                     args = (est, np.min(yi), cand_acq_func, False, self.acq_func_kwargs)
-                    problem = PyMOORealProblem(
-                        n_var=len(xl),
-                        xl=xl,
-                        xu=xu,
-                        acq_func=lambda x: _gaussian_acquisition(x, *args),
-                    )
-
-                    pop = self._pymoo_pop_size
-                    idx_sorted = np.argsort(values)
-                    initial_sampling = Xsample_transformed[idx_sorted[:pop]]
-                    init_pop = Population.new(
-                        "X",
-                        initial_sampling,
-                        "F",
-                        values[idx_sorted[:pop]].reshape(-1),
-                    )
-
-                    algorithm = GA(pop=pop, sampling=init_pop)
-
-                    with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
-
-                        res = minimize(
-                            problem,
-                            algorithm,
-                            termination=DefaultSingleObjectiveTermination(
-                                **self._pymoo_termination_kwargs
-                            ),
-                            seed=self.rng.randint(0, np.iinfo(np.int32).max),
-                            verbose=False,
-                        )
-
-                    next_x = res.X
+                    next_x = acq_opt.minimize(acq_func=lambda x: _gaussian_acquisition(x, *args))
 
                 # lbfgs should handle this but just in case there are
                 # precision errors.
@@ -1282,9 +1132,7 @@ class Optimizer(object):
             self._counter_fit += 1
 
         # Pack results
-        result = create_result(
-            self.Xi, self.yi, self.space, self.rng, models=self.models
-        )
+        result = create_result(self.Xi, self.yi, self.space, self.rng, models=self.models)
 
         result.specs = self.specs
         return result
@@ -1315,25 +1163,13 @@ class Optimizer(object):
 
         else:
             raise ValueError(
-                "Type of arguments `x` (%s) and `y` (%s) "
-                "not compatible." % (type(x), type(y))
+                "Type of arguments `x` (%s) and `y` (%s) not compatible." % (type(x), type(y))
             )
 
-    def run(self, func, n_iter=1):
-        """Execute ask() + tell() `n_iter` times"""
-        for _ in range(n_iter):
-            x = self.ask()
-            self.tell(x, func(x))
-
-        result = create_result(
-            self.Xi, self.yi, self.space, self.rng, models=self.models
-        )
-        result.specs = self.specs
-        return result
-
     def update_next(self):
-        """Updates the value returned by opt.ask(). Useful if a parameter
-        was updated after ask was called.
+        """Updates the value returned by opt.ask().
+
+        Useful if a parameter was updated after ask was called.
         """
         self.cache_ = {}
         # Ask for a new next_x.
@@ -1341,21 +1177,6 @@ class Optimizer(object):
         if hasattr(self, "_next_x"):
             opt = self.copy(random_state=self.rng)
             self._next_x = opt._next_x
-
-    def get_result(self):
-        """Returns the same result that would be returned by opt.tell()
-        but without calling tell
-
-        Returns:
-        res : `OptimizeResult`, scipy object
-            OptimizeResult instance with the required information.
-
-        """
-        result = create_result(
-            self.Xi, self.yi, self.space, self.rng, models=self.models
-        )
-        result.specs = self.specs
-        return result
 
     def _moo_scalarize(self, yi):
         has_failures = "F" in yi
@@ -1374,62 +1195,14 @@ class Optimizer(object):
         # Penality
         if self._moo_upper_bounds is not None:
             y_max = yi_filtered.max(axis=0)
-            # y_min = yi_filtered.min(axis=0)
-            upper_bounds = [
-                m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)
-            ]
+            upper_bounds = [m if b is None else b for m, b in zip(y_max, self._moo_upper_bounds)]
 
             # ! Strategy 1: penalty after scaling
             upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
             yi_filtered = self.objective_scaler.transform(yi_filtered)
             penalty = np.sum(2 * np.maximum(yi_filtered - upper_bounds, 0), axis=1)
-            # print("-> y:", yi_filtered[-1])
-            # print("-> p:", penalty[-1])
-            # print()
             yi_filtered = np.add(yi_filtered.T, penalty).T
 
-            # ! Strategy 2: penalty before scaling
-            # penalty = np.maximum(yi_filtered - upper_bounds, 0)
-            # yi_filtered = yi_filtered + penalty
-            # yi_filtered = self.objective_scaler.transform(yi_filtered)
-
-            # ! Strategy 3: replace values above upper bounds with y_max
-            # yi_filtered = self.objective_scaler.transform(yi_filtered)
-            # y_max_scaled = self.objective_scaler.transform([y_max])[0]
-            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
-
-            # *S.3.A: Replacing only the objective which breaks the bound
-            # mask = yi_filtered > upper_bounds
-            # yi_filtered[mask] = np.tile(y_max_scaled, yi_filtered.shape[0]).reshape(
-            #     yi_filtered.shape
-            # )[mask]
-
-            # *S.3.B: Replacing all objectives if any of them breaks the bound
-            # mask = (yi_filtered > upper_bounds).any(axis=1)
-            # yi_filtered[mask] = y_max_scaled
-
-            # Strategy 4: "leaky" penalty after scaling
-            # upper_bounds = [0.0 if b is None else b for b in self._moo_upper_bounds]
-            # penalty_param = 2.0
-            # leak_param = self.rng.uniform()
-
-            # upper_bounds = self.objective_scaler.transform([upper_bounds])[0]
-            # augmented_lower_bounds = upper_bounds.copy()
-            # for i, b in enumerate(self._moo_upper_bounds):
-            #     if b is None:
-            #         upper_bounds[i] = np.infty  # Allow to go higher
-            #         augmented_lower_bounds[i] = -np.infty  # No leaky rewards
-            # yi_filtered = self.objective_scaler.transform(yi_filtered)
-            # penalty = np.sum(
-            #     penalty_param * np.maximum(yi_filtered - upper_bounds, 0), axis=1
-            # ) + np.sum(
-            #     leak_param * np.minimum(yi_filtered - augmented_lower_bounds, 0), axis=1
-            # )
-            # # print("-> y:", yi_filtered[-1])
-            # # print("-> b:", upper_bounds)
-            # # print("-> p:", penalty[-1])
-            # # print()
-            # yi_filtered = np.add(yi_filtered.T, penalty).T
         else:
             yi_filtered = self.objective_scaler.transform(yi_filtered)
 
@@ -1437,9 +1210,7 @@ class Optimizer(object):
         # is inferred from observed data.
         if self._moo_scalar_function is None:
             if isinstance(self._moo_scalarization_strategy, str):
-                self._moo_scalar_function = moo_functions[
-                    self._moo_scalarization_strategy
-                ](
+                self._moo_scalar_function = moo_functions[self._moo_scalarization_strategy](
                     n_objectives=n_objectives,
                     weight=self._moo_scalarization_weight,
                     random_state=self.rng,
@@ -1458,3 +1229,25 @@ class Optimizer(object):
             return yi.tolist()
         else:
             return yi_filtered
+
+    def _update_base_estimator_params(self, yi):
+        """Updates the configuration of the surrogate model.
+
+        The configuration is updating according to the history of yi.
+        """
+        if self.base_estimator_scheduler is None:
+            return
+
+        patience = self.base_estimator_scheduler["patience"]
+        params = self.base_estimator_scheduler["params"]
+
+        if is_not_improving(scores=yi, patience=patience, delay=self.n_initial_points_):
+            base_estimator_params = self.base_estimator_.get_params()
+            for param_name, param_config in params.items():
+                if param_name in base_estimator_params:
+                    param_value = base_estimator_params[param_name]
+                    param_type = type(param_value)
+                    param_value = param_type(param_value * param_config["factor"])
+                    logging.info(f"{param_name} updated: {param_value}")
+                    base_estimator_params.update({param_name: param_value})
+            self.base_estimator_.set_params(**base_estimator_params)

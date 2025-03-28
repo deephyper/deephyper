@@ -1,21 +1,35 @@
+"""Mixed-Integer genetic-algorithm optimization for the acquisition function."""
+
 from collections import OrderedDict
 
 import numpy as np
-
-from ConfigSpace.forbidden import ForbiddenClause, ForbiddenRelation, ForbiddenConjunction
+from ConfigSpace.forbidden import ForbiddenClause, ForbiddenConjunction, ForbiddenRelation
 from ConfigSpace.util import deactivate_inactive_hyperparameters
-
+from pymoo.config import Config
+from pymoo.core.mixed import (
+    MixedVariableDuplicateElimination,
+    MixedVariableGA,
+    MixedVariableMating,
+)
+from pymoo.core.population import Population
 from pymoo.core.problem import ElementwiseProblem, Problem
 from pymoo.core.repair import Repair
 from pymoo.core.termination import Termination
 from pymoo.core.variable import Choice, Integer, Real
+from pymoo.optimize import minimize
 from pymoo.termination.ftol import SingleObjectiveSpaceTermination
 from pymoo.termination.max_eval import MaximumFunctionCallTermination
 from pymoo.termination.max_gen import MaximumGenerationTermination
 from pymoo.termination.robust import RobustTermination
-from pymoo.config import Config
+from sklearn.utils import check_random_state
 
 import deephyper.skopt.space as skopt_space
+
+Config.warnings["not_compiled"] = False
+
+# https://pymoo.org/customization/mixed.html
+# https://pymoo.org/interface/problem.html
+
 
 Config.warnings["not_compiled"] = False
 
@@ -49,6 +63,8 @@ def convert_space_to_pymoo_mixed(space):
 
 
 class PyMOOMixedVectorizedProblem(Problem):
+    """Pymoo mixed-integer problem definition (vectorized)."""
+
     def __init__(self, space, acq_func=None, **kwargs):
         super().__init__(vars=convert_space_to_pymoo_mixed(space), n_obj=1, **kwargs)
         self.space = space
@@ -71,6 +87,8 @@ class PyMOOMixedVectorizedProblem(Problem):
 
 
 class PyMOOMixedElementWiseProblem(ElementwiseProblem):
+    """Pymoo mixed-integer problem definition (element-wise)."""
+
     def __init__(self, space, acq_func=None, **kwargs):
         vars = convert_space_to_pymoo_mixed(space)
         super().__init__(vars=vars, n_obj=1, **kwargs)
@@ -85,18 +103,9 @@ class PyMOOMixedElementWiseProblem(ElementwiseProblem):
         out["F"] = y
 
 
-class PyMOORealProblem(Problem):
-    def __init__(self, n_var, xl, xu, acq_func, **kwargs):
-        super().__init__(n_var=n_var, n_obj=1, xl=xl, xu=xu)
-        self.acq_func = acq_func
-
-    def _evaluate(self, x, out, *args, **kwargs):
-        y = self.acq_func(x).reshape(-1)
-
-        out["F"] = y
-
-
 class DefaultMixedTermination(Termination):
+    """Pymoo custom termination criteria for mixed-integer problem."""
+
     def __init__(self, f, n_max_gen=1000, n_max_evals=100000) -> None:
         super().__init__()
         self.f = f
@@ -112,38 +121,39 @@ class DefaultMixedTermination(Termination):
 
 
 class DefaultSingleObjectiveMixedTermination(DefaultMixedTermination):
+    """Pymoo custom default single objectived mixed-integer termination criteria."""
+
     def __init__(self, ftol=1e-6, period=30, n_max_gen=1000, **kwargs) -> None:
-        f = RobustTermination(
-            SingleObjectiveSpaceTermination(ftol, only_feas=True), period=period
-        )
+        f = RobustTermination(SingleObjectiveSpaceTermination(ftol, only_feas=True), period=period)
         super().__init__(f, n_max_gen)
 
 
 class ConfigSpaceRepair(Repair):
+    """Pymoo repair operator for ConfigSpace conditions/forbiddens."""
+
     def __init__(self, space):
         super().__init__()
         self.space = space
         self.config_space = self.space.config_space
 
     def _do(self, problem, x, **kwargs):
-
         def deactivate_inactive_dimensions(x: dict):
-            
             if len(self.config_space.forbidden_clauses) > 0:
                 # Resolve forbidden
                 max_trials = 10
-                num_trials = 0 
-                while (num_trials < max_trials) and any(f.is_forbidden_value(x) for f in self.config_space.forbidden_clauses):
+                num_trials = 0
+                while (num_trials < max_trials) and any(
+                    f.is_forbidden_value(x) for f in self.config_space.forbidden_clauses
+                ):
                     # The new x respect all forbiddens
                     x_new = dict(self.config_space.sample_configuration())
                     for forbidden in self.config_space.forbidden_clauses:
-
                         if forbidden.is_forbidden_value(x):
                             if isinstance(forbidden, ForbiddenConjunction):
                                 dlcs = forbidden.dlcs
                             else:
                                 dlcs = [forbidden]
-                                
+
                             for f in dlcs:
                                 if isinstance(f, ForbiddenClause):
                                     x[f.hyperparameter.name] = x_new[f.hyperparameter.name]
@@ -163,7 +173,6 @@ class ConfigSpaceRepair(Repair):
             return x
 
         if self.config_space:
-
             # If there are forbiddens they must be treated before conditions
 
             # Dealing with conditions
@@ -175,3 +184,71 @@ class ConfigSpaceRepair(Repair):
             )
 
         return x
+
+
+class MixedGAPymooAcqOptimizer:
+    """Mixed-Integer GA optimizer using Pymoo."""
+
+    def __init__(
+        self,
+        space,
+        x_init,
+        y_init,
+        pop_size: int = 100,
+        random_state=None,
+        termination_kwargs=None,
+    ):
+        self.space = space
+        self.x_init = np.array(x_init)
+        self.y_init = np.array(y_init).reshape(-1)
+        self.pop_size = pop_size
+        self.random_state = check_random_state(random_state)
+
+        if termination_kwargs is None:
+            termination_kwargs = {}
+        default_termination_kwargs = {
+            "ftol": 1e-6,
+            "period": 30,
+            "n_max_gen": 1000,
+        }
+        default_termination_kwargs.update(termination_kwargs)
+        self.termination_kwargs = default_termination_kwargs
+
+    def minimize(self, acq_func):
+        """Minimize the acquisition function."""
+        problem = PyMOOMixedVectorizedProblem(
+            space=self.space,
+            acq_func=lambda x: acq_func(self.space.transform(x)),
+        )
+
+        init_pop = Population.new(
+            "X",
+            self.x_init,
+            "F",
+            self.y_init,
+        )
+
+        repair = ConfigSpaceRepair(self.space)
+        eliminate_duplicates = MixedVariableDuplicateElimination()
+        algorithm = MixedVariableGA(
+            pop_size=self.pop_size,
+            sampling=init_pop,
+            mating=MixedVariableMating(
+                eliminate_duplicates=eliminate_duplicates,
+                repair=repair,
+            ),
+            repair=repair,
+            eliminate_duplicates=eliminate_duplicates,
+        )
+
+        res_ga = minimize(
+            problem,
+            algorithm,
+            termination=DefaultSingleObjectiveMixedTermination(**self.termination_kwargs),
+            seed=self.random_state.randint(0, np.iinfo(np.int32).max),
+            verbose=False,
+        )
+
+        res_X = [res_ga.X[name] for name in self.space.dimension_names]
+        res_X = self.space.transform([res_X])[0]
+        return res_X

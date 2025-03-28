@@ -76,22 +76,9 @@ problem
 # %%
 # Then, we define some default search parameters for the Centralized Bayesian Optimization (CBO) algorithm.
 search_kwargs = {
-    "n_initial_points": 2 * nb_dim + 1, # Number of initial random points
-    "surrogate_model": "ET", # Use Extra Trees as surrogate model
-    "surrogate_model_kwargs": {
-        "n_estimators": 25, # Relatively small number of trees in the surrogate to make it "fast" 
-        "min_samples_split": 8, # Larger number to avoid small leaf nodes (smoothing the response)
-    },
     "multi_point_strategy": "qUCBd", # Multi-point strategy for asynchronous batch generations (explained later)
     "acq_optimizer": "ga", # Use continuous Genetic Algorithm for the acquisition function optimizer
-    "acq_optimizer_freq": 1, # Frequency of the acquisition function optimizer (1 = each new batch generation) increasing this value can help amortize the computational cost of acquisition function optimization
     "filter_duplicated": False, # Deactivate filtration of duplicated new points
-    "kappa": 10.0, # Initial value of exploration-exploitation parameter for the acquisition function
-    "scheduler": { # Scheduler for the exploration-exploitation parameter "kappa"
-        "type": "periodic-exp-decay", # Periodic exponential decay 
-        "period": 50, # Period over which the decay is applied. It is useful to escape local solutions.
-        "kappa_final": 0.001 # Value of kappa at the end of each "period"
-    },
     "random_state": 42, # Random seed
 }
 
