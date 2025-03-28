@@ -88,7 +88,8 @@ class GAPymooAcqOptimizer:
             self.y_init.reshape(-1),
         )
 
-        with warnings.catch_warnings(action="ignore", category=DeprecationWarning):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
             res = minimize(
                 problem,
                 algorithm=GA(pop_size=self.pop_size, sampling=init_pop),
