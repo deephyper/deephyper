@@ -85,6 +85,7 @@ class MPIWinMutableMapping(MutableMapping):
         # Deserialize the dictionary from shared memory
         try:
             self.win.Get(self.shared_memory, target_rank=self.root)
+            self.win.Flush(self.root)
             size = int.from_bytes(self.shared_memory[: self.HEADER_SIZE], byteorder="big")
             if size > 0:
                 raw_data = self.shared_memory[self.HEADER_SIZE : self.HEADER_SIZE + size].tobytes()
@@ -116,6 +117,7 @@ class MPIWinMutableMapping(MutableMapping):
         )
         self.shared_memory[self.HEADER_SIZE + size :] = 0
         self.win.Put(self.shared_memory, target_rank=self.root)
+        self.win.Flush(self.root)
 
     def __getitem__(self, key):
         self.lock()
@@ -190,6 +192,8 @@ class MPIWinMutableMapping(MutableMapping):
         self._read_dict()
 
     def session_finish(self):
+        assert self.locked
+        
         if not self._session_is_started:
             raise RuntimeError("No session has been started!")
 
