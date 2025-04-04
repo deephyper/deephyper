@@ -89,6 +89,7 @@ class MPICommEvaluator(Evaluator):
                 if self.comm.Get_rank() == self.root:
                     search_id = storage.create_new_search()
         self.comm.Barrier()
+        search_id = self.comm.bcast(search_id, self.root)
 
         super().__init__(
             run_function=run_function,
@@ -145,7 +146,9 @@ class MPICommEvaluator(Evaluator):
                 job.run_function, running_job, **self.run_function_kwargs
             )
 
-            run_function_future = self.loop.run_in_executor(self._pool_executor, run_function)
+            run_function_future = self.loop.run_in_executor(
+                self._pool_executor, run_function
+            )
 
             if self.timeout is not None:
                 try:
