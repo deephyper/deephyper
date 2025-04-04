@@ -85,13 +85,9 @@ class MPIWinMutableMapping(MutableMapping):
         # Deserialize the dictionary from shared memory
         try:
             self.win.Get(self.shared_memory, target_rank=self.root)
-            size = int.from_bytes(
-                self.shared_memory[: self.HEADER_SIZE], byteorder="big"
-            )
+            size = int.from_bytes(self.shared_memory[: self.HEADER_SIZE], byteorder="big")
             if size > 0:
-                raw_data = self.shared_memory[
-                    self.HEADER_SIZE : self.HEADER_SIZE + size
-                ].tobytes()
+                raw_data = self.shared_memory[self.HEADER_SIZE : self.HEADER_SIZE + size].tobytes()
                 self.local_dict = pickle.loads(raw_data)
             else:
                 self.local_dict = {}
@@ -184,9 +180,7 @@ class MPIWinMutableMapping(MutableMapping):
 
     def session_start(self, read_only: bool = False):
         if self._session_is_started:
-            raise RuntimeError(
-                "A session has already been started without being finished!"
-            )
+            raise RuntimeError("A session has already been started without being finished!")
 
         self._session_is_started = True
         self._session_is_read_only = read_only

@@ -79,9 +79,7 @@ class Evaluator(abc.ABC):
             logging.info(f"{type(self).__name__} will execute {run_function}")
 
         self.run_function = run_function  # User-defined run function.
-        self.run_function_kwargs = (
-            {} if run_function_kwargs is None else run_function_kwargs
-        )
+        self.run_function_kwargs = {} if run_function_kwargs is None else run_function_kwargs
 
         # Number of parallel workers available
         self.num_workers = num_workers
@@ -92,9 +90,7 @@ class Evaluator(abc.ABC):
         self.jobs_done = []  # List used to store all jobs completed by the evaluator.
         self.job_id_submitted = []  # List of jobs'id submitted by the evaluator.
         self.job_id_gathered = []  # List of jobs'id gathered by the evaluator.
-        self.timestamp = (
-            time.time()
-        )  # Recorded time of when this evaluator interface was created.
+        self.timestamp = time.time()  # Recorded time of when this evaluator interface was created.
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop = None  # Event loop for asyncio.
@@ -129,9 +125,7 @@ class Evaluator(abc.ABC):
 
         # to avoid "RuntimeError: This event loop is already running"
         if not (Evaluator.NEST_ASYNCIO_PATCHED) and test_ipython_interpretor():
-            warnings.warn(
-                "Applying nest-asyncio patch for IPython Shell!", category=UserWarning
-            )
+            warnings.warn("Applying nest-asyncio patch for IPython Shell!", category=UserWarning)
             import deephyper.evaluator._nest_asyncio as nest_asyncio
 
             nest_asyncio.apply()
@@ -622,9 +616,7 @@ class Evaluator(abc.ABC):
                     self._columns_dumped = records_list[0].keys()
 
                 if self._columns_dumped is not None:
-                    writer = csv.DictWriter(
-                        fp, self._columns_dumped, extrasaction="ignore"
-                    )
+                    writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
 
                     if not (self._start_dumping):
                         writer.writeheader()
@@ -660,9 +652,7 @@ class Evaluator(abc.ABC):
             result["objective"] = job.objective
 
             # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
-            if isinstance(result["objective"], tuple) or isinstance(
-                result["objective"], list
-            ):
+            if isinstance(result["objective"], tuple) or isinstance(result["objective"], list):
                 obj = result.pop("objective")
 
                 if self.num_objective is None:
@@ -700,26 +690,18 @@ class Evaluator(abc.ABC):
                     for result in resultsList:
                         # Waiting to start receiving non-failed jobs before dumping results
                         is_single_obj_and_has_success = (
-                            "objective" in result
-                            and type(result["objective"]) is not str
+                            "objective" in result and type(result["objective"]) is not str
                         )
                         is_multi_obj_and_has_success = (
-                            "objective_0" in result
-                            and type(result["objective_0"]) is not str
+                            "objective_0" in result and type(result["objective_0"]) is not str
                         )
-                        if (
-                            is_single_obj_and_has_success
-                            or is_multi_obj_and_has_success
-                            or flush
-                        ):
+                        if is_single_obj_and_has_success or is_multi_obj_and_has_success or flush:
                             self._columns_dumped = result.keys()
 
                             break
 
                 if self._columns_dumped is not None:
-                    writer = csv.DictWriter(
-                        fp, self._columns_dumped, extrasaction="ignore"
-                    )
+                    writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
 
                     if not (self._start_dumping):
                         writer.writeheader()

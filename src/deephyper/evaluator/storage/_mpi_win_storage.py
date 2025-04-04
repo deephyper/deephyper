@@ -89,9 +89,7 @@ class MPIWinStorage(Storage):
         with self._mapping():
             self._mapping["data"][search_id]["data"][partial_id][key] = value
 
-    def store_job_in(
-        self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None
-    ) -> None:
+    def store_job_in(self, job_id: Hashable, args: Tuple = None, kwargs: Dict = None) -> None:
         """Stores the input arguments of the executed job.
 
         Args:
@@ -120,9 +118,7 @@ class MPIWinStorage(Storage):
         """
         search_id, partial_id = job_id.split(".")
         with self._mapping():
-            self._mapping["data"][search_id]["data"][partial_id]["metadata"][
-                key
-            ] = value
+            self._mapping["data"][search_id]["data"][partial_id]["metadata"][key] = value
 
     def load_all_search_ids(self) -> List[Hashable]:
         """Loads the identifiers of all recorded searches.
@@ -170,9 +166,7 @@ class MPIWinStorage(Storage):
         data = self._mapping["data"][search_id]["data"][partial_id]
         return copy.deepcopy(data)
 
-    def store_search_value(
-        self, search_id: Hashable, key: Hashable, value: Any
-    ) -> None:
+    def store_search_value(self, search_id: Hashable, key: Hashable, value: Any) -> None:
         """Stores the value corresponding to key for search_id.
 
         Args:
@@ -192,9 +186,7 @@ class MPIWinStorage(Storage):
         """
         return self._mapping["data"][search_id][key]
 
-    def load_metadata_from_all_jobs(
-        self, search_id: Hashable, key: Hashable
-    ) -> List[Any]:
+    def load_metadata_from_all_jobs(self, search_id: Hashable, key: Hashable) -> List[Any]:
         """Loads a given metadata value from all jobs.
 
         Args:

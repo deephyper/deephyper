@@ -146,9 +146,7 @@ class MPICommEvaluator(Evaluator):
                 job.run_function, running_job, **self.run_function_kwargs
             )
 
-            run_function_future = self.loop.run_in_executor(
-                self._pool_executor, run_function
-            )
+            run_function_future = self.loop.run_in_executor(self._pool_executor, run_function)
 
             if self.timeout is not None:
                 try:

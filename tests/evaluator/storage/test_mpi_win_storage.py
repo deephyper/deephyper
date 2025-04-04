@@ -29,9 +29,7 @@ def _test_mpi_win_mutable_mapping():
 
     for i in range(comm.Get_size()):
         if i == comm.Get_rank():
-            print(
-                f"Process {comm.Get_rank()} has: {mapping} with {len(mapping)} elements"
-            )
+            print(f"Process {comm.Get_rank()} has: {mapping} with {len(mapping)} elements")
             assert len(mapping) == i + 1
 
     comm.Barrier()
