@@ -45,19 +45,20 @@ class MPIWinMutableMapping(MutableMapping):
         self.root = root
         self.locked = False
         self._session_is_started = False
-        self._session_is_ready_only = False
+        self._session_is_read_only = False
 
-        # Allocate shared memory
-        # Creates a window from already allocated MPI shared memory.
-        logging.info("Creating MPI.Win ...")
-        self.win = MPI.Win.Allocate_shared(size, 1, comm=comm)
-        buf, itemsize = self.win.Shared_query(self.root)
-        logging.info("MPI.Win created")
+        # Allocate memory (works on multiple nodes)
+        logging.info("Allocating MPI.Win ...")
+        self.win = MPI.Win.Allocate(size, 1, comm=comm)
+        # TODO: shake if comm is on 1 node or multiple nodes to use:
+        # TODO: Allocate_shared + Shared_query instead
+        # self.win = MPI.Win.Allocate_shared(size, 1, comm=comm)
+        # buf, itemsize = self.win.Shared_query(self.root)
+        # self.shared_memory = np.ndarray(buffer=buf, dtype=np.byte, shape=(size,))
+        logging.info("MPI.Win allocated")
 
-        # Use a NumPy array to interface with the shared memory
-        self.shared_memory = np.ndarray(buffer=buf, dtype=np.byte, shape=(size,))
+        self.shared_memory = np.empty((size,), dtype=np.byte)
 
-        # Local cache for the dictionary
         if default_value is None:
             self.local_dict = {}
         else:
@@ -83,6 +84,8 @@ class MPIWinMutableMapping(MutableMapping):
         """Read the dictionnary state from the shared memory."""
         # Deserialize the dictionary from shared memory
         try:
+            self.win.Get(self.shared_memory, target_rank=self.root)
+            self.win.Flush(self.root)
             size = int.from_bytes(self.shared_memory[: self.HEADER_SIZE], byteorder="big")
             if size > 0:
                 raw_data = self.shared_memory[self.HEADER_SIZE : self.HEADER_SIZE + size].tobytes()
@@ -113,6 +116,8 @@ class MPIWinMutableMapping(MutableMapping):
             serialized, dtype=np.byte
         )
         self.shared_memory[self.HEADER_SIZE + size :] = 0
+        self.win.Put(self.shared_memory, target_rank=self.root)
+        self.win.Flush(self.root)
 
     def __getitem__(self, key):
         self.lock()
@@ -152,8 +157,8 @@ class MPIWinMutableMapping(MutableMapping):
         self.unlock()
         return repr(self.local_dict)
 
-    def __call__(self, ready_only: bool = False):
-        self._session_is_ready_only = ready_only
+    def __call__(self, read_only: bool = False):
+        self._session_is_read_only = read_only
         return self
 
     def __enter__(self):
@@ -171,32 +176,34 @@ class MPIWinMutableMapping(MutableMapping):
 
     def unlock(self):
         """Release the lock."""
-        if self.locked:
+        if self.locked and not self._session_is_started:
             self.win.Unlock(self.root)
             self.locked = False
 
-    def session_start(self, ready_only: bool = False):
+    def session_start(self, read_only: bool = False):
         if self._session_is_started:
             raise RuntimeError("A session has already been started without being finished!")
 
         self._session_is_started = True
-        self._session_is_ready_only = ready_only
+        self._session_is_read_only = read_only
 
         self.lock()
 
         self._read_dict()
 
     def session_finish(self):
+        assert self.locked
+
         if not self._session_is_started:
             raise RuntimeError("No session has been started!")
 
-        if not self._session_is_ready_only:
+        if not self._session_is_read_only:
             self._write_dict()
 
-        self.unlock()
-
         self._session_is_started = False
-        self._session_is_ready_only = True
+        self._session_is_read_only = True
+
+        self.unlock()
 
     # This can create a deadlock if not called by all processes!
     def __del__(self):
