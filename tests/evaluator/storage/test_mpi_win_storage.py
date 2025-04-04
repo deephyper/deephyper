@@ -276,3 +276,7 @@ def test_mpi_win_storage_with_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_storage_with_evaluator"
     result = dht.run(command, live_output=False)
     assert result.returncode == 0
+
+
+if __name__ == "__main__":
+    _test_mpi_win_storage_with_evaluator()

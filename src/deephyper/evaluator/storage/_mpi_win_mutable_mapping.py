@@ -176,7 +176,7 @@ class MPIWinMutableMapping(MutableMapping):
 
     def unlock(self):
         """Release the lock."""
-        if self.locked:
+        if self.locked and not self._session_is_started:
             self.win.Unlock(self.root)
             self.locked = False
 
@@ -193,17 +193,17 @@ class MPIWinMutableMapping(MutableMapping):
 
     def session_finish(self):
         assert self.locked
-        
+
         if not self._session_is_started:
             raise RuntimeError("No session has been started!")
 
         if not self._session_is_read_only:
             self._write_dict()
 
-        self.unlock()
-
         self._session_is_started = False
         self._session_is_read_only = True
+
+        self.unlock()
 
     # This can create a deadlock if not called by all processes!
     def __del__(self):
