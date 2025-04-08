@@ -75,13 +75,13 @@ While the feature matrix below provides a high-level overview, it necessarily si
 
 | Feature | DeepHyper       | Optuna | SMAC3 |
 |---|-----------------|--------|-------|
-| Single-objective       | 🟩 | 🟩 | 🟩    |
-| Multi-objective        | 🟩 | 🟩 | 🟩    |
-| Early discarding       | 🟩 | 🟩 | 🟩    |
-| Fault tolerance        | 🟩 | 🟩 | 🟥    |
-| Transfer learning      | 🟩 | 🟩 | 🟧    |
-| Ensemble construction  | 🟩 | 🟥 | 🟥    |
-| Visualization          | 🟧 | 🟩 | 🟥    |
+| Single-objective       | X | X | X    |
+| Multi-objective        | X | X | X    |
+| Early discarding       | X | X | X    |
+| Fault tolerance        | X | X | .    |
+| Transfer learning      | X | X | ~    |
+| Ensemble construction  | X | . | .    |
+| Visualization          | ~ | X | .    |
 
 Absolutely! Here's an improved version of your text that adopts a **factual, scientific, formal, and synthetic** tone while preserving the important content. I've also polished the grammar and structure for clarity and readability.
 
@@ -111,13 +111,13 @@ While the feature matrix below provides a high-level overview, it necessarily si
 
 | Feature                 | DeepHyper | Optuna | SMAC3 |
 |------------------------|-----------|--------|--------|
-| Single-objective       | 🟩        | 🟩     | 🟩     |
-| Multi-objective        | 🟩        | 🟩     | 🟩     |
-| Early stopping         | 🟩        | 🟩     | 🟩     |
-| Fault tolerance        | 🟩        | 🟩     | 🟥     |
-| Transfer learning      | 🟩        | 🟩     | 🟧     |
-| Ensemble construction  | 🟩        | 🟥     | 🟥     |
-| Visualization          | 🟧        | 🟩     | 🟥     |
+| Single-objective       | X        | X     | X     |
+| Multi-objective        | X        | X     | X     |
+| Early stopping         | X        | X     | X     |
+| Fault tolerance        | X        | X     | .     |
+| Transfer learning      | X        | X     | ~     |
+| Ensemble construction  | X        | .     | .     |
+| Visualization          | ~        | X     | .     |
 
 #### Detailed Feature Description
 
