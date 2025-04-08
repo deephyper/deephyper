@@ -49,15 +49,20 @@ class MPIWinMutableMapping(MutableMapping):
 
         # Allocate memory (works on multiple nodes)
         logging.info("Allocating MPI.Win ...")
-        self.win = MPI.Win.Allocate(size, 1, comm=comm)
-        # TODO: shake if comm is on 1 node or multiple nodes to use:
-        # TODO: Allocate_shared + Shared_query instead
-        # self.win = MPI.Win.Allocate_shared(size, 1, comm=comm)
-        # buf, itemsize = self.win.Shared_query(self.root)
-        # self.shared_memory = np.ndarray(buffer=buf, dtype=np.byte, shape=(size,))
-        logging.info("MPI.Win allocated")
 
-        self.shared_memory = np.empty((size,), dtype=np.byte)
+        # If all processes are in the local shared comm then we
+        # can use shared memory
+        local_comm = self.comm.Split_type(MPI.COMM_TYPE_SHARED)
+        if local_comm.Get_size() == self.comm.Get_size():
+            logging.info("Using MPI.Win.Allocate_shared")
+            self.win = MPI.Win.Allocate_shared(size, 1, comm=comm)
+            buf, itemsize = self.win.Shared_query(self.root)
+            self.shared_memory = np.ndarray(buffer=buf, dtype=np.byte, shape=(size,))
+        else:
+            logging.info("Using MPI.Win.Allocate")
+            self.win = MPI.Win.Allocate(size, 1, comm=comm)
+            self.shared_memory = np.empty((size,), dtype=np.byte)
+        logging.info("MPI.Win allocated")
 
         if default_value is None:
             self.local_dict = {}
