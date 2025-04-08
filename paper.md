@@ -148,11 +148,11 @@ Basic visualization tools are provided via `deephyper.analytics`. For more inter
 
 |   | DeepHyper | Optuna | SMAC3 |
 |---|-----------|--------|-------|
-| Asynchronous optimization  | 🟩 | 🟩 | ❓ |
-| Centralized  optimization  | 🟩 | 🟩 | 🟩 |
-| Decentralized optimization | 🟩 | 🟩 | 🟥 |
-| Parallelization backends   | 🟩 | 🟥 | 🟧 |
-| Memory backends            | 🟩 | 🟩 | 🟧 |
+| Asynchronous optimization  | X | X | ? |
+| Centralized  optimization  | X | X | . |
+| Decentralized optimization | X | X | . |
+| Parallelization backends   | X | . | ~ |
+| Memory backends            | X | X | ~ |
 
 The main difference between DeepHyper, Optuna and SMAC related to parallelization is that DeepHyper provides out-of-the-box parallelization software while Optuna leaves it to the user and SMAC limits itself to centralized parallelism with Dask.
 
