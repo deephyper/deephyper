@@ -172,6 +172,10 @@ including $N$ workers, each running centralized optimization.
 ## Black-box Optimization Benchmarks
 
 Average regret (i.e., $y^* - \hat{y}^*$) and standard error over 10 random repetition for each method.
+All methods are run sequentialy with default arguments.
+For DeepHyper, the `CBO` optimizer is used.
+For Optuna, the `TPE` optimizer is used.
+For SMAC, the default parameters using the OptunaHub SMAC sampler is used.
 
 ![Ackley 5D](figures/benchmarks/ackley_5d.png){width=45%}
 
