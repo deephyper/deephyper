@@ -119,8 +119,6 @@ While the feature matrix below provides a high-level overview, it necessarily si
 | Ensemble construction  | X        | .     | .     |
 | Visualization          | ~        | X     | .     |
 
-#### Detailed Feature Description
-
 **Single-objective Optimization**  
 DeepHyper employs a surrogate model based on random forests to estimate $P(\text{Objective} \mid \text{Hyperparameters})$, similar to SMAC. However, DeepHyper's implementation is typically faster per query, especially when the number of evaluations exceeds 200. In contrast, Optuna uses the Tree-structured Parzen Estimator (TPE), which models $P(\text{Hyperparameters} \mid \text{Objective})$. TPE offers faster query times but can struggle with complex optimization landscapes and tends to be less effective in refining continuous hyperparameters.
 
@@ -142,7 +140,7 @@ DeepHyper enables model ensembling from the pool of evaluated configurations, he
 **Visualization**  
 Basic visualization tools are provided via `deephyper.analytics`. For more interactive exploration, we recommend [SandDance](https://microsoft.github.io/SandDance/), a Visual Studio Code plugin. Figure 2 illustrates a 3D visualization of a Random Forest optimization, with `min_samples_split`, `min_weight_fraction_leaf`, and test accuracy as the x, y, and z axes (and color), respectively. The two plots compare configurations using `splitter="best"` (left) and `splitter="random"` (right). Such visualizations help identify the sensitivity of the objective to different hyperparameters.
 
-![Add SanDance Figure](figures/sanddance_viz.png){width=80%,label="sanddance_viz"}
+![Visualization of hyperparameter optimization results with SandDance](figures/sanddance_viz.png){width=80%,label="sanddance_viz"}
 
 ### Parallelization Capabilities
 
@@ -155,8 +153,6 @@ Basic visualization tools are provided via `deephyper.analytics`. For more inter
 | Memory backends            | X | X | ~ |
 
 The main difference between DeepHyper, Optuna and SMAC related to parallelization is that DeepHyper provides out-of-the-box parallelization software while Optuna leaves it to the user and SMAC limits itself to centralized parallelism with Dask.
-
-#### Detailed Feature Description
 
 **Asynchronous optimization**: DeepHyper's allows to submit and gather hyperparameter configuration by batch and asynchronously (in a centralized or decentralized setting).
 
@@ -205,15 +201,15 @@ The objective function can be stochastic $Y = f(x)$ where $Y$ is a random variab
 
 The Bayesian optimization of `DeepHyper` relies by default on Extremely Randomized Forest as surrogate model to estimate $E_Y[Y|X=x]$.
 Extremely Randomized Forest [@geurts2006extremely] are a kind of Randomized Forest algorithm where the split decision involves a random process for each newly created node of a tree.
-It provides smoother epistemic uncertainty estimates with an increasing number of trees (Figure 2) compared to usual Random Forests that use a deterministic "best" split decision (Figure 3).
+It provides smoother epistemic uncertainty estimates with an increasing number of trees (Figure 12) compared to usual Random Forests that use a deterministic "best" split decision (Figure 13).
 
 ![Uncertainty for Extremely Randomized Forest (Random Split)](figures/random_forest_random_split.png){width=45%,label="randomsplit"}
 
 ![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png){width=45%,label="bestsplit"}
 
 
-Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate (purple area in Figure 4) for improved efficiency.
-It is also combined with a periodic exponential decay (Figure 5, impacting exploration-exploitation parameters of BO) to escape local solutions [@egele2023asynchronous].
+Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate (purple area in Figure 13) for improved efficiency.
+It is also combined with a periodic exponential decay (Figure 14, impacting exploration-exploitation parameters of BO) to escape local solutions [@egele2023asynchronous].
 
 ![Periodic Exponential Decay for Bayesian Optimization](figures/example-exp-decay.jpg){width=49%}
 
