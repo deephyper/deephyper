@@ -31,7 +31,7 @@ def figure_size(width, fraction=1):
     return fig_dim
 
 
-def update_matplotlib_rc(width=252 * 1.8, fraction=1.0, fontsize=10):
+def update_matplotlib_rc(width=252 * 1.8, fraction=1.0, fontsize=10, use_latext=False):
     mpl.rcParams.update(
         {
             "figure.figsize": figure_size(width=width, fraction=fraction),
@@ -40,7 +40,7 @@ def update_matplotlib_rc(width=252 * 1.8, fraction=1.0, fontsize=10):
             "savefig.dpi": 360,
             "figure.subplot.bottom": 0.5,
             # Use LaTeX to write all text
-            "text.usetex": True,
+            "text.usetex": use_latext,
             # "font.family": "serif",
             # Use 10pt font in plots, to match 10pt font in document
             "axes.labelsize": fontsize,
