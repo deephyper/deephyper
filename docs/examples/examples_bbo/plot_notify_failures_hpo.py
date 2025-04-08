@@ -77,11 +77,11 @@ for failure_strategy in ["ignore", "mean", "min"]:
     search = CBO(
         problem,
         evaluator,
-        acq_func="UCBd",
         acq_optimizer="ga",
-        acq_optimizer_freq=1,
-        filter_duplicated=False,
-        filter_failures=failure_strategy,
+        acq_optimizer_kwargs=dict(
+            filter_duplicated=False,
+            filter_failures=failure_strategy,
+        ),
         log_dir=f"search_{failure_strategy}",
         random_state=42,
     )
@@ -104,11 +104,11 @@ for i, (failure_strategy, df) in enumerate(results.items()):
         x_success, x_failed = x[mask_success], x[mask_failed]
         y_success = df["objective"][mask_success].astype(float)
 
-    axes[i].scatter(x_success, y_success, label=failure_strategy)
-    axes[i].scatter(x_failed, np.zeros(x_failed.shape), marker="v", color="red")
+    axes[i].scatter(x_success, y_success, label="success")
+    axes[i].scatter(x_failed, np.zeros(x_failed.shape), marker="v", color="red", label="failure")
 
-    axes[i].set_xlabel("Evalutions")
     axes[i].set_ylabel("Objective")
-    axes[i].legend()
+    axes[i].legend(title=f"Strategy: {failure_strategy}")
     axes[i].grid()
+axes[i].set_xlabel("Evaluations")
 

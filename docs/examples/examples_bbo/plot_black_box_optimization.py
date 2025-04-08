@@ -99,9 +99,7 @@ from deephyper.hpo import CBO
 search = CBO(
     problem,
     evaluator,
-    acq_func="UCB",  # Acquisition function to Upper Confidence Bound
-    multi_point_strategy="qUCB",  # Fast Multi-point strategy with q-Upper Confidence Bound
-    n_jobs=2,  # Number of threads to fit surrogate models in parallel
+    acq_optimizer="ga",
 )
 
 # %%

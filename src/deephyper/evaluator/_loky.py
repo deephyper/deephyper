@@ -2,43 +2,36 @@ import asyncio
 import functools
 from typing import Callable, Hashable
 
-import cloudpickle
-
-from loky import ProcessPoolExecutor
+from loky import get_reusable_executor
 
 from deephyper.evaluator import Evaluator, Job, JobStatus
 from deephyper.evaluator.storage import SharedMemoryStorage, Storage
-
-
-def run_with_cloudpickle(loop, executor, func, *args):
-    # Serialize the function and arguments using cloudpickle
-    serialized_task = cloudpickle.dumps((func, args))
-
-    def wrapped_task(serialized_task):
-        func, args = cloudpickle.loads(serialized_task)
-        return func(*args)
-
-    return loop.run_in_executor(executor, wrapped_task, serialized_task)
 
 
 class LokyEvaluator(Evaluator):
     """This evaluator uses the ``ProcessPoolExecutor`` from ``loky`` as backend.
 
     The ``loky`` backend uses ``cloudpickle`` to serialize by value the called function and
-    its arguments.
+    its arguments. This allows to pass lambda or local functions to the ``Evaluator`` as
+    ``run_function.``
 
     Args:
         run_function (callable):
             Functions to be executed by the ``Evaluator``.
+
         num_workers (int, optional):
             Number of parallel processes used to compute the ``run_function``. Defaults to 1.
+
         callbacks (list, optional):
             A list of callbacks to trigger custom actions at the creation or
-            completion of jobs. Defaults to None.
+            completion of jobs. Defaults to ``None``.
+
         run_function_kwargs (dict, optional):
             Static keyword arguments to pass to the ``run_function`` when executed.
+
         storage (Storage, optional):
             Storage used by the evaluator. Defaults to ``SharedMemoryStorage``.
+
         search_id (Hashable, optional):
             The id of the search to use in the corresponding storage. If
             ``None`` it will create a new search identifier when initializing
@@ -67,9 +60,9 @@ class LokyEvaluator(Evaluator):
         )
 
         # Creating the exector once here is crutial to avoid repetitive overheads
-        self.executor = ProcessPoolExecutor(
-            max_workers=self.num_workers,
-        )
+        # context="spawn" is important to avoid deadlocks in multi-threaded environments
+        # which is the case because we are using asyncio
+        self.executor = get_reusable_executor(max_workers=self.num_workers, context="spawn")
         self.sem = None
 
     def set_event_loop(self):
@@ -88,8 +81,7 @@ class LokyEvaluator(Evaluator):
                 job.run_function, running_job, **self.run_function_kwargs
             )
 
-            # run_function_future = self.loop.run_in_executor(self.executor, run_function)
-            run_function_future = run_with_cloudpickle(self.loop, self.executor, run_function)
+            run_function_future = self.loop.run_in_executor(self.executor, run_function)
 
             if self.timeout is not None:
                 try:

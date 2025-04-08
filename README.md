@@ -7,13 +7,12 @@
 [![Documentation Status](https://readthedocs.org/projects/deephyper/badge/?version=latest)](https://deephyper.readthedocs.io/en/latest/?badge=latest)
 ![License](https://img.shields.io/github/license/deephyper/deephyper)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/deephyper.svg?label=Pypi%20downloads)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/deephyper/tutorials/blob/main/tutorials/colab/DeepHyper_101.ipynb)
 
 ## What is DeepHyper?
 
 DeepHyper is a powerful Python package for automating machine learning tasks, particularly focused on optimizing hyperparameters, searching for optimal neural architectures, and quantifying uncertainty through the use of deep ensembles. With DeepHyper, users can easily perform these tasks on a single machine or distributed across multiple machines, making it ideal for use in a variety of environments. Whether you're a beginner looking to optimize your machine learning models or an experienced data scientist looking to streamline your workflow, DeepHyper has something to offer. So why wait? Start using DeepHyper today and take your machine-learning skills to the next level!
 
-## Install Instructions
+## Installation
 
 Installation with `pip`:
 
@@ -21,11 +20,9 @@ Installation with `pip`:
 pip install deephyper
 ```
 
-More details about the installation process can be found at [DeepHyper Installations](https://deephyper.readthedocs.io/en/latest/install/index.html).
+More details about the installation process can be found in our [Installation](https://deephyper.readthedocs.io/en/stable/install/) documentation.
 
 ## Quickstart
-
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/deephyper/tutorials/blob/main/tutorials/colab/DeepHyper_101.ipynb)
 
 The black-box function named `run` is defined by taking an input job named `job` which contains the different variables to optimize `job.parameters`. Then the run-function is bound to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `CBO` is created and executed to find the values of config which **MAXIMIZE** the return value of `run(job)`.
 
@@ -102,15 +99,7 @@ The optimization process is defined as follows:
 
 ## How do I learn more?
 
-* Documentation: <https://deephyper.readthedocs.io>
-
-* GitHub repository: <https://github.com/deephyper/deephyper>
-
-* Blog: <https://deephyper.github.io>
-
-## Contributions
-
-Find the list of contributors on the [DeepHyper Authors](https://deephyper.github.io/aboutus) page of the Documentation.
+Check out our online documentation with API reference and examples: <https://deephyper.readthedocs.io>
 
 ## Citing DeepHyper
 
@@ -126,18 +115,13 @@ If you wish to cite the Software, please use the following:
 } 
 ```
 
-Find all our publications on the [Research & Publication](https://deephyper.github.io/papers) page of the Documentation.
-
 ## How can I participate?
 
-Questions, comments, feature requests, bug reports, etc. can be directed to:
-
-* Issues on GitHub
+Questions, comments, feature requests, bug reports, etc. can be directed to Github Issues.
 
 Patches through pull requests are much appreciated on the software itself as well as documentation.
-Optionally, please include in your first patch a credit for yourself in the list above.
 
-The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatsheet](https://danielkummer.github.io/git-flow-cheatsheet/). For tests we are using: [Pytest](https://docs.pytest.org/en/latest/).
+More documentation about how to contribute is available on [deephyper.readthedocs.io/en/latest/developer_guides/contributing.html](https://deephyper.readthedocs.io/en/latest/developer_guides/contributing.html).
 
 ## Acknowledgments
 
@@ -149,6 +133,6 @@ The DeepHyper Team uses git-flow to organize the development: [Git-Flow cheatshe
 
 Copyright © 2019, UChicago Argonne, LLC
 
-DeepHyper is distributed under the terms of BSD License. See [LICENSE](https://github.com/deephyper/deephyper/blob/master/LICENSE.md)
+DeepHyper is distributed under the terms of BSD License. See [LICENSE](https://github.com/deephyper/deephyper/blob/master/LICENSE)
 
 Argonne Patent & Intellectual Property File Number: SF-19-007

@@ -192,7 +192,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 8.144 seconds)
+   **Total running time of the script:** (0 minutes 2.637 seconds)
 
 
 .. _sphx_glr_download_examples_examples_bbo_plot_experimental_design.py:

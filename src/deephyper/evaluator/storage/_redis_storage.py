@@ -1,9 +1,7 @@
 import logging
 import math
 import pickle
-
 from numbers import Number
-
 from typing import Any, Dict, Hashable, List, Tuple
 
 import redis

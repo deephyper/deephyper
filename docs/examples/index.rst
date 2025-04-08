@@ -138,6 +138,23 @@ Hyperparameter optimization
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
+
+.. only:: html
+
+  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_hpo_text_classification_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Hyperparameter search for text classification</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="In this example, you will learn how to treat the choice of a learning method as just another hyperparameter. We consider the Random Forest (RF) and Gradient Boosting (GB) classifiers from Scikit-Learn on the Airlines dataset.">
 
 .. only:: html

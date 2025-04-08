@@ -60,21 +60,7 @@ problem_large = create_problem(n_large)
 # %%
 # We define the parameters of the search:
 search_kwargs = {
-    "surrogate_model": "ET",  # Use Extra Trees as surrogate model
-    "surrogate_model_kwargs": {
-        "n_estimators": 25,  # Relatively small number of trees in the surrogate to make it "fast"
-        "min_samples_split": 4,  # Larger number to avoid small leaf nodes (smoothing the objective response)
-    },
     "acq_optimizer": "ga", # Optimizing the acquisition function with countinuous genetic algorithm
-    "acq_optimizer_freq": 1,
-    "filter_duplicated": False,  # Deactivate filtration of duplicated new points
-    "kappa": 10.0,  # Initial value of exploration-exploitation parameter for the acquisition function
-    "scheduler": {  # Scheduler for the exploration-exploitation parameter "kappa"
-        "type": "periodic-exp-decay",  # Periodic exponential decay
-        "period": 25,  # Period over which the decay is applied. It is useful to escape local solutions.
-        "kappa_final": 0.01,  # Value of kappa at the end of each "period"
-    },
-    "objective_scaler": "identity",
     "random_state": 42,
 }
 
@@ -95,7 +81,6 @@ evaluator_small = Evaluator.create(
 search_small = CBO(
     problem_small, 
     evaluator_small, 
-    n_initial_points=2 * n_small + 1, 
     **search_kwargs,
 )
 results_small = search_small.search(max_evals)
@@ -110,7 +95,6 @@ evaluator_large = Evaluator.create(
 search_large = CBO(
     problem_large, 
     evaluator_large,
-    n_initial_points=2 * n_large + 1,
     **search_kwargs,
 )
 results["Large"] = search_large.search(max_evals)

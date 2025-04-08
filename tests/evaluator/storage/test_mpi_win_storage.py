@@ -76,8 +76,6 @@ def _test_mpi_win_mutable_mapping():
             self.count_read = 0
             self.count_write = 0
             super().__init__(*args, **kwargs)
-            self.count_write = 0
-            self.count_write = 0
 
         def _read_dict(self):
             self.count_read += 1
@@ -101,10 +99,10 @@ def _test_mpi_win_mutable_mapping():
 
         # No session was used here
         assert mapping._session_is_started is False
-        for key in mapping:
-            mapping[key]
+        for key in mapping:  # on read for __getitem__
+            mapping[key]  # on read to access each key-val
 
-        assert mapping.count_read == 5
+        assert mapping.count_read == 3
 
     comm.Barrier()
 
@@ -113,7 +111,7 @@ def _test_mpi_win_mutable_mapping():
         mapping.count_write = 0
 
         # Read-only session
-        with mapping(ready_only=True):
+        with mapping(read_only=True):
             assert mapping._session_is_started is True
 
             for key in mapping:

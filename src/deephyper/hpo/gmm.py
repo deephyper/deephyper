@@ -14,6 +14,8 @@ from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
 from sklearn.utils import check_random_state
 
+__all__ = ["GMMSampler"]
+
 
 class GMMSampler:
     """Gaussian Mixture Model sampler.

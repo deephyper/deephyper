@@ -17,42 +17,66 @@ Therefore, we start by defining a black-box ``run``-function that implements the
 .. image:: https://www.sfu.ca/~ssurjano/ackley.png
   :width: 400
   :alt: Ackley Function in 2D
-
-To help illustrate the parallelization gain, we will simulate a computational cost
-by using ``time.sleep``. We also use the ``@profile`` decorator to collect starting/ending
-times of each call to the ``run``-function. When using this decorator, the ``run``-function will
-return a dictionnary including ``"metadata"`` with 2 new keys ``"timestamp_start"`` and
-``"timestamp_end"``. The ``run``-function is defined in a separate Python module
-for better serialization (through ``pickle``) in case other parallel backends such as ``"process"`` would be used
-
-.. literalinclude:: ../../examples/black_box_util.py
-   :language: python
-
-After defining the ``run``-function we can continue with the definition of our optimization script:
 """
+# %%
+
 # .. dropdown:: Import statements
-import black_box_util as black_box
+import multiprocessing
+import time
+
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.stats as ss
 
-from multiprocessing import Pool
+from loky import get_reusable_executor
 
 from deephyper.analysis import figure_size
 from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
 from deephyper.analysis.hpo import plot_worker_utilization
-from deephyper.evaluator import Evaluator
+from deephyper.evaluator import Evaluator, profile
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.evaluator.storage import SharedMemoryStorage
 from deephyper.hpo import HpProblem, CBO
 
-from dbo_util import execute_centralized_bo_with_share_memory
+# %%
+# We define the Ackley function:
+
+# .. dropdown:: Ackley function
+def ackley(x, a=20, b=0.2, c=2 * np.pi):
+    d = len(x)
+    s1 = np.sum(x**2)
+    s2 = np.sum(np.cos(c * x))
+    term1 = -a * np.exp(-b * np.sqrt(s1 / d))
+    term2 = -np.exp(s2 / d)
+    y = term1 + term2 + a + np.exp(1)
+    return y
+
+# %% 
+# We will use the ``time.sleep`` function to simulate a budget of 2 secondes of execution in average 
+# which helps illustrate the advantage of parallel evaluations. The ``@profile`` decorator is useful 
+# to collect starting/ending time of the ``run``-function execution which help us know exactly when 
+# we are inside the black-box. This decorator is necessary when profiling the worker utilization. When 
+# using this decorator, the ``run``-function will return a dictionnary with 2 new keys ``"timestamp_start"`` 
+# and ``"timestamp_end"``.
+
+@profile
+def run_ackley(config, sleep_loc=2, sleep_scale=0.5):
+    # to simulate the computation of an expensive black-box
+    if sleep_loc > 0:
+        t_sleep = np.random.normal(loc=sleep_loc, scale=sleep_scale)
+        t_sleep = max(t_sleep, 0)
+        time.sleep(t_sleep)
+
+    x = np.array([config[k] for k in config if "x" in k])
+    x = np.asarray_chkfinite(x)  # ValueError if any NaN or Inf
+    return -ackley(x)  # maximisation is performed
 
 # %%
 # Then, we define the variable(s) we want to optimize. For this problem we
 # optimize Ackley in a N-dimensional search space. Each dimension in the continuous range
 # [-32.768, 32.768]. The true minimum is located at ``(0, ..., 0)``.
 
-nb_dim = 5
+nb_dim = 10
 problem = HpProblem()
 for i in range(nb_dim):
     problem.add_hyperparameter((-32.768, 32.768), f"x{i}")
@@ -64,22 +88,14 @@ problem
 # classic constant-liar strategy (a.k.a, Krigging Believer) `"cl_min/max/mean` in our setting
 # would totally freeze the execution (you can try!).
 search_kwargs = {
-    "n_initial_points": 2 * nb_dim + 1,  # Number of initial random points
-    "surrogate_model": "ET",  # Use Extra Trees as surrogate model
-    "surrogate_model_kwargs": {
-        "n_estimators": 25,  # Relatively small number of trees in the surrogate to make it "fast"
-        "min_samples_split": 8,  # Larger number to avoid small leaf nodes (smoothing the response)
+    "acq_func_kwargs": {
+        "kappa": 2.0,
+    },
+    "acq_optimizer": "ga",  # Use continuous Genetic Algorithm for the acquisition function optimizer
+    "acq_optimizer_kwargs": {
+        "filter_duplicated": False, # Deactivate filtration of duplicated new points
     },
     "multi_point_strategy": "qUCBd",  # Multi-point strategy for asynchronous batch generations (explained later)
-    "acq_optimizer": "ga",  # Use continuous Genetic Algorithm for the acquisition function optimizer
-    "acq_optimizer_freq": 1,  # Frequency of the acquisition function optimizer (1 = each new batch generation) increasing this value can help amortize the computational cost of acquisition function optimization
-    "filter_duplicated": False,  # Deactivate filtration of duplicated new points
-    "kappa": 10.0,  # Initial value of exploration-exploitation parameter for the acquisition function
-    "scheduler": {  # Scheduler for the exploration-exploitation parameter "kappa"
-        "type": "periodic-exp-decay",  # Periodic exponential decay
-        "period": 50,  # Period over which the decay is applied. It is useful to escape local solutions.
-        "kappa_final": 0.001,  # Value of kappa at the end of each "period"
-    },
     "random_state": 42,  # Random seed
 }
 
@@ -134,19 +150,18 @@ def execute_centralized_bo(
 
 
 # %%
-# To execute the search, we use the `if __name__ == "__main__":` statement. It is important to avoid triggering searches
+# To execute the search, we use the ``if __name__ == "__main__":`` statement. It is important to avoid triggering searches
 # recursively when launching child processes latter in the example.
 if __name__ == "__main__":
     results["centralized"] = execute_centralized_bo(
         problem=problem,
-        run_function=black_box.run_ackley,
+        run_function=run_ackley,
         run_function_kwargs=run_function_kwargs,
         num_workers=num_workers,
         log_dir="search_centralized",
         search_kwargs=search_kwargs,
         timeout=timeout,
     )
-    results["centralized"]
 
 # %%
 # We can now plot the results of the centralized search. The first plot shows the evolution of the objective.
@@ -160,35 +175,76 @@ if __name__ == "__main__":
         ncols=1,
         sharex=True,
         figsize=figure_size(width=600),
+        tight_layout=True,
     )
 
-    plot_search_trajectory_single_objective_hpo(
+    fig, ax = plot_search_trajectory_single_objective_hpo(
         results["centralized"], mode="min", x_units="seconds", ax=axes[0]
     )
 
-    plot_worker_utilization(
+    fig, ax = plot_worker_utilization(
         results["centralized"], num_workers=None, profile_type="start/end", ax=axes[1]
     )
-
-    plt.tight_layout()
-    plt.show()
 
 
 # %%
 # Then we move to the decentralized optimization. We defined it in a separate module for Pickling to work.
 # This function will be launched in child processes to trigger each sub-instances of the decentralized search.
-#
-# .. literalinclude:: ../../examples/dbo_util.py
-#    :language: python
-#
+
+def execute_centralized_bo_with_share_memory(
+    problem,
+    run_function,
+    run_function_kwargs,
+    storage,
+    search_id,
+    search_random_state,
+    log_dir,
+    num_workers,
+    is_master,
+    kappa,
+    search_kwargs,
+    timeout,
+):
+    evaluator = Evaluator.create(
+        run_function,
+        method="thread",
+        method_kwargs={
+            "num_workers": num_workers,
+            "storage": storage,
+            "search_id": search_id,
+            "callbacks": [TqdmCallback()] if is_master else [],
+            "run_function_kwargs": run_function_kwargs,
+        },
+    )
+
+    search_kwargs["acq_func_kwargs"]["kappa"] = kappa
+    search_kwargs["random_state"] = search_random_state
+    search = CBO(problem, evaluator, log_dir=log_dir, **search_kwargs)
+
+    def dummy(*args, **kwargs):
+        pass
+
+    results = None
+    if is_master:
+        results = search.search(timeout=timeout)
+    else:
+        # for concurrency reasons this is important to override these functions
+        evaluator.dump_jobs_done_to_csv = dummy
+        search.extend_results_with_pareto_efficient = dummy
+
+        search.search(timeout=timeout)
+
+    return results
+
+# %%
 # This function is very similar to our previous centralized optimization. However, importantly you can see that we
-# override two methods of the `CBO` with `dummy` function.
+# override two methods of the ``CBO`` with ``dummy`` function.
 #
-# Now we can define the decentralized search using that launches each centralized instance with `multiprocessing.Pool`.
-# Importantly we use `SharedMemoryStorage` so that centralized sub-instances can communicate globally.
-# We also create explicitely the `search_id` to make sure they communicate about the search Search instance.
-# The `kappa` value is sampled from an Exponential distribution to enable a diverse set of exploration-exploitation trade-offs
-# leading to better results. You can try to fix it to `1.96` instead (default parameter in DeepHyper).
+# Now we can define the decentralized search by launching centralized instances with an paralle executor.
+# Importantly we use ``SharedMemoryStorage`` so that centralized sub-instances can communicate globally.
+# We also create explicitely the ``search_id`` to make sure they communicate about the search Search instance.
+# The ``kappa`` value is sampled from an Exponential distribution to enable a diverse set of exploration-exploitation trade-offs
+# leading to better results. You can try to fix it to ``1.96`` instead (default parameter in DeepHyper).
 def execute_decentralized_bo(
     problem,
     run_function,
@@ -202,31 +258,32 @@ def execute_decentralized_bo(
     storage = SharedMemoryStorage()
     search_id = storage.create_new_search()
     kappa = ss.expon.rvs(
-        size=n_processes, scale=search_kwargs["kappa"], random_state=search_kwargs["random_state"]
+        size=n_processes, 
+        scale=search_kwargs["acq_func_kwargs"]["kappa"], 
+        random_state=search_kwargs["random_state"],
     )
-    with Pool(processes=n_processes) as pool:
-        results = pool.starmap(
-            execute_centralized_bo_with_share_memory,
-            [
-                (
-                    problem,
-                    run_function,
-                    run_function_kwargs,
-                    storage,
-                    search_id,
-                    i,
-                    log_dir,
-                    num_workers // n_processes,
-                    i == 0,
-                    kappa[i],
-                    search_kwargs,
-                    timeout,
-                )
-                for i in range(n_processes)
-            ],
-        )
 
-    results = preprocess_results(results[0])
+    executor = get_reusable_executor(max_workers=n_processes, context="spawn")
+    futures = []
+    for i in range(n_processes):
+        future = executor.submit(execute_centralized_bo_with_share_memory, *(
+            problem,
+            run_function,
+            run_function_kwargs,
+            storage,
+            search_id,
+            i,
+            log_dir,
+            num_workers // n_processes,
+            i == 0,
+            kappa[i],
+            search_kwargs,
+            timeout
+            )
+        )
+        futures.append(future)
+
+    results = preprocess_results(futures[0].result())
 
     return results
 
@@ -236,15 +293,14 @@ def execute_decentralized_bo(
 if __name__ == "__main__":
     results["decentralized"] = execute_decentralized_bo(
         problem=problem,
-        run_function=black_box.run_ackley,
+        run_function=run_ackley,
         run_function_kwargs=run_function_kwargs,
         num_workers=num_workers,
-        log_dir="search_centralized",
+        log_dir="search_decentralized",
         search_kwargs=search_kwargs,
         timeout=timeout,
-        n_processes=10,
+        n_processes=multiprocessing.cpu_count(),
     )
-    results["decentralized"]
 
 # %%
 # Observing the results we can see a better objective and less intance drops in worker utilization:
@@ -256,18 +312,16 @@ if __name__ == "__main__":
         ncols=1,
         sharex=True,
         figsize=figure_size(width=600),
+        tight_layout=True,
     )
 
-    plot_search_trajectory_single_objective_hpo(
+    fig, ax = plot_search_trajectory_single_objective_hpo(
         results["decentralized"], mode="min", x_units="seconds", ax=axes[0]
     )
 
-    plot_worker_utilization(
+    fig, ax = plot_worker_utilization(
         results["decentralized"], num_workers=None, profile_type="start/end", ax=axes[1]
     )
-
-    plt.tight_layout()
-    plt.show()
 
 # %%
 # If we compare the objective curves side by side we can see the improvement of decentralized
@@ -278,7 +332,7 @@ if __name__ == "__main__":
 # .. dropdown:: Make plot
 if __name__ == "__main__":
     # sphinx_gallery_thumbnail_number = 3
-    fig, ax = plt.subplots(figsize=figure_size(width=600))
+    fig, ax = plt.subplots(figsize=figure_size(width=600), tight_layout=True)
     labels = {
         "centralized": "Centralized Bayesian Optimization",
         "decentralized": "Decentralized Bayesian Optimization",
@@ -303,10 +357,9 @@ if __name__ == "__main__":
 
     ax.set_xlim(x_min, x_max)
 
-    plt.xlabel("Time (sec.)")
-    plt.ylabel("Objective")
-    plt.yscale("log")
-    plt.grid(visible=True, which="minor", linestyle=":")
-    plt.grid(visible=True, which="major", linestyle="-")
-    plt.legend()
-    plt.show()
+    ax.set_xlabel("Time (sec.)")
+    ax.set_ylabel("Objective")
+    ax.set_yscale("log")
+    ax.grid(visible=True, which="minor", linestyle=":")
+    ax.grid(visible=True, which="major", linestyle="-")
+    ax.legend()

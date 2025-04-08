@@ -3,7 +3,7 @@ from sklearn.base import BaseEstimator, RegressorMixin, clone
 from sklearn.ensemble import GradientBoostingRegressor, HistGradientBoostingRegressor
 from sklearn.utils import check_random_state
 
-from deephyper.core.utils.joblib_utils import Parallel, delayed
+from deephyper.skopt.joblib import Parallel, delayed
 
 
 def _parallel_fit(regressor, X, y):
