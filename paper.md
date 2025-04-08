@@ -31,11 +31,11 @@ bibliography: paper.bib
 
 ---
 
+![DeepHyper Logo](figures/logo-deephyper-nobg.png){width=40%}
+
 # Summary
 
 Machine learning models are increasingly applied across scientific disciplines, yet their effectiveness often hinges on heuristic decisions—such as data transformations, training strategies, and model architectures—that are not learned by the models themselves. Automating the selection of these heuristics and analyzing their sensitivity is crucial for building robust and efficient learning workflows. `DeepHyper` addresses this challenge by democratizing hyperparameter optimization, providing accessible tools to streamline and enhance machine learning workflows from a laptop to the largest supercomputer in the world. Building on top of hyperparameter optimization it unlock new capabilities around ensembles of models for improved accuray and uncertainty quantification. All of these organized around efficient parallel computing.
-
-![DeepHyper Logo](figures/logo-deephyper-nobg.png){width=49%}
 
 # Statement of need
 
@@ -72,8 +72,9 @@ The Bayesian optimization of `DeepHyper` relies by default on Extremely Randomiz
 Extremely Randomized Forest [@geurts2006extremely] are a kind of Random Forest algorithm where the split decision involves a random process for each newly created node of a tree.
 It provides smoother epistemic uncertainty estimates with an increasing number of trees (Figure \ref{random-forest-random-split}) compared to usual Random Forests that use a deterministic "best" split decision (Figure \ref{random-forest-best-split}).
 
-![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png){width=49%, label="random-forest-best-split"}
-![Uncertainty for Extremely Randomized Forest (Random Split)](figures/random_forest_random_split.png){width=49%, label="random-forest-random-split"}
+![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png){width=45%, label="random-forest-best-split"}
+
+![Uncertainty for Extremely Randomized Forest (Random Split)](figures/random_forest_random_split.png){width=45%, label="random-forest-random-split"}
 
 Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate for improved efficiency.
 It is also combined with a periodic exponential decay (impacting exploration-exploitation parameters of BO) to escape local solutions [@egele2023asynchronous].
