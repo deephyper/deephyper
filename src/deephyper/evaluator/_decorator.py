@@ -48,6 +48,9 @@ def profile(  # noqa: D417
 ):
     """Decorator to use on a ``run_function`` to profile its execution-time and peak memory usage.
 
+    It will add the ``m:timestamp_start``, ``m:timestamp_end`` and optionaly ``m:memory`` metadata
+    columns to the results.
+    
     By default, only the run-time is measured, for example by using the decorator as follows:
 
     .. code-block::
@@ -67,7 +70,7 @@ def profile(  # noqa: D417
             ...
             return y
 
-    If the ``memory_limit` is used then the call will be cancelled
+    If the ``memory_limit`` is used then the call will be cancelled
     (when possible) if the memory usage exceeds the limit, for example by
     using the decorator as follows:
 
