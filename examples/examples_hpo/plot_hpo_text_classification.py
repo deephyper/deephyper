@@ -16,9 +16,11 @@ This tutorial is based on materials from the Pytorch Documentation: `Text classi
 # .. code-block:: bash
 #
 #     %%bash
+#     pip install numpy==1.26.4
+#     pip install torch torchtext==0.17.2 torchdata==0.7.1
 #     pip install deephyper
 #     pip install ray
-#     pip install torch torchtext torchdata
+#     pip install 'portalocker>=2.0.0'
 
 # %%
 # Imports
