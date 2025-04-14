@@ -27,7 +27,6 @@ This tutorial is based on materials from the Pytorch Documentation: `Text classi
 # .. dropdown:: Imports
 import ray
 import json
-import pandas as pd
 from functools import partial
 
 import torch
