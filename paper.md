@@ -74,9 +74,9 @@ While the feature matrix below provides a high-level overview, it necessarily si
 
 | Feature                 | DeepHyper | Optuna | SMAC3 |
 |------------------------|-----------|--------|--------|
-| Single-objective       | X        | X     | X     |
-| Multi-objective        | X        | X     | X     |
-| Early stopping         | X        | X     | X     |
+| Single-objective       | ✅        | X     | X     |
+| Multi-objective        | ✓        | X     | X     |
+| Early stopping         | ✔        | X     | X     |
 | Fault tolerance        | X        | X     | .     |
 | Transfer learning      | X        | X     | ~     |
 | Ensemble construction  | X        | .     | .     |
