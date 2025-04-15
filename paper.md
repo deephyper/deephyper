@@ -50,43 +50,6 @@ using explicit or hidden constraints, and benefit from early-discarding strategi
 `DeepHyper` was designed to help research in the field of automated machine learning and also to be used out-of-the box
 in scientific projects where learning workflows are being developed.
 
-# Related Works
-
-Numerous software packages now exist for hyperparameter optimization (HPO), including:
-
-- [HyperMapper]()
-- [Optuna](https://optuna.readthedocs.io)
-- [Hyperopt]()
-- [BoTorch]()
-- [OpenBox]()
-- [HpBandSter]()
-- [SMAC](https://automl.github.io/SMAC3)
-
-These tools differ in scope and design: some are research-oriented (e.g., SMAC), while others prioritize production-readiness and usability (e.g., Optuna). In this section, we focus our comparison on SMAC and Optuna, which are representative of these two directions.
-
-**DeepHyper** is designed to maximize HPO efficiency across a wide range of parallelization scales, from sequential (single-core) runs to massively parallel evaluations on high-performance computing (HPC) systems with thousands of cores.
-
-## Feature Comparison
-
-While the feature matrix below provides a high-level overview, it necessarily simplifies some nuanced implementation differences.
-
-### Hyperparameter Optimization Capabilities
-
-
-| Feature | DeepHyper       | Optuna | SMAC3 |
-|---|-----------------|--------|-------|
-| Single-objective       | X | X | X    |
-| Multi-objective        | X | X | X    |
-| Early discarding       | X | X | X    |
-| Fault tolerance        | X | X | .    |
-| Transfer learning      | X | X | ~    |
-| Ensemble construction  | X | . | .    |
-| Visualization          | ~ | X | .    |
-
-Absolutely! Here's an improved version of your text that adopts a **factual, scientific, formal, and synthetic** tone while preserving the important content. I've also polished the grammar and structure for clarity and readability.
-
----
-
 # Related Work
 
 Numerous software packages now exist for hyperparameter optimization (HPO), including:
