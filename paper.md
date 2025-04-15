@@ -78,9 +78,9 @@ While the feature matrix below provides a high-level overview, it necessarily si
 | Multi-objective        | $\checkmark$ | $\checkmark$ | $\checkmark$ |
 | Early stopping         | $\checkmark$ | $\checkmark$ | $\checkmark$ |
 | Fault tolerance        | $\checkmark$ | $\checkmark$ |              |
-| Transfer learning      | $\checkmark$ | $\checkmark$ | $approx$     |
+| Transfer learning      | $\checkmark$ | $\checkmark$ | $\approx$    |
 | Ensemble construction  | $\checkmark$ |              |              |
-| Visualization          | $approx$     | $\checkmark$ |              |
+| Visualization          | $\approx$    | $\checkmark$ |              |
 
 **Single-objective Optimization**  
 DeepHyper employs a surrogate model based on random forests to estimate $P(\text{Objective} \mid \text{Hyperparameters})$, similar to SMAC. However, DeepHyper's implementation is typically faster per query, especially when the number of evaluations exceeds 200. In contrast, Optuna uses the Tree-structured Parzen Estimator (TPE), which models $P(\text{Hyperparameters} \mid \text{Objective})$. TPE offers faster query times but can struggle with complex optimization landscapes and tends to be less effective in refining continuous hyperparameters.
@@ -107,13 +107,13 @@ Basic visualization tools are provided via `deephyper.analytics`. For more inter
 
 ### Parallelization Capabilities
 
-|   | DeepHyper | Optuna | SMAC3 |
-|---|-----------|--------|-------|
-| Asynchronous optimization  | X | X | ? |
-| Centralized  optimization  | X | X | . |
-| Decentralized optimization | X | X | . |
-| Parallelization backends   | X | . | ~ |
-| Memory backends            | X | X | ~ |
+|                            | DeepHyper    |  Optuna      | SMAC3     |
+|----------------------------|--------------|--------------|-----------|
+| Asynchronous optimization  | $\checkmark$ | $\checkmark$ | ?         |
+| Centralized  optimization  | $\checkmark$ | $\checkmark$ |           |
+| Decentralized optimization | $\checkmark$ | $\checkmark$ |           |
+| Parallelization backends   | $\checkmark$ |              | $\approx$ |
+| Memory backends            | $\checkmark$ | $\checkmark$ | $\approx$ |
 
 The main difference between DeepHyper, Optuna and SMAC related to parallelization is that DeepHyper provides out-of-the-box parallelization software while Optuna leaves it to the user and SMAC limits itself to centralized parallelism with Dask.
 
