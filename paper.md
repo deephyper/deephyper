@@ -72,15 +72,15 @@ While the feature matrix below provides a high-level overview, it necessarily si
 
 ### Hyperparameter Optimization Capabilities
 
-| Feature                 | DeepHyper | Optuna | SMAC3 |
-|------------------------|-----------|--------|--------|
-| Single-objective       | $\checkmark$ | X     | X     |
-| Multi-objective        | $\checkmark$ | X     | X     |
-| Early stopping         | $\checkmark$ | X     | X     |
-| Fault tolerance        | X        | X     | .     |
-| Transfer learning      | X        | X     | ~     |
-| Ensemble construction  | X        | .     | .     |
-| Visualization          | ~        | X     | .     |
+| Feature                | DeepHyper    | Optuna       | SMAC3        |
+|------------------------|--------------|--------------|--------------|
+| Single-objective       | $\checkmark$ | $\checkmark$ | $\checkmark$ |
+| Multi-objective        | $\checkmark$ | $\checkmark$ | $\checkmark$ |
+| Early stopping         | $\checkmark$ | $\checkmark$ | $\checkmark$ |
+| Fault tolerance        | $\checkmark$ | $\checkmark$ |              |
+| Transfer learning      | $\checkmark$ | $\checkmark$ | $approx$     |
+| Ensemble construction  | $\checkmark$ |              |              |
+| Visualization          | $approx$     | $\checkmark$ |              |
 
 **Single-objective Optimization**  
 DeepHyper employs a surrogate model based on random forests to estimate $P(\text{Objective} \mid \text{Hyperparameters})$, similar to SMAC. However, DeepHyper's implementation is typically faster per query, especially when the number of evaluations exceeds 200. In contrast, Optuna uses the Tree-structured Parzen Estimator (TPE), which models $P(\text{Hyperparameters} \mid \text{Objective})$. TPE offers faster query times but can struggle with complex optimization landscapes and tends to be less effective in refining continuous hyperparameters.
