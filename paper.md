@@ -73,7 +73,7 @@ While the feature matrix below provides a high-level overview, it necessarily si
 ### Hyperparameter Optimization Capabilities
 
 | Feature                | DeepHyper    | Optuna       | SMAC3        |
-|------------------------|--------------|--------------|--------------|
+|-----------------------:|:------------:|:------------:|:------------:|
 | Single-objective       | $\checkmark$ | $\checkmark$ | $\checkmark$ |
 | Multi-objective        | $\checkmark$ | $\checkmark$ | $\checkmark$ |
 | Early stopping         | $\checkmark$ | $\checkmark$ | $\checkmark$ |
@@ -108,7 +108,7 @@ Basic visualization tools are provided via `deephyper.analytics`. For more inter
 ### Parallelization Capabilities
 
 |                            | DeepHyper    |  Optuna      | SMAC3     |
-|----------------------------|--------------|--------------|-----------|
+|---------------------------:|:------------:|:------------:|:---------:|
 | Asynchronous optimization  | $\checkmark$ | $\checkmark$ | ?         |
 | Centralized  optimization  | $\checkmark$ | $\checkmark$ |           |
 | Decentralized optimization | $\checkmark$ | $\checkmark$ |           |
