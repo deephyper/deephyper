@@ -165,12 +165,12 @@ The Bayesian optimization of `DeepHyper` relies by default on Extremely Randomiz
 Extremely Randomized Forest [@geurts2006extremely] are a kind of Randomized Forest algorithm where the split decision involves a random process for each newly created node of a tree.
 It provides smoother epistemic uncertainty estimates with an increasing number of trees (Figure 12) compared to usual Random Forests that use a deterministic "best" split decision (Figure 13).
 
-![Uncertainty for Extremely Randomized Forest (Random Split)](figures/random_forest_random_split.png){width=45%,label="randomsplit"}
+![Uncertainty for Extremely Randomized Forest (Random Split).\label{fig:randomsplit}](figures/random_forest_random_split.png){width=33%}
 
-![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png){width=45%,label="bestsplit"}
+![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png){width=33%,label="bestsplit"}
 
 
-Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate (purple area in Figure 13) for improved efficiency.
+Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate (purple area in \autoref{fig:bestsplit}) for improved efficiency.
 It is also combined with a periodic exponential decay (Figure 14, impacting exploration-exploitation parameters of BO) to escape local solutions [@egele2023asynchronous].
 
 ![Periodic Exponential Decay for Bayesian Optimization](figures/example-exp-decay.jpg){width=49%}
