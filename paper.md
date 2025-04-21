@@ -1,5 +1,5 @@
 ---
-title: 'DeepHyper: Massively Parallel Hyperparameter Optimization for Machine Learning'
+title: 'DeepHyper: A Python Package for Massively Parallel Hyperparameter Optimization in Machine Learning'
 tags:
   - Python
   - machine learning
@@ -30,8 +30,6 @@ date: 3 February 2025
 bibliography: paper.bib
 
 ---
-
-![](figures/logo-deephyper-nobg.png){width=40%}
 
 # Summary
 
@@ -129,10 +127,12 @@ including $N$ workers, each running centralized optimization.
 
 ## Black-box Optimization Benchmarks
 
-Average regret (i.e., $y^* - \hat{y}^*$) and standard error over 10 random repetition for each method.
-All methods are run sequentialy with default arguments.
-For DeepHyper, the `CBO` optimizer is used.
-For Optuna, the `TPE` optimizer is used.
+The benchmark is run on 9 different continuous black-box benchmark functions: [Ackley](https://www.sfu.ca/~ssurjano/ackley.html) (5 dim.), [Branin](https://www.sfu.ca/~ssurjano/branin.html) (2 dim.), [Griewank](https://www.sfu.ca/~ssurjano/griewank.html) (5 dim.), [Hartmann](https://www.sfu.ca/~ssurjano/hart6.html) (6 dim.), [Levy](https://www.sfu.ca/~ssurjano/levy.html) (5 dim.), [Michalewicz](https://www.sfu.ca/~ssurjano/michal.html) (5 dim.), [Rosen](https://www.sfu.ca/~ssurjano/rosen.html) (5 dim.), [Schwefel](https://www.sfu.ca/~ssurjano/schwef.html) (5 dim.) and [Shekel](https://www.sfu.ca/~ssurjano/shekel.html) (5 dim.).
+The benchmark results present the average regret and the standard error over 10 random repetitions for each method.
+The average regret is given by $y^* - \hat{y}^*$ where $y^*$ is the true optimal objective value and $\hat{y}^*$ is the current estimated best optimal objective value.
+All methods are run sequentialy (no parallelization features enabled for consistent evaluation) with default arguments.
+For DeepHyper, the `CBO` search is used.
+For Optuna, the `TPE` sampler with default arguments is used.
 For SMAC, the default parameters using the OptunaHub SMAC sampler is used.
 
 ![Ackley 5D (left) and Branin 2D (right)](figures/benchmarks/ackley_5d_and_branin_2d.png)
