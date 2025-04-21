@@ -371,7 +371,7 @@ search = CBO(problem, evaluator_1)
 #
 
 # %%
-results = search.search(max_evals=1)
+results = search.search(max_evals=30)
 
 # %%
 # The returned :code:`results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
