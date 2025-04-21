@@ -135,21 +135,13 @@ For DeepHyper, the `CBO` optimizer is used.
 For Optuna, the `TPE` optimizer is used.
 For SMAC, the default parameters using the OptunaHub SMAC sampler is used.
 
-![Ackley 5D](figures/benchmarks/ackley_5d.png){width=45%}
+![Ackley 5D (left) and Branin 2D (right)](figures/benchmarks/ackley_5d_and_branin_2d.png)
 
-![Branin 2D](figures/benchmarks/branin_2d.png){width=45%}
+![Griewank 5D (left) and Hartmann 6D (right)](figures/benchmarks/griewank_5d_and_hartmann_6d.png)
 
-![Griewank 5D](figures/benchmarks/griewank_5d.png){width=45%}
+![Levy 5D (left) and Michalewicz 5D (right)](figures/benchmarks/levy_5d_and_michal_5d.png)
 
-![Hartmann 6D](figures/benchmarks/hartmann_6d.png){width=45%}
-
-![Levy 5D](figures/benchmarks/levy_5d.png){width=45%}
-
-![Michalewicz 5D](figures/benchmarks/michal_5d.png){width=45%}
-
-![Rosen 5D](figures/benchmarks/rosen_5d.png){width=45%}
-
-![Schwefel 5D](figures/benchmarks/schwefel_5d.png){width=45%}
+![Rosen 5D (left) and Schwefel 5D (right)](figures/benchmarks/rosen_5d_and_schwefel_5d.png)
 
 ![Shekel 5D](figures/benchmarks/shekel_5d.png){width=45%}
 
