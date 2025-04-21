@@ -23,12 +23,11 @@ authors:
   - name: Brett Eiffert
     affiliation: 1
 affiliations:
- - name: Oak Ridge National Laboratory, Tenesse, United States
-   index: 1
-   ror: 01qz5mb56
+  - name: Oak Ridge National Laboratory, Oak Ridge, TN, United States
+    index: 1
+    ror: 01qz5mb56
 date: 3 February 2025
 bibliography: paper.bib
-
 ---
 
 # Summary
@@ -37,16 +36,11 @@ Machine learning models are increasingly applied across scientific disciplines, 
 
 # Statement of need
 
-`DeepHyper` is a Python package for parallel hyperparameter optimization or neural architecture search.
-The project started in 2018 [@balaprakash2018deephyper] with a focus on making Bayesian optimization more efficient on high-performance computing clusters.
-It provides access to a variety of asynchronous parallel black-box optimization algorithms `deephyper.hpo`. The 
-software offers a variety of parallel programming backends such as Asyncio, threading, processes, Ray, and MPI `deehyper.evaluator`. The hyperparameter optimization can be single or multi-objective, composed of mixed variables,
-using explicit or hidden constraints, and benefit from early-discarding strategies `deephyper.stopper`. Leveraging the results of hyperparameter optimization or neural architecture search it provides parallel ensemble algorithms `deephyper.ensemble` that can help improve accuracy or quantify disentangled predictive uncertainty. A diagram of our software architecture is shown in Figure 1.
+`DeepHyper` is a Python package for parallel hyperparameter optimization or neural architecture search. The project started in 2018 [@balaprakash2018deephyper] with a focus on making Bayesian optimization more efficient on high-performance computing clusters. It provides access to a variety of asynchronous parallel black-box optimization algorithms `deephyper.hpo`. The software offers a variety of parallel programming backends such as Asyncio, threading, processes, Ray, and MPI `deehyper.evaluator`. The hyperparameter optimization can be single or multi-objective, composed of mixed variables, using explicit or hidden constraints, and benefit from early-discarding strategies `deephyper.stopper`. Leveraging the results of hyperparameter optimization or neural architecture search it provides parallel ensemble algorithms `deephyper.ensemble` that can help improve accuracy or quantify disentangled predictive uncertainty. A diagram of our software architecture is shown in Figure 1.
 
 ![Software Architecture](figures/deephyper-architecture.png){width=60%}
 
-`DeepHyper` was designed to help research in the field of automated machine learning and also to be used out-of-the box
-in scientific projects where learning workflows are being developed.
+`DeepHyper` was designed to help research in the field of automated machine learning and also to be used out-of-the box in scientific projects where learning workflows are being developed.
 
 # Related Work
 
@@ -118,8 +112,7 @@ The main difference between DeepHyper, Optuna and SMAC related to parallelizatio
 
 **Centralized optimization**: DeepHyper's allows to run centralized optimization, including $1$ master running the optimizationa and $N$ workers evaluating hyperparameter configurations.
 
-**Decentralized optimization**: DeepHyper's allows to run decentralized optimization,
-including $N$ workers, each running centralized optimization.
+**Decentralized optimization**: DeepHyper's allows to run decentralized optimization, including $N$ workers, each running centralized optimization.
 
 **Parallelization backends**: DeepHyper's provides compatibility with several parallelization backends: AsyncIO functions, thread-based, process-based, Ray, and MPI. This allows to easily adapt to the context of the execution.
 
@@ -127,13 +120,7 @@ including $N$ workers, each running centralized optimization.
 
 ## Black-box Optimization Benchmarks
 
-The benchmark is run on 9 different continuous black-box benchmark functions: [Ackley](https://www.sfu.ca/~ssurjano/ackley.html) (5 dim.), [Branin](https://www.sfu.ca/~ssurjano/branin.html) (2 dim.), [Griewank](https://www.sfu.ca/~ssurjano/griewank.html) (5 dim.), [Hartmann](https://www.sfu.ca/~ssurjano/hart6.html) (6 dim.), [Levy](https://www.sfu.ca/~ssurjano/levy.html) (5 dim.), [Michalewicz](https://www.sfu.ca/~ssurjano/michal.html) (5 dim.), [Rosen](https://www.sfu.ca/~ssurjano/rosen.html) (5 dim.), [Schwefel](https://www.sfu.ca/~ssurjano/schwef.html) (5 dim.) and [Shekel](https://www.sfu.ca/~ssurjano/shekel.html) (5 dim.).
-The benchmark results present the average regret and the standard error over 10 random repetitions for each method.
-The average regret is given by $y^* - \hat{y}^*$ where $y^*$ is the true optimal objective value and $\hat{y}^*$ is the current estimated best optimal objective value.
-All methods are run sequentialy (no parallelization features enabled for consistent evaluation) with default arguments.
-For DeepHyper, the `CBO` search is used.
-For Optuna, the `TPE` sampler with default arguments is used.
-For SMAC, the default parameters using the OptunaHub SMAC sampler is used.
+The benchmark is run on 9 different continuous black-box benchmark functions: [Ackley](https://www.sfu.ca/~ssurjano/ackley.html) (5 dim.), [Branin](https://www.sfu.ca/~ssurjano/branin.html) (2 dim.), [Griewank](https://www.sfu.ca/~ssurjano/griewank.html) (5 dim.), [Hartmann](https://www.sfu.ca/~ssurjano/hart6.html) (6 dim.), [Levy](https://www.sfu.ca/~ssurjano/levy.html) (5 dim.), [Michalewicz](https://www.sfu.ca/~ssurjano/michal.html) (5 dim.), [Rosen](https://www.sfu.ca/~ssurjano/rosen.html) (5 dim.), [Schwefel](https://www.sfu.ca/~ssurjano/schwef.html) (5 dim.) and [Shekel](https://www.sfu.ca/~ssurjano/shekel.html) (5 dim.). The benchmark results present the average regret and the standard error over 10 random repetitions for each method. The average regret is given by $y^* - \hat{y}^*$ where $y^*$ is the true optimal objective value and $\hat{y}^*$ is the current estimated best optimal objective value. All methods are run sequentialy (no parallelization features enabled for consistent evaluation) with default arguments. For DeepHyper, the `CBO` search is used. For Optuna, the `TPE` sampler with default arguments is used. For SMAC, the default parameters using the OptunaHub SMAC sampler is used.
 
 ![Ackley 5D (left) and Branin 2D (right)](figures/benchmarks/ackley_5d_and_branin_2d.png)
 
@@ -148,24 +135,17 @@ For SMAC, the default parameters using the OptunaHub SMAC sampler is used.
 
 # Black-box Optimization Methods
 
-The algorithms used for hyperparameter optimization are black-box optimization algorithms for mixed search spaces.
-A mixed search space, can be composed of real, discrete, or categorical (nomimal or ordinal) values.
-The search space can also include constraints (e.g., explicit such as $x_0 < x_1$, or implicit such as "unexpected out-of-memory error").
-The objective function can be stochastic $Y = f(x)$ where $Y$ is a random variable, $x$ is a vector of input hyperparameters and $f$ is the objective function. `DeepHyper` main hyperparameter optimization algorithm is based on Bayesian optimization.
+The algorithms used for hyperparameter optimization are black-box optimization algorithms for mixed search spaces. A mixed search space, can be composed of real, discrete, or categorical (nomimal or ordinal) values. The search space can also include constraints (e.g., explicit such as $x_0 < x_1$, or implicit such as "unexpected out-of-memory error"). The objective function can be stochastic $Y = f(x)$ where $Y$ is a random variable, $x$ is a vector of input hyperparameters and $f$ is the objective function. `DeepHyper` main hyperparameter optimization algorithm is based on Bayesian optimization.
 
-The Bayesian optimization of `DeepHyper` relies by default on Extremely Randomized Forest as surrogate model to estimate $E_Y[Y|X=x]$.
-Extremely Randomized Forest [@geurts2006extremely] are a kind of Randomized Forest algorithm where the split decision involves a random process for each newly created node of a tree.
-It provides smoother epistemic uncertainty estimates with an increasing number of trees (Figure 12) compared to usual Random Forests that use a deterministic "best" split decision (Figure 13).
+The Bayesian optimization of `DeepHyper` relies by default on Extremely Randomized Forest as surrogate model to estimate $E_Y[Y|X=x]$. Extremely Randomized Forest [@geurts2006extremely] are a kind of Randomized Forest algorithm where the split decision involves a random process for each newly created node of a tree. It provides smoother epistemic uncertainty estimates with an increasing number of trees (Figure 12) compared to usual Random Forests that use a deterministic "best" split decision (Figure 13).
 
 ![Uncertainty of Randomized Forests, on the left-side with random split, and on the right-side with best split.](figures/random_forest.png)
 
-Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate (purple area in \autoref{fig:bestsplit}) for improved efficiency.
-It is also combined with a periodic exponential decay (Figure 14, impacting exploration-exploitation parameters of BO) to escape local solutions [@egele2023asynchronous].
+Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate (purple area in \autoref{fig:bestsplit}) for improved efficiency. It is also combined with a periodic exponential decay (Figure 14, impacting exploration-exploitation parameters of BO) to escape local solutions [@egele2023asynchronous].
 
 ![Periodic Exponential Decay for Bayesian Optimization](figures/example-exp-decay.jpg){width=49%}
 
-Batch parallel genetic algorithms are provided to resolve efficiently the sub-problem of optimizing the acquisition function and it is also more accurate than Monte-Carlo approches to find the optimum of the acquisition function.
-A cheap and efficient multi-point acquisition strategy `qUCBd` is provided for better parallel scalability [@egele2023asynchronous].
+Batch parallel genetic algorithms are provided to resolve efficiently the sub-problem of optimizing the acquisition function and it is also more accurate than Monte-Carlo approches to find the optimum of the acquisition function. A cheap and efficient multi-point acquisition strategy `qUCBd` is provided for better parallel scalability [@egele2023asynchronous].
 
 The multi-objective optimization is enabled by scalarization functions and objective rescaling [@egele2023dmobo].
 
@@ -177,7 +157,6 @@ A transfer-learning strategy for hyperparameter optimization [@dorier2022transfe
 
 # Acknowledgements
 
-We acknowledge contributions from Misha Salim, Romit Maulik, Venkat Vishwanath, Stefan Wild, Joceran Gouneau, Dipendra Jha, Kyle Felker, Matthieu Dorier, Felix Perez, Bethany Lush, Gavin M. Wiggins, Tyler H. Chang, Yixuan Sun, Shengli Jiang, rmjcs2020, Albert Lam, Taylor Childers, Z223I, Zachariah Carmichael, Hongyuan Liu, Sam Foreman, Akalanka Galappaththi, Brett Eiffert, Sun Haozhe, Sandeep Madireddy, Adrian Perez Dieguez, and Nesar Ramachandra. 
-We also would like to thank Prof. Isabelle Guyon for her guidance on the machine learning methodologies developed in this software.
+We acknowledge contributions from Misha Salim, Romit Maulik, Venkat Vishwanath, Stefan Wild, Joceran Gouneau, Dipendra Jha, Kyle Felker, Matthieu Dorier, Felix Perez, Bethany Lush, Gavin M. Wiggins, Tyler H. Chang, Yixuan Sun, Shengli Jiang, rmjcs2020, Albert Lam, Taylor Childers, Z223I, Zachariah Carmichael, Hongyuan Liu, Sam Foreman, Akalanka Galappaththi, Brett Eiffert, Sun Haozhe, Sandeep Madireddy, Adrian Perez Dieguez, and Nesar Ramachandra. We also would like to thank Prof. Isabelle Guyon for her guidance on the machine learning methodologies developed in this software.
 
 # References
