@@ -167,7 +167,7 @@ It provides smoother epistemic uncertainty estimates with an increasing number o
 
 ![Uncertainty for Extremely Randomized Forest (Random Split).\label{fig:randomsplit}](figures/random_forest_random_split.png){width=33%}
 
-![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png){width=33%,label="bestsplit"}
+![Uncertainty for Random Forest (Best Split)](figures/random_forest_best_split.png){width=33%}
 
 
 Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate (purple area in \autoref{fig:bestsplit}) for improved efficiency.
