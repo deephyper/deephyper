@@ -56,7 +56,7 @@ Numerous software packages now exist for hyperparameter optimization (HPO), incl
 
 - BoTorch (and Ax platform) [@botorch2020], ([doc.](https://botorch.org))
 - HyperMapper [@hypermapper2019], ([doc.](https://github.com/luinardi/hypermapper))
-- Hyperopt [@hyperopt2013,@hyperopt2015], ([doc.](http://hyperopt.github.io/hyperopt/))
+- Hyperopt [@hyperopt2013;@hyperopt2015], ([doc.](http://hyperopt.github.io/hyperopt/))
 - OpenBox [@openbox2024], ([doc.](https://open-box.readthedocs.io))
 - Optuna [@optuna2019], ([doc.](https://optuna.readthedocs.io))
 - SMAC3 [@smac32022], ([doc.](https://automl.github.io/SMAC3))
