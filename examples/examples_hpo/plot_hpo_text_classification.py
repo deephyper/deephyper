@@ -149,7 +149,7 @@ def collate_batch(batch, device):
 class TextClassificationModel(nn.Module):
 
     def __init__(self, vocab_size, embed_dim, num_class):
-        super(TextClassificationModel, self).__init__()
+        super().__init__()
         self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=False)
         self.fc = nn.Linear(embed_dim, num_class)
         self.init_weights()
@@ -371,7 +371,7 @@ search = CBO(problem, evaluator_1)
 #
 
 # %%
-results = search.search(max_evals=30)
+results = search.search(max_evals=1)
 
 # %%
 # The returned :code:`results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
