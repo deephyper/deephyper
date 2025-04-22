@@ -16,9 +16,7 @@ This tutorial is based on materials from the Pytorch Documentation: `Text classi
 # .. code-block:: bash
 #
 #     %%bash
-#     pip install deephyper
-#     pip install ray
-#     pip install torch torchtext torchdata
+#     pip install deephyper ray numpy==1.26.4 torch torchtext==0.17.2 torchdata==0.7.1 'portalocker>=2.0.0'
 
 # %%
 # Imports
@@ -29,7 +27,6 @@ This tutorial is based on materials from the Pytorch Documentation: `Text classi
 # .. dropdown:: Imports
 import ray
 import json
-import pandas as pd
 from functools import partial
 
 import torch
@@ -152,7 +149,7 @@ def collate_batch(batch, device):
 class TextClassificationModel(nn.Module):
 
     def __init__(self, vocab_size, embed_dim, num_class):
-        super(TextClassificationModel, self).__init__()
+        super().__init__()
         self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=False)
         self.fc = nn.Linear(embed_dim, num_class)
         self.init_weights()
