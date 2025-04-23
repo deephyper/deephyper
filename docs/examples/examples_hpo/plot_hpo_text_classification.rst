@@ -29,23 +29,21 @@ In this tutorial we present how to use hyperparameter optimization on a text cla
 **Reference**:
 This tutorial is based on materials from the Pytorch Documentation: `Text classification with the torchtext library <https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html>`_
 
-.. GENERATED FROM PYTHON SOURCE LINES 15-21
+.. GENERATED FROM PYTHON SOURCE LINES 15-19
 
 .. code-block:: bash
 
     %%bash
-    pip install deephyper
-    pip install ray
-    pip install torch torchtext torchdata
+    pip install deephyper ray numpy==1.26.4 torch torchtext==0.17.2 torchdata==0.7.1 'portalocker>=2.0.0'
 
-.. GENERATED FROM PYTHON SOURCE LINES 24-28
+.. GENERATED FROM PYTHON SOURCE LINES 22-26
 
 Imports
 -------
 
 All imports used in the tutorial are declared at the top of the file.
 
-.. GENERATED FROM PYTHON SOURCE LINES 28-47
+.. GENERATED FROM PYTHON SOURCE LINES 26-44
 
 .. dropdown:: Code (Imports)
 
@@ -54,7 +52,6 @@ All imports used in the tutorial are declared at the top of the file.
 
         import ray
         import json
-        import pandas as pd
         from functools import partial
 
         import torch
@@ -76,17 +73,17 @@ All imports used in the tutorial are declared at the top of the file.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-51
+.. GENERATED FROM PYTHON SOURCE LINES 45-48
 
 .. note::
   The following can be used to detect if **CUDA** devices are available on the current host. Therefore, this notebook will automatically adapt the parallel execution based on the ressources available locally. However, it will not be the case if many compute nodes are requested.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 53-54
+.. GENERATED FROM PYTHON SOURCE LINES 50-51
 
 If GPU is available, this code will enabled the tutorial to use the GPU for pytorch operations.
 
-.. GENERATED FROM PYTHON SOURCE LINES 55-60
+.. GENERATED FROM PYTHON SOURCE LINES 52-57
 
 .. dropdown:: Code (Code to check if using CPU or GPU)
 
@@ -103,7 +100,7 @@ If GPU is available, this code will enabled the tutorial to use the GPU for pyto
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-66
+.. GENERATED FROM PYTHON SOURCE LINES 58-63
 
 The dataset
 -----------
@@ -111,7 +108,7 @@ The dataset
 The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the :code:`AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 66-84
+.. GENERATED FROM PYTHON SOURCE LINES 63-81
 
 .. dropdown:: Code (Loading the data)
 
@@ -141,7 +138,7 @@ The torchtext library provides a few raw dataset iterators, which yield the raw 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 85-93
+.. GENERATED FROM PYTHON SOURCE LINES 82-90
 
 Preprocessing pipelines and Batch generation
 --------------------------------------------
@@ -152,18 +149,18 @@ vocabulary.
 
 The vocabulary block converts a list of tokens into integers.
 
-.. GENERATED FROM PYTHON SOURCE LINES 95-99
+.. GENERATED FROM PYTHON SOURCE LINES 92-96
 
 .. code-block:: python
 
   vocab(['here', 'is', 'an', 'example'])
   >>> [475, 21, 30, 5286]
 
-.. GENERATED FROM PYTHON SOURCE LINES 101-102
+.. GENERATED FROM PYTHON SOURCE LINES 98-99
 
 The text pipeline converts a text string into a list of integers based on the lookup table defined in the vocabulary. The label pipeline converts the label into integers. For example,
 
-.. GENERATED FROM PYTHON SOURCE LINES 104-110
+.. GENERATED FROM PYTHON SOURCE LINES 101-107
 
 .. code-block:: python
 
@@ -172,7 +169,7 @@ The text pipeline converts a text string into a list of integers based on the lo
   label_pipeline('10')
   >>> 9 
 
-.. GENERATED FROM PYTHON SOURCE LINES 110-141
+.. GENERATED FROM PYTHON SOURCE LINES 107-138
 
 .. dropdown:: Code (Code to tokenize and build vocabulary for text processing)
 
@@ -215,19 +212,19 @@ The text pipeline converts a text string into a list of integers based on the lo
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 142-144
+.. GENERATED FROM PYTHON SOURCE LINES 139-141
 
 .. note:: The :code:`collate_fn` function works on a batch of samples generated from :code:`DataLoader`. The input to :code:`collate_fn` is a batch of data with the batch size in :code:`DataLoader`, and :code:`collate_fn` processes them according to the data processing pipelines declared previously.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 146-150
+.. GENERATED FROM PYTHON SOURCE LINES 143-147
 
 Define the model
 ----------------
 
 The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag>`_ layer plus a linear layer for the classification purpose.
 
-.. GENERATED FROM PYTHON SOURCE LINES 150-170
+.. GENERATED FROM PYTHON SOURCE LINES 147-167
 
 .. dropdown:: Code (Defining the Text Classification model)
 
@@ -237,7 +234,7 @@ The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/n
         class TextClassificationModel(nn.Module):
 
             def __init__(self, vocab_size, embed_dim, num_class):
-                super(TextClassificationModel, self).__init__()
+                super().__init__()
                 self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=False)
                 self.fc = nn.Linear(embed_dim, num_class)
                 self.init_weights()
@@ -259,12 +256,12 @@ The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/n
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 171-173
+.. GENERATED FROM PYTHON SOURCE LINES 168-170
 
 Define functions to train the model and evaluate results.
 ---------------------------------------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 173-197
+.. GENERATED FROM PYTHON SOURCE LINES 170-194
 
 .. dropdown:: Code (Define the training and evaluation of the Text Classification model)
 
@@ -300,7 +297,7 @@ Define functions to train the model and evaluate results.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 198-208
+.. GENERATED FROM PYTHON SOURCE LINES 195-205
 
 Define the run-function
 -----------------------
@@ -313,7 +310,7 @@ The run-function defines how the objective that we want to maximize is computed.
 
 A hyperparameter value can be acessed easily in the dictionary through the corresponding key, for example :code:`config["units"]`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 208-235
+.. GENERATED FROM PYTHON SOURCE LINES 205-232
 
 .. dropdown:: Code (Run the Text Classification model)
 
@@ -352,11 +349,11 @@ A hyperparameter value can be acessed easily in the dictionary through the corre
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 236-237
+.. GENERATED FROM PYTHON SOURCE LINES 233-234
 
 We create two versions of :code:`run`, one quicker to evaluate for the search, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
 
-.. GENERATED FROM PYTHON SOURCE LINES 239-242
+.. GENERATED FROM PYTHON SOURCE LINES 236-239
 
 .. code-block:: Python
 
@@ -370,13 +367,13 @@ We create two versions of :code:`run`, one quicker to evaluate for the search, w
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 243-246
+.. GENERATED FROM PYTHON SOURCE LINES 240-243
 
 .. note:: The objective maximised by DeepHyper is the scalar value returned by the :code:`run`-function.
 
 In this tutorial it corresponds to the validation accuracy of the model after training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 248-258
+.. GENERATED FROM PYTHON SOURCE LINES 245-255
 
 Define the Hyperparameter optimization problem
 ---------------------------------------------- 
@@ -389,7 +386,7 @@ Hyperparameter ranges are defined using the following syntax:
 
 We provide the default configuration of hyperparameters as a starting point of the problem.
 
-.. GENERATED FROM PYTHON SOURCE LINES 260-273
+.. GENERATED FROM PYTHON SOURCE LINES 257-270
 
 .. code-block:: Python
 
@@ -424,14 +421,14 @@ We provide the default configuration of hyperparameters as a starting point of t
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 274-278
+.. GENERATED FROM PYTHON SOURCE LINES 271-275
 
 Evaluate a default configuration
 --------------------------------
 
 We evaluate the performance of the default set of hyperparameters provided in the Pytorch tutorial.
 
-.. GENERATED FROM PYTHON SOURCE LINES 278-295
+.. GENERATED FROM PYTHON SOURCE LINES 275-292
 
 .. code-block:: Python
 
@@ -460,13 +457,13 @@ We evaluate the performance of the default set of hyperparameters provided in th
 
  .. code-block:: none
 
-    2025-04-04 15:03:55,970 INFO worker.py:1852 -- Started a local Ray instance.
-    Accuracy Default Configuration:  0.863
+    2025-04-22 17:20:37,925 INFO worker.py:1852 -- Started a local Ray instance.
+    Accuracy Default Configuration:  0.823
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 296-302
+.. GENERATED FROM PYTHON SOURCE LINES 293-299
 
 Define the evaluator object
 ---------------------------
@@ -475,19 +472,19 @@ The :code:`Evaluator` object allows to change the parallelization backend used b
 It is a standalone object which schedules the execution of remote tasks. All evaluators needs a :code:`run_function` to be instantiated.  
 Then a keyword :code:`method` defines the backend (e.g., :code:`"ray"`) and the :code:`method_kwargs` corresponds to keyword arguments of this chosen :code:`method`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 304-307
+.. GENERATED FROM PYTHON SOURCE LINES 301-304
 
 .. code-block:: python
 
   evaluator = Evaluator.create(run_function, method, method_kwargs)
 
-.. GENERATED FROM PYTHON SOURCE LINES 309-312
+.. GENERATED FROM PYTHON SOURCE LINES 306-309
 
 Once created the :code:`evaluator.num_workers` gives access to the number of available parallel workers.
 
 Finally, to submit and collect tasks to the evaluator one just needs to use the following interface:
 
-.. GENERATED FROM PYTHON SOURCE LINES 314-321
+.. GENERATED FROM PYTHON SOURCE LINES 311-318
 
 .. code-block:: python
 
@@ -497,11 +494,11 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
 	tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
 	tasks_done = evaluator.get("ALL") # For batch synchronous
 
-.. GENERATED FROM PYTHON SOURCE LINES 323-324
+.. GENERATED FROM PYTHON SOURCE LINES 320-321
 
 .. warning:: Each `Evaluator` saves its own state, therefore it is crucial to create a new evaluator when launching a fresh search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 326-356
+.. GENERATED FROM PYTHON SOURCE LINES 323-353
 
 .. code-block:: Python
 
@@ -543,19 +540,19 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
 
  .. code-block:: none
 
-    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x12f1160f0>]}
+    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x12fdeaab0>]}
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 357-361
+.. GENERATED FROM PYTHON SOURCE LINES 354-358
 
 Define and run the Centralized Bayesian Optimization search (CBO)
 -----------------------------------------------------------------
 
 We create the CBO using the :code:`problem` and :code:`evaluator` defined above.
 
-.. GENERATED FROM PYTHON SOURCE LINES 363-365
+.. GENERATED FROM PYTHON SOURCE LINES 360-362
 
 .. code-block:: Python
 
@@ -568,11 +565,11 @@ We create the CBO using the :code:`problem` and :code:`evaluator` defined above.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 366-367
+.. GENERATED FROM PYTHON SOURCE LINES 363-364
 
 Instanciate the search with the problem and a specific evaluator
 
-.. GENERATED FROM PYTHON SOURCE LINES 367-369
+.. GENERATED FROM PYTHON SOURCE LINES 364-366
 
 .. code-block:: Python
 
@@ -586,12 +583,12 @@ Instanciate the search with the problem and a specific evaluator
 
  .. code-block:: none
 
-    WARNING:root:Results file already exists, it will be renamed to /Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/results_20250404-150417.csv
+    WARNING:root:Results file already exists, it will be renamed to /Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/results_20250422-172057.csv
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 370-375
+.. GENERATED FROM PYTHON SOURCE LINES 367-372
 
 .. note:: 
   All DeepHyper's search algorithm have two stopping criteria:
@@ -599,7 +596,7 @@ Instanciate the search with the problem and a specific evaluator
       * :code:`timeout (int)`: Defines a time budget (in seconds) before stopping the search. Default to :code:`None` for an infinite time budget.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 377-379
+.. GENERATED FROM PYTHON SOURCE LINES 374-376
 
 .. code-block:: Python
 
@@ -613,12 +610,12 @@ Instanciate the search with the problem and a specific evaluator
 
  .. code-block:: none
 
-      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 2391.28it/s, failures=0, objective=0.812]      7%|▋         | 2/30 [00:02<00:39,  1.41s/it, failures=0, objective=0.812]        7%|▋         | 2/30 [00:02<00:39,  1.41s/it, failures=0, objective=0.812]     10%|█         | 3/30 [00:08<01:23,  3.08s/it, failures=0, objective=0.812]     10%|█         | 3/30 [00:08<01:23,  3.08s/it, failures=0, objective=0.812]     13%|█▎        | 4/30 [00:20<02:44,  6.34s/it, failures=0, objective=0.812]     13%|█▎        | 4/30 [00:20<02:44,  6.34s/it, failures=0, objective=0.812]     17%|█▋        | 5/30 [00:30<03:13,  7.73s/it, failures=0, objective=0.812]     17%|█▋        | 5/30 [00:30<03:13,  7.73s/it, failures=0, objective=0.812]     20%|██        | 6/30 [00:42<03:42,  9.29s/it, failures=0, objective=0.812]     20%|██        | 6/30 [00:42<03:42,  9.29s/it, failures=0, objective=0.812]     23%|██▎       | 7/30 [00:46<02:54,  7.57s/it, failures=0, objective=0.812]     23%|██▎       | 7/30 [00:46<02:54,  7.57s/it, failures=0, objective=0.812]     27%|██▋       | 8/30 [01:17<05:28, 14.93s/it, failures=0, objective=0.812]     27%|██▋       | 8/30 [01:17<05:28, 14.93s/it, failures=0, objective=0.812]     30%|███       | 9/30 [01:22<04:09, 11.87s/it, failures=0, objective=0.812]     30%|███       | 9/30 [01:22<04:09, 11.87s/it, failures=0, objective=0.812]     33%|███▎      | 10/30 [01:29<03:23, 10.16s/it, failures=0, objective=0.812]     33%|███▎      | 10/30 [01:29<03:23, 10.16s/it, failures=0, objective=0.812]     37%|███▋      | 11/30 [01:32<02:33,  8.05s/it, failures=0, objective=0.812]     37%|███▋      | 11/30 [01:32<02:33,  8.05s/it, failures=0, objective=0.812]     40%|████      | 12/30 [01:47<03:04, 10.26s/it, failures=0, objective=0.812]     40%|████      | 12/30 [01:47<03:04, 10.26s/it, failures=0, objective=0.812]     43%|████▎     | 13/30 [02:27<05:27, 19.24s/it, failures=0, objective=0.812]     43%|████▎     | 13/30 [02:27<05:27, 19.24s/it, failures=0, objective=0.819]     47%|████▋     | 14/30 [03:02<06:21, 23.81s/it, failures=0, objective=0.819]     47%|████▋     | 14/30 [03:02<06:21, 23.81s/it, failures=0, objective=0.819]     50%|█████     | 15/30 [03:42<07:12, 28.84s/it, failures=0, objective=0.819]     50%|█████     | 15/30 [03:42<07:12, 28.84s/it, failures=0, objective=0.822]     53%|█████▎    | 16/30 [04:04<06:13, 26.71s/it, failures=0, objective=0.822]     53%|█████▎    | 16/30 [04:04<06:13, 26.71s/it, failures=0, objective=0.822]     57%|█████▋    | 17/30 [04:33<05:58, 27.59s/it, failures=0, objective=0.822]     57%|█████▋    | 17/30 [04:33<05:58, 27.59s/it, failures=0, objective=0.822]     60%|██████    | 18/30 [05:39<07:46, 38.85s/it, failures=0, objective=0.822]     60%|██████    | 18/30 [05:39<07:46, 38.85s/it, failures=0, objective=0.822]     63%|██████▎   | 19/30 [06:16<07:01, 38.35s/it, failures=0, objective=0.822]     63%|██████▎   | 19/30 [06:16<07:01, 38.35s/it, failures=0, objective=0.822]     67%|██████▋   | 20/30 [06:49<06:08, 36.83s/it, failures=0, objective=0.822]     67%|██████▋   | 20/30 [06:49<06:08, 36.83s/it, failures=0, objective=0.822]     70%|███████   | 21/30 [07:06<04:36, 30.75s/it, failures=0, objective=0.822]     70%|███████   | 21/30 [07:06<04:36, 30.75s/it, failures=0, objective=0.822]     73%|███████▎  | 22/30 [07:13<03:10, 23.85s/it, failures=0, objective=0.822]     73%|███████▎  | 22/30 [07:13<03:10, 23.85s/it, failures=0, objective=0.822]     77%|███████▋  | 23/30 [07:46<03:05, 26.52s/it, failures=0, objective=0.822]     77%|███████▋  | 23/30 [07:46<03:05, 26.52s/it, failures=0, objective=0.822]     80%|████████  | 24/30 [08:12<02:38, 26.45s/it, failures=0, objective=0.822]     80%|████████  | 24/30 [08:12<02:38, 26.45s/it, failures=0, objective=0.822]     83%|████████▎ | 25/30 [09:05<02:50, 34.17s/it, failures=0, objective=0.822]     83%|████████▎ | 25/30 [09:05<02:50, 34.17s/it, failures=0, objective=0.822]     87%|████████▋ | 26/30 [09:39<02:17, 34.40s/it, failures=0, objective=0.822]     87%|████████▋ | 26/30 [09:39<02:17, 34.40s/it, failures=0, objective=0.822]     90%|█████████ | 27/30 [10:28<01:56, 38.71s/it, failures=0, objective=0.822]     90%|█████████ | 27/30 [10:28<01:56, 38.71s/it, failures=0, objective=0.822]     93%|█████████▎| 28/30 [11:14<01:21, 40.75s/it, failures=0, objective=0.822]     93%|█████████▎| 28/30 [11:14<01:21, 40.75s/it, failures=0, objective=0.822]     97%|█████████▋| 29/30 [11:24<00:31, 31.57s/it, failures=0, objective=0.822]     97%|█████████▋| 29/30 [11:24<00:31, 31.57s/it, failures=0, objective=0.822]    100%|██████████| 30/30 [11:30<00:00, 24.08s/it, failures=0, objective=0.822]    100%|██████████| 30/30 [11:30<00:00, 24.08s/it, failures=0, objective=0.822]    100%|██████████| 30/30 [11:30<00:00, 23.03s/it, failures=0, objective=0.822]
+      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 2053.01it/s, failures=0, objective=0.258]      7%|▋         | 2/30 [00:06<01:32,  3.30s/it, failures=0, objective=0.258]        7%|▋         | 2/30 [00:06<01:32,  3.30s/it, failures=0, objective=0.425]     10%|█         | 3/30 [00:21<03:43,  8.29s/it, failures=0, objective=0.425]     10%|█         | 3/30 [00:21<03:43,  8.29s/it, failures=0, objective=0.425]     13%|█▎        | 4/30 [00:31<03:48,  8.79s/it, failures=0, objective=0.425]     13%|█▎        | 4/30 [00:31<03:48,  8.79s/it, failures=0, objective=0.426]     17%|█▋        | 5/30 [00:40<03:44,  8.97s/it, failures=0, objective=0.426]     17%|█▋        | 5/30 [00:40<03:44,  8.97s/it, failures=0, objective=0.79]      20%|██        | 6/30 [01:15<07:02, 17.62s/it, failures=0, objective=0.79]     20%|██        | 6/30 [01:15<07:02, 17.62s/it, failures=0, objective=0.79]     23%|██▎       | 7/30 [01:30<06:24, 16.71s/it, failures=0, objective=0.79]     23%|██▎       | 7/30 [01:30<06:24, 16.71s/it, failures=0, objective=0.807]     27%|██▋       | 8/30 [01:34<04:39, 12.71s/it, failures=0, objective=0.807]     27%|██▋       | 8/30 [01:34<04:39, 12.71s/it, failures=0, objective=0.807]     30%|███       | 9/30 [01:50<04:49, 13.80s/it, failures=0, objective=0.807]     30%|███       | 9/30 [01:50<04:49, 13.80s/it, failures=0, objective=0.807]     33%|███▎      | 10/30 [02:03<04:26, 13.32s/it, failures=0, objective=0.807]     33%|███▎      | 10/30 [02:03<04:26, 13.32s/it, failures=0, objective=0.807]     37%|███▋      | 11/30 [02:21<04:44, 14.97s/it, failures=0, objective=0.807]     37%|███▋      | 11/30 [02:21<04:44, 14.97s/it, failures=0, objective=0.821]     40%|████      | 12/30 [02:54<06:07, 20.42s/it, failures=0, objective=0.821]     40%|████      | 12/30 [02:54<06:07, 20.42s/it, failures=0, objective=0.821]     43%|████▎     | 13/30 [03:03<04:45, 16.80s/it, failures=0, objective=0.821]     43%|████▎     | 13/30 [03:03<04:45, 16.80s/it, failures=0, objective=0.821]     47%|████▋     | 14/30 [03:41<06:13, 23.34s/it, failures=0, objective=0.821]     47%|████▋     | 14/30 [03:41<06:13, 23.34s/it, failures=0, objective=0.821]     50%|█████     | 15/30 [03:52<04:51, 19.43s/it, failures=0, objective=0.821]     50%|█████     | 15/30 [03:52<04:51, 19.43s/it, failures=0, objective=0.821]     53%|█████▎    | 16/30 [04:16<04:51, 20.84s/it, failures=0, objective=0.821]     53%|█████▎    | 16/30 [04:16<04:51, 20.84s/it, failures=0, objective=0.821]     57%|█████▋    | 17/30 [04:45<05:04, 23.40s/it, failures=0, objective=0.821]     57%|█████▋    | 17/30 [04:45<05:04, 23.40s/it, failures=0, objective=0.821]     60%|██████    | 18/30 [05:11<04:50, 24.21s/it, failures=0, objective=0.821]     60%|██████    | 18/30 [05:11<04:50, 24.21s/it, failures=0, objective=0.821]     63%|██████▎   | 19/30 [05:20<03:36, 19.66s/it, failures=0, objective=0.821]     63%|██████▎   | 19/30 [05:20<03:36, 19.66s/it, failures=0, objective=0.821]     67%|██████▋   | 20/30 [05:26<02:35, 15.58s/it, failures=0, objective=0.821]     67%|██████▋   | 20/30 [05:26<02:35, 15.58s/it, failures=0, objective=0.821]     70%|███████   | 21/30 [05:34<01:59, 13.26s/it, failures=0, objective=0.821]     70%|███████   | 21/30 [05:34<01:59, 13.26s/it, failures=0, objective=0.821]     73%|███████▎  | 22/30 [05:40<01:29, 11.14s/it, failures=0, objective=0.821]     73%|███████▎  | 22/30 [05:40<01:29, 11.14s/it, failures=0, objective=0.821]     77%|███████▋  | 23/30 [06:00<01:35, 13.58s/it, failures=0, objective=0.821]     77%|███████▋  | 23/30 [06:00<01:35, 13.58s/it, failures=0, objective=0.821]     80%|████████  | 24/30 [06:14<01:22, 13.69s/it, failures=0, objective=0.821]     80%|████████  | 24/30 [06:14<01:22, 13.69s/it, failures=0, objective=0.821]     83%|████████▎ | 25/30 [06:26<01:07, 13.44s/it, failures=0, objective=0.821]     83%|████████▎ | 25/30 [06:26<01:07, 13.44s/it, failures=0, objective=0.821]     87%|████████▋ | 26/30 [06:41<00:55, 13.93s/it, failures=0, objective=0.821]     87%|████████▋ | 26/30 [06:41<00:55, 13.93s/it, failures=0, objective=0.821]     90%|█████████ | 27/30 [07:09<00:53, 17.89s/it, failures=0, objective=0.821]     90%|█████████ | 27/30 [07:09<00:53, 17.89s/it, failures=0, objective=0.821]     93%|█████████▎| 28/30 [07:27<00:36, 18.18s/it, failures=0, objective=0.821]     93%|█████████▎| 28/30 [07:27<00:36, 18.18s/it, failures=0, objective=0.821]     97%|█████████▋| 29/30 [07:33<00:14, 14.30s/it, failures=0, objective=0.821]     97%|█████████▋| 29/30 [07:33<00:14, 14.30s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 17.71s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 17.71s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 15.96s/it, failures=0, objective=0.821]
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 380-386
+.. GENERATED FROM PYTHON SOURCE LINES 377-383
 
 The returned :code:`results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
 
@@ -627,7 +624,7 @@ The returned :code:`results` is a Pandas Dataframe where columns are hyperparame
 * :code:`timestamp_submit` is the time (in seconds) when the hyperparameter configuration was submitted by the :code:`Evaluator` relative to the creation of the evaluator.
 * :code:`timestamp_gather` is the time (in seconds) when the hyperparameter configuration was collected by the :code:`Evaluator` relative to the creation of the evaluator.
 
-.. GENERATED FROM PYTHON SOURCE LINES 388-390
+.. GENERATED FROM PYTHON SOURCE LINES 385-387
 
 .. code-block:: Python
 
@@ -672,333 +669,333 @@ The returned :code:`results` is a Pandas Dataframe where columns are hyperparame
       <tbody>
         <tr>
           <th>0</th>
+          <td>263</td>
+          <td>0.307330</td>
           <td>9</td>
-          <td>7.425425</td>
-          <td>15</td>
-          <td>0.812143</td>
+          <td>0.258095</td>
           <td>0</td>
           <td>DONE</td>
-          <td>2.604801</td>
-          <td>46.987732</td>
+          <td>3.127765</td>
+          <td>14.453226</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>452</td>
-          <td>1.145549</td>
-          <td>12</td>
-          <td>0.380000</td>
+          <td>184</td>
+          <td>0.619315</td>
+          <td>18</td>
+          <td>0.424762</td>
           <td>1</td>
           <td>DONE</td>
-          <td>47.059917</td>
-          <td>49.822526</td>
+          <td>14.539550</td>
+          <td>21.074172</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>57</td>
-          <td>0.383452</td>
-          <td>9</td>
-          <td>0.419048</td>
+          <td>11</td>
+          <td>0.267404</td>
+          <td>7</td>
+          <td>0.414048</td>
           <td>2</td>
           <td>DONE</td>
-          <td>49.857259</td>
-          <td>55.230967</td>
+          <td>21.106992</td>
+          <td>36.337234</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>15</td>
-          <td>5.642948</td>
-          <td>7</td>
-          <td>0.805714</td>
+          <td>16</td>
+          <td>0.327795</td>
+          <td>6</td>
+          <td>0.426429</td>
           <td>3</td>
           <td>DONE</td>
-          <td>55.263904</td>
-          <td>67.059916</td>
+          <td>36.368617</td>
+          <td>45.965276</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>38</td>
-          <td>0.200370</td>
-          <td>14</td>
-          <td>0.405714</td>
+          <td>23</td>
+          <td>5.655336</td>
+          <td>8</td>
+          <td>0.790000</td>
           <td>4</td>
           <td>DONE</td>
-          <td>67.092526</td>
-          <td>77.403794</td>
+          <td>45.995517</td>
+          <td>55.273026</td>
         </tr>
         <tr>
           <th>5</th>
-          <td>40</td>
-          <td>3.867938</td>
-          <td>18</td>
-          <td>0.800476</td>
+          <td>9</td>
+          <td>0.879577</td>
+          <td>13</td>
+          <td>0.699762</td>
           <td>5</td>
           <td>DONE</td>
-          <td>77.434969</td>
-          <td>89.825199</td>
+          <td>55.305938</td>
+          <td>90.301269</td>
         </tr>
         <tr>
           <th>6</th>
-          <td>268</td>
-          <td>2.038292</td>
-          <td>16</td>
-          <td>0.527857</td>
+          <td>32</td>
+          <td>8.432492</td>
+          <td>18</td>
+          <td>0.806905</td>
           <td>6</td>
           <td>DONE</td>
-          <td>89.855504</td>
-          <td>93.771533</td>
+          <td>90.331885</td>
+          <td>105.113069</td>
         </tr>
         <tr>
           <th>7</th>
-          <td>9</td>
-          <td>9.626926</td>
-          <td>12</td>
-          <td>0.807143</td>
+          <td>353</td>
+          <td>5.803402</td>
+          <td>13</td>
+          <td>0.586667</td>
           <td>7</td>
           <td>DONE</td>
-          <td>94.552353</td>
-          <td>124.719900</td>
+          <td>105.901583</td>
+          <td>109.096179</td>
         </tr>
         <tr>
           <th>8</th>
-          <td>37</td>
-          <td>2.895236</td>
-          <td>5</td>
-          <td>0.620476</td>
+          <td>32</td>
+          <td>4.693885</td>
+          <td>19</td>
+          <td>0.794524</td>
           <td>8</td>
           <td>DONE</td>
-          <td>125.383406</td>
-          <td>129.799785</td>
+          <td>109.777105</td>
+          <td>125.332508</td>
         </tr>
         <tr>
           <th>9</th>
-          <td>153</td>
-          <td>7.178963</td>
-          <td>19</td>
-          <td>0.797143</td>
+          <td>17</td>
+          <td>2.967434</td>
+          <td>8</td>
+          <td>0.762857</td>
           <td>9</td>
           <td>DONE</td>
-          <td>130.489276</td>
-          <td>136.089723</td>
+          <td>125.989688</td>
+          <td>137.581629</td>
         </tr>
         <tr>
           <th>10</th>
-          <td>244</td>
-          <td>8.542534</td>
-          <td>8</td>
-          <td>0.544286</td>
+          <td>29</td>
+          <td>3.046464</td>
+          <td>20</td>
+          <td>0.821190</td>
           <td>10</td>
           <td>DONE</td>
-          <td>136.765761</td>
-          <td>139.339588</td>
+          <td>138.640750</td>
+          <td>156.303423</td>
         </tr>
         <tr>
           <th>11</th>
-          <td>19</td>
-          <td>3.968249</td>
-          <td>11</td>
-          <td>0.795000</td>
+          <td>12</td>
+          <td>3.004998</td>
+          <td>17</td>
+          <td>0.804048</td>
           <td>11</td>
           <td>DONE</td>
-          <td>140.250239</td>
-          <td>154.656680</td>
+          <td>156.985886</td>
+          <td>189.248511</td>
         </tr>
         <tr>
           <th>12</th>
-          <td>8</td>
-          <td>7.385292</td>
-          <td>14</td>
-          <td>0.818571</td>
+          <td>66</td>
+          <td>4.342034</td>
+          <td>16</td>
+          <td>0.783810</td>
           <td>12</td>
           <td>DONE</td>
-          <td>155.356481</td>
-          <td>194.618774</td>
+          <td>189.890529</td>
+          <td>197.676170</td>
         </tr>
         <tr>
           <th>13</th>
-          <td>8</td>
-          <td>4.465524</td>
           <td>12</td>
-          <td>0.815714</td>
+          <td>4.922773</td>
+          <td>20</td>
+          <td>0.803571</td>
           <td>13</td>
           <td>DONE</td>
-          <td>195.311674</td>
-          <td>229.019057</td>
+          <td>198.329679</td>
+          <td>236.173472</td>
         </tr>
         <tr>
           <th>14</th>
-          <td>9</td>
-          <td>6.083976</td>
-          <td>16</td>
-          <td>0.822143</td>
+          <td>52</td>
+          <td>3.529654</td>
+          <td>17</td>
+          <td>0.788095</td>
           <td>14</td>
           <td>DONE</td>
-          <td>229.714876</td>
-          <td>269.514743</td>
+          <td>236.840004</td>
+          <td>246.533402</td>
         </tr>
         <tr>
           <th>15</th>
-          <td>9</td>
-          <td>5.053471</td>
-          <td>8</td>
-          <td>0.807619</td>
+          <td>16</td>
+          <td>7.520990</td>
+          <td>16</td>
+          <td>0.787857</td>
           <td>15</td>
           <td>DONE</td>
-          <td>270.209680</td>
-          <td>291.281826</td>
+          <td>247.194122</td>
+          <td>270.638290</td>
         </tr>
         <tr>
           <th>16</th>
-          <td>8</td>
-          <td>6.475469</td>
-          <td>10</td>
-          <td>0.818333</td>
+          <td>13</td>
+          <td>9.459284</td>
+          <td>16</td>
+          <td>0.820476</td>
           <td>16</td>
           <td>DONE</td>
-          <td>291.968086</td>
-          <td>320.907829</td>
+          <td>271.455738</td>
+          <td>300.009493</td>
         </tr>
         <tr>
           <th>17</th>
-          <td>8</td>
-          <td>7.484417</td>
-          <td>20</td>
-          <td>0.810238</td>
+          <td>14</td>
+          <td>6.333043</td>
+          <td>15</td>
+          <td>0.812857</td>
           <td>17</td>
           <td>DONE</td>
-          <td>321.689849</td>
-          <td>386.003532</td>
+          <td>300.733284</td>
+          <td>326.092465</td>
         </tr>
         <tr>
           <th>18</th>
-          <td>9</td>
-          <td>1.744984</td>
-          <td>13</td>
-          <td>0.776905</td>
+          <td>76</td>
+          <td>2.864959</td>
+          <td>19</td>
+          <td>0.771905</td>
           <td>18</td>
           <td>DONE</td>
-          <td>386.968047</td>
-          <td>423.184486</td>
+          <td>326.893129</td>
+          <td>335.169225</td>
         </tr>
         <tr>
           <th>19</th>
-          <td>14</td>
-          <td>1.153448</td>
-          <td>18</td>
-          <td>0.767143</td>
+          <td>34</td>
+          <td>3.699183</td>
+          <td>6</td>
+          <td>0.687619</td>
           <td>19</td>
           <td>DONE</td>
-          <td>423.919372</td>
-          <td>456.463661</td>
+          <td>335.842253</td>
+          <td>341.226246</td>
         </tr>
         <tr>
           <th>20</th>
-          <td>15</td>
-          <td>1.065215</td>
-          <td>9</td>
-          <td>0.625476</td>
+          <td>101</td>
+          <td>9.631699</td>
+          <td>20</td>
+          <td>0.806905</td>
           <td>20</td>
           <td>DONE</td>
-          <td>457.148631</td>
-          <td>473.035276</td>
+          <td>341.890406</td>
+          <td>349.094039</td>
         </tr>
         <tr>
           <th>21</th>
-          <td>127</td>
-          <td>8.755717</td>
-          <td>20</td>
-          <td>0.805952</td>
+          <td>129</td>
+          <td>7.667238</td>
+          <td>17</td>
+          <td>0.777857</td>
           <td>21</td>
           <td>DONE</td>
-          <td>473.893791</td>
-          <td>480.795972</td>
+          <td>349.768611</td>
+          <td>355.277805</td>
         </tr>
         <tr>
           <th>22</th>
-          <td>10</td>
-          <td>8.288423</td>
-          <td>12</td>
-          <td>0.820000</td>
+          <td>23</td>
+          <td>6.802672</td>
+          <td>17</td>
+          <td>0.803333</td>
           <td>22</td>
           <td>DONE</td>
-          <td>481.636946</td>
-          <td>513.528365</td>
+          <td>356.129515</td>
+          <td>374.547178</td>
         </tr>
         <tr>
           <th>23</th>
-          <td>10</td>
-          <td>5.977716</td>
-          <td>11</td>
-          <td>0.816905</td>
+          <td>36</td>
+          <td>8.862987</td>
+          <td>18</td>
+          <td>0.806905</td>
           <td>23</td>
           <td>DONE</td>
-          <td>514.225128</td>
-          <td>539.820897</td>
+          <td>375.217385</td>
+          <td>388.509987</td>
         </tr>
         <tr>
           <th>24</th>
-          <td>9</td>
-          <td>4.320941</td>
-          <td>18</td>
-          <td>0.806905</td>
+          <td>43</td>
+          <td>5.716999</td>
+          <td>19</td>
+          <td>0.809048</td>
           <td>24</td>
           <td>DONE</td>
-          <td>541.150857</td>
-          <td>592.006657</td>
+          <td>389.156084</td>
+          <td>401.360895</td>
         </tr>
         <tr>
           <th>25</th>
-          <td>11</td>
-          <td>8.315465</td>
-          <td>15</td>
-          <td>0.815238</td>
+          <td>33</td>
+          <td>3.940563</td>
+          <td>18</td>
+          <td>0.785952</td>
           <td>25</td>
           <td>DONE</td>
-          <td>593.012866</td>
-          <td>626.937860</td>
+          <td>402.023900</td>
+          <td>416.426354</td>
         </tr>
         <tr>
           <th>26</th>
-          <td>10</td>
-          <td>6.658980</td>
-          <td>20</td>
-          <td>0.813810</td>
+          <td>15</td>
+          <td>4.065718</td>
+          <td>17</td>
+          <td>0.814524</td>
           <td>26</td>
           <td>DONE</td>
-          <td>627.698929</td>
-          <td>675.699136</td>
+          <td>417.259908</td>
+          <td>443.559158</td>
         </tr>
         <tr>
           <th>27</th>
-          <td>8</td>
-          <td>4.454033</td>
-          <td>15</td>
-          <td>0.807381</td>
+          <td>28</td>
+          <td>3.023265</td>
+          <td>20</td>
+          <td>0.786190</td>
           <td>27</td>
           <td>DONE</td>
-          <td>676.438800</td>
-          <td>721.224411</td>
+          <td>444.360056</td>
+          <td>462.428190</td>
         </tr>
         <tr>
           <th>28</th>
+          <td>152</td>
+          <td>9.811295</td>
           <td>15</td>
-          <td>7.719777</td>
-          <td>5</td>
-          <td>0.783095</td>
+          <td>0.770000</td>
           <td>28</td>
           <td>DONE</td>
-          <td>721.985601</td>
-          <td>731.361303</td>
+          <td>463.098771</td>
+          <td>467.679759</td>
         </tr>
         <tr>
           <th>29</th>
-          <td>131</td>
-          <td>3.920481</td>
-          <td>17</td>
-          <td>0.740238</td>
+          <td>13</td>
+          <td>8.953454</td>
+          <td>14</td>
+          <td>0.803571</td>
           <td>29</td>
           <td>DONE</td>
-          <td>732.134989</td>
-          <td>737.962880</td>
+          <td>468.413173</td>
+          <td>493.326741</td>
         </tr>
       </tbody>
     </table>
@@ -1007,14 +1004,14 @@ The returned :code:`results` is a Pandas Dataframe where columns are hyperparame
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 391-395
+.. GENERATED FROM PYTHON SOURCE LINES 388-392
 
 Evaluate the best configuration
 -------------------------------
 
 Now that the search is over, let us print the best configuration found during this run and evaluate it on the full training dataset.
 
-.. GENERATED FROM PYTHON SOURCE LINES 397-407
+.. GENERATED FROM PYTHON SOURCE LINES 394-404
 
 .. code-block:: Python
 
@@ -1036,20 +1033,20 @@ Now that the search is over, let us print the best configuration found during th
 
  .. code-block:: none
 
-    The default configuration has an accuracy of 0.863. 
-    The best configuration found by DeepHyper has an accuracy 0.822, 
-    finished after 269.51 secondes of search.
+    The default configuration has an accuracy of 0.823. 
+    The best configuration found by DeepHyper has an accuracy 0.821, 
+    finished after 156.30 secondes of search.
 
     {
-        "batch_size": 9,
-        "learning_rate": 6.083975570398782,
-        "num_epochs": 16
+        "batch_size": 29,
+        "learning_rate": 3.0464644512097143,
+        "num_epochs": 20
     }
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 408-410
+.. GENERATED FROM PYTHON SOURCE LINES 405-407
 
 .. code-block:: Python
 
@@ -1063,7 +1060,7 @@ Now that the search is over, let us print the best configuration found during th
 
  .. code-block:: none
 
-    Accuracy Best Configuration:  0.850
+    Accuracy Best Configuration:  0.837
 
 
 
@@ -1071,7 +1068,7 @@ Now that the search is over, let us print the best configuration found during th
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (14 minutes 59.752 seconds)
+   **Total running time of the script:** (9 minutes 36.821 seconds)
 
 
 .. _sphx_glr_download_examples_examples_hpo_plot_hpo_text_classification.py:
