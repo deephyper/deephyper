@@ -38,7 +38,7 @@ Machine learning models are increasingly applied across scientific disciplines, 
 
 `DeepHyper` is a Python package for parallel hyperparameter optimization or neural architecture search. The project started in 2018 [@balaprakash2018deephyper] with a focus on making Bayesian optimization more efficient on high-performance computing clusters. It provides access to a variety of asynchronous parallel black-box optimization algorithms `deephyper.hpo`. The software offers a variety of parallel programming backends such as Asyncio, threading, processes, Ray, and MPI `deehyper.evaluator`. The hyperparameter optimization can be single or multi-objective, composed of mixed variables, using explicit or hidden constraints, and benefit from early-discarding strategies `deephyper.stopper`. Leveraging the results of hyperparameter optimization or neural architecture search it provides parallel ensemble algorithms `deephyper.ensemble` that can help improve accuracy or quantify disentangled predictive uncertainty. A diagram of our software architecture is shown in Figure 1.
 
-![Software Architecture](figures/deephyper-architecture.png){width=60%}
+![DeepHyper Software Architecture](figures/deephyper-architecture.png){width=50%}
 
 `DeepHyper` was designed to help research in the field of automated machine learning and also to be used out-of-the box in scientific projects where learning workflows are being developed.
 
@@ -59,7 +59,7 @@ These tools differ in scope and design: some are research-oriented (e.g., SMAC),
 
 ## Feature Comparison
 
-While the feature matrix below provides a high-level overview, it necessarily simplifies some nuanced implementation differences.
+While the feature matrix below provides a high-level overview, it necessarily simplifies some nuanced implementation differences. We use the $\checkmark$ symbol for available features, the $\approx$ symbol for incomplete features, and no symbol for missing features.
 
 ### Hyperparameter Optimization Capabilities
 
@@ -96,7 +96,7 @@ DeepHyper enables model ensembling from the pool of evaluated configurations, he
 **Visualization**  
 Basic visualization tools are provided via `deephyper.analytics`. For more interactive exploration, we recommend [SandDance](https://microsoft.github.io/SandDance/), a Visual Studio Code plugin. Figure 2 illustrates a 3D visualization of a Random Forest optimization, with `min_samples_split`, `min_weight_fraction_leaf`, and test accuracy as the x, y, and z axes (and color), respectively. The two plots compare configurations using `splitter="best"` (left) and `splitter="random"` (right). Such visualizations help identify the sensitivity of the objective to different hyperparameters.
 
-![Visualization of hyperparameter optimization results with SandDance](figures/sanddance_viz.png){width=80%,label="sanddance_viz"}
+![Visualization of hyperparameter optimization results with SandDance](figures/sanddance_viz.png){width=80%}
 
 ### Parallelization Capabilities
 
@@ -120,11 +120,12 @@ The main difference between DeepHyper, Optuna and SMAC related to parallelizatio
 
 **Parallelization backends**: DeepHyper's provides compatibility with several parallelization backends: AsyncIO functions, thread-based, process-based, Ray, and MPI. This allows to easily adapt to the context of the execution.
 
-**Memory backends**:: DeepHyper's provides compatibility with several shared-memory backends: local memory, server managed memory, MPI-based remote memory access, Ray.
+**Memory backends**: DeepHyper's provides compatibility with several shared-memory backends: local memory, server managed memory, MPI-based remote memory access, Ray.
 
 ## Black-box Optimization Benchmarks
 
-The benchmark is run on 9 different continuous black-box benchmark functions: [Ackley](https://www.sfu.ca/~ssurjano/ackley.html) (5 dim.), [Branin](https://www.sfu.ca/~ssurjano/branin.html) (2 dim.), [Griewank](https://www.sfu.ca/~ssurjano/griewank.html) (5 dim.), [Hartmann](https://www.sfu.ca/~ssurjano/hart6.html) (6 dim.), [Levy](https://www.sfu.ca/~ssurjano/levy.html) (5 dim.), [Michalewicz](https://www.sfu.ca/~ssurjano/michal.html) (5 dim.), [Rosen](https://www.sfu.ca/~ssurjano/rosen.html) (5 dim.), [Schwefel](https://www.sfu.ca/~ssurjano/schwef.html) (5 dim.) and [Shekel](https://www.sfu.ca/~ssurjano/shekel.html) (5 dim.). The benchmark results present the average regret and the standard error over 10 random repetitions for each method. The average regret is given by $y^* - \hat{y}^*$ where $y^*$ is the true optimal objective value and $\hat{y}^*$ is the current estimated best optimal objective value. All methods are run sequentialy (no parallelization features enabled for consistent evaluation) with default arguments. For DeepHyper, the `CBO` search is used. For Optuna, the `TPE` sampler with default arguments is used. For SMAC, the default parameters using the OptunaHub SMAC sampler is used.
+The benchmark is run on 9 different continuous black-box benchmark functions: [Ackley](https://www.sfu.ca/~ssurjano/ackley.html) (5 dim.), [Branin](https://www.sfu.ca/~ssurjano/branin.html) (2 dim.), [Griewank](https://www.sfu.ca/~ssurjano/griewank.html) (5 dim.), [Hartmann](https://www.sfu.ca/~ssurjano/hart6.html) (6 dim.), [Levy](https://www.sfu.ca/~ssurjano/levy.html) (5 dim.), [Michalewicz](https://www.sfu.ca/~ssurjano/michal.html) (5 dim.), [Rosen](https://www.sfu.ca/~ssurjano/rosen.html) (5 dim.), [Schwefel](https://www.sfu.ca/~ssurjano/schwef.html) (5 dim.) and [Shekel](https://www.sfu.ca/~ssurjano/shekel.html) (5 dim.). 
+Figures 3-7 present the benchmark results with the average regret and the standard error over 10 random repetitions for each method. The average regret is given by $y^* - \hat{y}^*$ where $y^*$ is the true optimal objective value and $\hat{y}^*$ is the current estimated best optimal objective value. All methods are run sequentialy (no parallelization features enabled for consistent evaluation) with default arguments. For DeepHyper, the `CBO` search is used. For Optuna, the `TPE` sampler with default arguments is used. For SMAC, the default parameters using the OptunaHub SMAC sampler is used.
 
 ![Ackley 5D (left) and Branin 2D (right)](figures/benchmarks/ackley_5d_and_branin_2d.png)
 
@@ -141,11 +142,12 @@ The benchmark is run on 9 different continuous black-box benchmark functions: [A
 
 The algorithms used for hyperparameter optimization are black-box optimization algorithms for mixed search spaces. A mixed search space, can be composed of real, discrete, or categorical (nomimal or ordinal) values. The search space can also include constraints (e.g., explicit such as $x_0 < x_1$, or implicit such as "unexpected out-of-memory error"). The objective function can be stochastic $Y = f(x)$ where $Y$ is a random variable, $x$ is a vector of input hyperparameters and $f$ is the objective function. `DeepHyper` main hyperparameter optimization algorithm is based on Bayesian optimization.
 
-The Bayesian optimization of `DeepHyper` relies by default on Extremely Randomized Forest as surrogate model to estimate $E_Y[Y|X=x]$. Extremely Randomized Forest [@geurts2006extremely] are a kind of Randomized Forest algorithm where the split decision involves a random process for each newly created node of a tree. It provides smoother epistemic uncertainty estimates with an increasing number of trees (Figure 12) compared to usual Random Forests that use a deterministic "best" split decision (Figure 13).
+The Bayesian optimization of `DeepHyper` relies by default on Extremely Randomized Forest as surrogate model to estimate $E_Y[Y|X=x]$. Extremely Randomized Forest [@geurts2006extremely] are a kind of Randomized Forest algorithm where the split decision involves a random process for each newly created node of a tree. It provides smoother epistemic uncertainty estimates with an increasing number of trees (left side in Figure 8) compared to usual Random Forests that use a deterministic "best" split decision (right side in Figure 8).
 
 ![Uncertainty of Randomized Forests, on the left-side with random split, and on the right-side with best split.](figures/random_forest.png)
 
-Then, a custom acquisition function `UCBd`, focuses on the epistemic uncertainty of this surrogate (purple area in \autoref{fig:bestsplit}) for improved efficiency. It is also combined with a periodic exponential decay (Figure 14, impacting exploration-exploitation parameters of BO) to escape local solutions [@egele2023asynchronous].
+Then, a custom acquisition function $\text{UCBd}(x) = \mu(x) + \kappa \cdot \sigma_\text{ep}(x)$, combines the mean predicition $\mu(x)$ with the epistemic uncertainty $\sigma_\text{ep}(x)$ of this surrogate (purple area in Figure 8) for improved efficiency. 
+We also apply a periodic exponential decay (Figure 9), impacting the exploration-exploitation parameter $\kappa$ to escape local solutions [@egele2023asynchronous].
 
 ![Periodic Exponential Decay for Bayesian Optimization](figures/example-exp-decay.jpg){width=49%}
 
@@ -155,13 +157,13 @@ The multi-objective optimization is enabled by scalarization functions and objec
 
 The early-discarding strategies include asynchronous successive halving and a robust learning curve extrapolation [@egele2024unreasonable].
 
-The ensemble strategies is modular to allow: exploring models tested during hyperparameter optimization, classification and regression problems to be treated, disentangled uncertainty quantification [@egele2022autodeuq].
+The ensemble strategies is modular to allow: exploring models tested during hyperparameter optimization, classification and regression problems to be treated, disentangled uncertainty quantification [@egele2022autodeuq]. It can leverage the same parallelization features as the optimization.
 
-A transfer-learning strategy for hyperparameter optimization [@dorier2022transferlearning] is also available. This strategy used to be based on variational auto-encoders for tabular data. It is now based on Gaussian mixture-model for tabular data.
+Finally, a transfer-learning strategy for hyperparameter optimization [@dorier2022transferlearning] is available. This strategy used to be based on variational auto-encoders for tabular data. It is now based on Gaussian mixture-model for tabular data.
 
 # Software Development
 
-The DeepHyper package adheres to best practices in the Python community by following the [PEP 8 style guide](https://pep8.org) for Python naming and formatting conventions. The layout and configuration of the package follows suggestions made by the [Python Packaging User Guide](https://packaging.python.org/en/latest/) which is maintained by the Python Packaging Authority. A `pyproject.toml` file provides all configuration settings and meta data for developing and publishing the DeepHyper package. The [ruff tool](https://astral.sh/ruff) is used to enforce style and format conventions during code development and during continuous integration checks via GitHub Actions. Unit tests are also conducted in the CI workflow with the [pytest](https://docs.pytest.org/en/stable/) framework. Conda environments and standard Python virtual environments are supported by the project to ensure consistent development environments. Documentation for the package is generated with the [Sphinx application](https://www.sphinx-doc.org/en/master/). See the Developer's Guide section in the DeepHyper [documentation](https://deephyper.readthedocs.io/en/stable/) for contributing guidelines and more software development information.
+The DeepHyper package adheres to best practices in the Python community by following the [PEP 8 style guide](https://pep8.org) for Python naming and formatting conventions. The layout and configuration of the package follows suggestions made by the [Python Packaging User Guide](https://packaging.python.org) which is maintained by the Python Packaging Authority. A `pyproject.toml` file provides all configuration settings and meta data for developing and publishing the DeepHyper package. The [ruff tool](https://astral.sh/ruff) is used to enforce style and format conventions during code development and during continuous integration checks via GitHub Actions. Unit tests are also conducted in the CI workflow with the [pytest](https://docs.pytest.org) framework. Conda environments and standard Python virtual environments are supported by the project to ensure consistent development environments. Documentation for the package is generated with the [Sphinx application](https://www.sphinx-doc.org/en/master/). See the Developer's Guide section in the DeepHyper [documentation](https://deephyper.readthedocs.io) for contributing guidelines and more software development information.
 
 # Acknowledgements
 
