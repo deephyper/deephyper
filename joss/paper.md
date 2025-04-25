@@ -73,6 +73,8 @@ While the feature matrix below provides a high-level overview, it necessarily si
 | Ensemble construction  | $\checkmark$ |              |              |
 | Visualization          | $\approx$    | $\checkmark$ |              |
 
+Table: The table bellow shows an overview of optimization features available in different hyperparameter optimization packages.
+
 **Single-objective Optimization**  
 DeepHyper employs a surrogate model based on random forests to estimate $P(\text{Objective} \mid \text{Hyperparameters})$, similar to SMAC. However, DeepHyper's implementation is typically faster per query, especially when the number of evaluations exceeds 200. In contrast, Optuna uses the Tree-structured Parzen Estimator (TPE), which models $P(\text{Hyperparameters} \mid \text{Objective})$. TPE offers faster query times but can struggle with complex optimization landscapes and tends to be less effective in refining continuous hyperparameters.
 
