@@ -70,7 +70,6 @@ class Search(abc.ABC):
         log_dir=".",
         verbose=0,
         stopper=None,
-        **kwargs,
     ):
         # TODO: stopper should be an argument passed here... check CBO and generalize
         # get the __init__ parameters
@@ -293,14 +292,12 @@ class Search(abc.ABC):
                 df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
                 df.to_csv(df_path, index=False)
 
-    def _search(self, max_evals, timeout, max_evals_strict=False):
+    def _search(self, max_evals, max_evals_strict=False):
         """Search algorithm logic.
 
         Args:
             max_evals (int): The maximum number of evaluations of the run function to perform
                 before stopping the search. Defaults to -1, will run indefinitely.
-            timeout (int): The time budget of the search before stopping. Defaults to ``None``,
-                will not impose a time budget.
             max_evals_strict (bool, optional): Wether the number of submitted jobs should be
             strictly equal to ``max_evals``.
         """
