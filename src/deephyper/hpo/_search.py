@@ -229,7 +229,7 @@ class Search(abc.ABC):
         try:
             if np.isscalar(timeout) and timeout > 0:
                 self._evaluator.timeout = timeout
-            self._search(max_evals, timeout, max_evals_strict)
+            self._search(max_evals, max_evals_strict)
         except MaximumJobsSpawnReached:
             self.stopped = True
             logging.warning(
@@ -419,4 +419,5 @@ class Search(abc.ABC):
             flush (bool, optional): Force the dumping if set to ``True``. Defaults to ``False``.
         """
         if self.is_master:
+            print("HERE")
             self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir, flush=flush)

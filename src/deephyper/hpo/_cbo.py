@@ -603,11 +603,11 @@ class CBO(Search):
             self._opt.tell(opt_X, opt_y)
             logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
-    def _search(self, max_evals, timeout, max_evals_strict=False):
+    def _search(self, max_evals, max_evals_strict=False):
         if self._opt is None:
             self._setup_optimizer()
 
-        super()._search(max_evals, timeout, max_evals_strict)
+        super()._search(max_evals, max_evals_strict)
 
     def _get_surrogate_model(
         self,
