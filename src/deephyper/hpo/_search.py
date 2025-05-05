@@ -64,9 +64,6 @@ class Search(abc.ABC):
         stopper (Stopper, optional):
             A stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None``
             which does not use any stopper.
-        csv_output (bool, optional):
-            Results are written to CSV file when ``True`` otherwise don't write to file when
-            ``False``. Default value is ``True``.
     """
 
     def __init__(
@@ -77,7 +74,6 @@ class Search(abc.ABC):
         log_dir=".",
         verbose=0,
         stopper=None,
-        csv_output: bool = True,
     ):
         # TODO: stopper should be an argument passed here... check CBO and generalize
         # get the __init__ parameters
@@ -111,6 +107,7 @@ class Search(abc.ABC):
 
         # Check if results already exist
         self._path_results = os.path.join(self._log_dir, "results.csv")
+
         if os.path.exists(self._path_results):
             str_current_time = time.strftime("%Y%m%d-%H%M%S")
             path_results_dirname = os.path.dirname(self._path_results)
@@ -134,7 +131,6 @@ class Search(abc.ABC):
         self._evaluator._stopper = stopper
 
         self.stopped = False
-        self.csv_output = csv_output
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
@@ -193,7 +189,13 @@ class Search(abc.ABC):
             if timeout <= 0:
                 raise ValueError("'timeout' should be > 0!")
 
-    def search(self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False):
+    def search(
+        self,
+        max_evals: int = -1,
+        timeout: int = None,
+        max_evals_strict: bool = False,
+        remove_csv: bool = False,
+    ):
         """Execute the search algorithm.
 
         Args:
@@ -203,6 +205,7 @@ class Search(abc.ABC):
                 Defaults to ``None``, will not impose a time budget.
             max_evals_strict (bool, optional): If ``True`` the search will not spawn more than
                 ``max_evals`` jobs. Defaults to ``False``.
+            remove_csv: Remove the CSV results file.
 
         Returns:
             DataFrame: A pandas DataFrame containing the evaluations performed or ``None`` if the
@@ -220,14 +223,17 @@ class Search(abc.ABC):
         """
         self.stopped = False
         self._check_timeout(timeout)
+
         if max_evals_strict:
             # TODO: should be replaced by a property with a setter?
             self._evaluator.set_maximum_num_jobs_submitted(max_evals)
 
         # save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
+
         # save the context in the log folder
         self.dump_context()
+
         # init tqdm callback
         if max_evals > 1:
             for cb in self._evaluator._callbacks:
@@ -235,6 +241,7 @@ class Search(abc.ABC):
                     cb.set_max_evals(max_evals)
 
         wait_all_running_jobs = True
+
         try:
             if np.isscalar(timeout) and timeout > 0:
                 self._evaluator.timeout = timeout
@@ -248,6 +255,7 @@ class Search(abc.ABC):
 
         # Collect remaining jobs
         logging.info("Collect remaining jobs...")
+
         if wait_all_running_jobs:
             while self._evaluator.num_jobs_submitted > self._evaluator.num_jobs_gathered:
                 self._evaluator.gather("ALL")
@@ -268,6 +276,10 @@ class Search(abc.ABC):
         self.extend_results_with_pareto_efficient_indicator()
 
         df_results = pd.read_csv(self._path_results)
+
+        # Remove the CSV results file
+        if remove_csv and os.path.isfile(self._path_results):
+            os.remove(self._path_results)
 
         return df_results
 
@@ -427,5 +439,5 @@ class Search(abc.ABC):
         Args:
             flush (bool, optional): Force the dumping if set to ``True``. Defaults to ``False``.
         """
-        if self.is_master and self.csv_output:
+        if self.is_master:
             self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir, flush=flush)
