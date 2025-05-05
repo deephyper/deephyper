@@ -51,15 +51,22 @@ class Search(abc.ABC):
     """Abstract class which represents a search algorithm.
 
     Args:
-        problem: object describing the search/optimization problem.
-        evaluator: object describing the evaluation process.
-        random_state (np.random.RandomState, optional): Initial random state of the search.
-            Defaults to ``None``.
-        log_dir (str, optional): Path to the directoy where results of the search are stored.
-            Defaults to ``"."``.
-        verbose (int, optional): Use verbose mode. Defaults to ``0``.
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
-            function. Defaults to ``None`` which does not use any stopper.
+        problem:
+            An object describing the search/optimization problem.
+        evaluator:
+            An object describing the evaluation process.
+        random_state (np.random.RandomState, optional):
+            Initial random state of the search. Defaults to ``None``.
+        log_dir (str, optional):
+            Path to the directoy where results of the search are stored. Defaults to ``"."``.
+        verbose (int, optional):
+            Use verbose mode. Defaults to ``0``.
+        stopper (Stopper, optional):
+            A stopper to leverage multi-fidelity when evaluating the function. Defaults to ``None``
+            which does not use any stopper.
+        csv_output (bool, optional):
+            Results are written to CSV file when ``True`` otherwise don't write to file when
+            ``False``. Default value is ``True``.
     """
 
     def __init__(
@@ -70,6 +77,7 @@ class Search(abc.ABC):
         log_dir=".",
         verbose=0,
         stopper=None,
+        csv_output: bool = True,
     ):
         # TODO: stopper should be an argument passed here... check CBO and generalize
         # get the __init__ parameters
@@ -126,6 +134,7 @@ class Search(abc.ABC):
         self._evaluator._stopper = stopper
 
         self.stopped = False
+        self.csv_output = csv_output
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
@@ -418,6 +427,5 @@ class Search(abc.ABC):
         Args:
             flush (bool, optional): Force the dumping if set to ``True``. Defaults to ``False``.
         """
-        if self.is_master:
-            print("HERE")
+        if self.is_master and self.csv_output:
             self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir, flush=flush)

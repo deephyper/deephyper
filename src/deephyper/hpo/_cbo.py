@@ -301,6 +301,7 @@ class CBO(Search):
         log_dir: str = ".",
         verbose: int = 0,
         stopper: Optional[Stopper] = None,
+        csv_output: bool = True,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -315,9 +316,8 @@ class CBO(Search):
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         objective_scaler="minmax",
-        **kwargs,
     ):
-        super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
+        super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper, csv_output)
         # get the __init__ parameters
         self._init_params = locals()
 
