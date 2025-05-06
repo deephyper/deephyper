@@ -315,6 +315,7 @@ class CBO(Search):
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         objective_scaler="minmax",
+        **kwargs,
     ):
         super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
         # get the __init__ parameters
