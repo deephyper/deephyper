@@ -67,6 +67,7 @@ class AcqOptimizerKwargs(BaseModel):
     acq_optimizer_freq: Optional[int] = 1
     n_jobs: Optional[int] = 1
     n_restarts_optimizer: Optional[int] = 1
+    outliers_iqr_factor: Optional[float] = 1.5
     # Genetic algorithms parameters
     ga_pop_size: Optional[int] = 100
     ga_xtol: Optional[float] = 1e-8
@@ -466,12 +467,13 @@ class CBO(Search):
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
             objective_scaler=objective_scaler,
+            outliers_iqr_factor=self._acq_optimizer_kwargs.get("outliers_iqr_factor"),
         )
 
         # Scheduler policy
         scheduler = self._acq_func_kwargs["scheduler"]
         scheduler = {"type": "bandit"} if scheduler is None else scheduler
-        if scheduler["delay"] == "n-initial-points":
+        if scheduler is not None and scheduler["delay"] == "n-initial-points":
             scheduler["delay"] = self._n_initial_points
 
         self.scheduler = None

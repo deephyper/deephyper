@@ -247,6 +247,7 @@ class Optimizer(object):
         moo_scalarization_strategy="Chebyshev",
         moo_scalarization_weight=None,
         objective_scaler="auto",
+        outliers_iqr_factor=None,
     ):
         args = locals().copy()
         del args["self"]
@@ -499,6 +500,10 @@ class Optimizer(object):
 
         # TODO: to monitor the BO
         self._last_est = None
+
+        self.outliers_iqr_factor = outliers_iqr_factor
+        if self.outliers_iqr_factor is None:
+            self.outliers_iqr_factor = 1.5
 
     def copy(self, random_state=None):
         """Create a shallow copy of an instance of the optimizer.
@@ -964,14 +969,17 @@ class Optimizer(object):
                     # replace outliers (large values) using interquantile range
                     # dtype="O" is key to avoid converting data to string
                     yi = np.asarray(yi, dtype="O")
-                    mask_no_failures = np.where(yi != "F")
-                    q1 = np.quantile(yi[mask_no_failures], q=0.25)
-                    q3 = np.quantile(yi[mask_no_failures], q=0.75)
-                    threshold = q3 + 1.5 * (q3 - q1)  # TODO: 1.5 could be a parameter
-                    mask = np.where(
-                        (yi != "F") & np.array([v != "F" and v > threshold for v in yi])
-                    )
-                    yi[mask] = threshold
+
+                    if not np.isinf(self.outliers_iqr_factor):
+                        mask_no_failures = np.where(yi != "F")
+                        q1 = np.quantile(yi[mask_no_failures], q=0.25)
+                        q3 = np.quantile(yi[mask_no_failures], q=0.75)
+                        threshold = q3 + self.outliers_iqr_factor * (q3 - q1)
+                        mask = np.where(
+                            (yi != "F")
+                            & np.array([v != "F" and v > threshold for v in yi])
+                        )
+                        yi[mask] = threshold
 
                     if "F" in yi:
                         mask_no_failures = np.where(yi != "F")
