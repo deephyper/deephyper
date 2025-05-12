@@ -36,7 +36,7 @@ Machine learning models are increasingly applied across scientific disciplines, 
 
 # Statement of need
 
-`DeepHyper` is a Python package for parallel hyperparameter optimization or neural architecture search. The project started in 2018 [@balaprakash2018deephyper] with a focus on making Bayesian optimization more efficient on high-performance computing clusters. It provides access to a variety of asynchronous parallel black-box optimization algorithms via `deephyper.hpo`. The software offers a variety of parallel programming backends such as Asyncio, threading, processes, Ray, and MPI `deehyper.evaluator`. The hyperparameter optimization can be single or multi-objective, composed of mixed variables, using explicit or hidden constraints, and benefit from early-discarding strategies via `deephyper.stopper`. Leveraging the results of hyperparameter optimization or neural architecture search it provides parallel ensemble algorithms via `deephyper.ensemble` that can help improve accuracy or quantify disentangled predictive uncertainty. A diagram of our software architecture is shown in Figure 1.
+`DeepHyper` is a Python package for parallel hyperparameter optimization or neural architecture search. The project started in 2018 [@balaprakash2018deephyper] with a focus on making Bayesian optimization more efficient on high-performance computing clusters. It provides access to a variety of asynchronous parallel black-box optimization algorithms via `deephyper.hpo`. The software offers a variety of parallel programming backends such as Asyncio, threading, processes, Ray, and MPI via `deehyper.evaluator`. The hyperparameter optimization can be single or multi-objective, composed of mixed variables, using explicit or hidden constraints, and benefit from early-discarding strategies via `deephyper.stopper`. Leveraging the results of hyperparameter optimization or neural architecture search it provides parallel ensemble algorithms via `deephyper.ensemble` that can help improve accuracy or quantify disentangled predictive uncertainty. A diagram of our software architecture is shown in Figure 1.
 
 ![DeepHyper Software Architecture](figures/deephyper-architecture.png){width=50%}
 
@@ -114,7 +114,7 @@ The main difference between DeepHyper, Optuna and SMAC related to parallelizatio
 
 **Asynchronous optimization**: DeepHyper's allows to submit and gather hyperparameter configuration by batch and asynchronously (in a centralized or decentralized setting).
 
-**Centralized optimization**: DeepHyper's allows to run centralized optimization, including $1$ master running the optimizationa and $N$ workers evaluating hyperparameter configurations.
+**Centralized optimization**: DeepHyper's allows to run centralized optimization, including $1$ master running the optimization and $N$ workers evaluating hyperparameter configurations.
 
 **Decentralized optimization**: DeepHyper's allows to run decentralized optimization, including $N$ workers, each running centralized optimization.
 
