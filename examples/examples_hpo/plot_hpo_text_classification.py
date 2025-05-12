@@ -16,18 +16,17 @@ This tutorial is based on materials from the Pytorch Documentation: `Text classi
 # .. code-block:: bash
 #
 #     %%bash
-#     pip install deephyper
-#     pip install ray
-#     pip install torch torchtext torchdata
+#     pip install deephyper ray numpy==1.26.4 torch torchtext==0.17.2 torchdata==0.7.1 'portalocker>=2.0.0'
 
 # %%
 # Imports
 # -------
+#
+# All imports used in the tutorial are declared at the top of the file.
 
-# %%
+# .. dropdown:: Imports
 import ray
 import json
-import pandas as pd
 from functools import partial
 
 import torch
@@ -35,6 +34,7 @@ import torch
 from torchtext.data.utils import get_tokenizer
 from torchtext.data.functional import to_map_style_dataset
 from torchtext.vocab import build_vocab_from_iterator
+from torchtext.datasets import AG_NEWS
 
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
@@ -43,10 +43,14 @@ from torch import nn
 
 # %%
 # .. note::
-#   The following can be used to detect if <b>CUDA</b> devices are available on the current host. Therefore, this notebook will automatically adapt the parallel execution based on the ressources available locally. However, it will not be the case if many compute nodes are requested.
+#   The following can be used to detect if **CUDA** devices are available on the current host. Therefore, this notebook will automatically adapt the parallel execution based on the ressources available locally. However, it will not be the case if many compute nodes are requested.
 #
 
 # %%
+# 
+# If GPU is available, this code will enabled the tutorial to use the GPU for pytorch operations.
+
+# .. dropdown:: Code to check if using CPU or GPU
 is_gpu_available = torch.cuda.is_available()
 n_gpus = torch.cuda.device_count()
 
@@ -57,9 +61,7 @@ n_gpus = torch.cuda.device_count()
 # The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the :code:`AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
 # 
 
-# %%
-from torchtext.datasets import AG_NEWS
-
+# .. dropdown:: Loading the data
 def load_data(train_ratio, fast=False):
     train_iter, test_iter = AG_NEWS()
     train_dataset = to_map_style_dataset(train_iter)
@@ -103,7 +105,7 @@ def load_data(train_ratio, fast=False):
 #   label_pipeline('10')
 #   >>> 9 
 
-# %%
+# .. dropdown:: Code to tokenize and build vocabulary for text processing
 train_iter = AG_NEWS(split='train')
 num_class = 4
 
@@ -143,11 +145,11 @@ def collate_batch(batch, device):
 # 
 # The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag>`_ layer plus a linear layer for the classification purpose.
 
-# %%
+# .. dropdown:: Defining the Text Classification model
 class TextClassificationModel(nn.Module):
 
     def __init__(self, vocab_size, embed_dim, num_class):
-        super(TextClassificationModel, self).__init__()
+        super().__init__()
         self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=False)
         self.fc = nn.Linear(embed_dim, num_class)
         self.init_weights()
@@ -166,7 +168,7 @@ class TextClassificationModel(nn.Module):
 # Define functions to train the model and evaluate results.
 # ---------------------------------------------------------
 
-# %%
+# .. dropdown:: Define the training and evaluation of the Text Classification model
 def train(model, criterion, optimizer, dataloader):
     model.train()
 
@@ -201,7 +203,7 @@ def evaluate(model, dataloader):
 # 
 # A hyperparameter value can be acessed easily in the dictionary through the corresponding key, for example :code:`config["units"]`.
 
-# %%
+# .. dropdown:: Run the Text Classification model
 def get_run(train_ratio=0.95):
   def run(config: dict):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
