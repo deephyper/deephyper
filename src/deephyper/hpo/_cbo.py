@@ -67,6 +67,7 @@ class AcqOptimizerKwargs(BaseModel):
     acq_optimizer_freq: Optional[int] = 1
     n_jobs: Optional[int] = 1
     n_restarts_optimizer: Optional[int] = 1
+    outliers_iqr_factor: Optional[float] = 1.5
     # Genetic algorithms parameters
     ga_pop_size: Optional[int] = 100
     ga_xtol: Optional[float] = 1e-8
@@ -334,8 +335,12 @@ class CBO(Search):
             "DUMMY",
         ]
 
-        surrogate_model_kwargs = {} if surrogate_model_kwargs is None else surrogate_model_kwargs
-        self._surrogate_model_kwargs = SurrogateModelKwargs(**surrogate_model_kwargs).model_dump()
+        surrogate_model_kwargs = (
+            {} if surrogate_model_kwargs is None else surrogate_model_kwargs
+        )
+        self._surrogate_model_kwargs = SurrogateModelKwargs(
+            **surrogate_model_kwargs
+        ).model_dump()
 
         base_estimator_scheduler = self._surrogate_model_kwargs.pop("scheduler")
 
@@ -373,8 +378,12 @@ class CBO(Search):
         acq_func_kwargs = {} if acq_func_kwargs is None else acq_func_kwargs
         self._acq_func_kwargs = AcqFuncKwargs(**acq_func_kwargs).model_dump()
 
-        acq_optimizer_kwargs = {} if acq_optimizer_kwargs is None else acq_optimizer_kwargs
-        self._acq_optimizer_kwargs = AcqOptimizerKwargs(**acq_optimizer_kwargs).model_dump()
+        acq_optimizer_kwargs = (
+            {} if acq_optimizer_kwargs is None else acq_optimizer_kwargs
+        )
+        self._acq_optimizer_kwargs = AcqOptimizerKwargs(
+            **acq_optimizer_kwargs
+        ).model_dump()
 
         # Initialize lower bounds for objectives
         if moo_lower_bounds is None:
@@ -383,7 +392,8 @@ class CBO(Search):
             [isinstance(lbi, numbers.Number) or lbi is None for lbi in moo_lower_bounds]
         ):
             self._moo_upper_bounds = [
-                -lbi if isinstance(lbi, numbers.Number) else None for lbi in moo_lower_bounds
+                -lbi if isinstance(lbi, numbers.Number) else None
+                for lbi in moo_lower_bounds
             ]
         else:
             raise ValueError(
@@ -466,12 +476,13 @@ class CBO(Search):
             moo_scalarization_strategy=self._moo_scalarization_strategy,
             moo_scalarization_weight=self._moo_scalarization_weight,
             objective_scaler=objective_scaler,
+            outliers_iqr_factor=self._acq_optimizer_kwargs.get("outliers_iqr_factor"),
         )
 
         # Scheduler policy
         scheduler = self._acq_func_kwargs["scheduler"]
         scheduler = {"type": "bandit"} if scheduler is None else scheduler
-        if scheduler["delay"] == "n-initial-points":
+        if scheduler is not None and scheduler["delay"] == "n-initial-points":
             scheduler["delay"] = self._n_initial_points
 
         self.scheduler = None
@@ -513,7 +524,9 @@ class CBO(Search):
                 }
                 scheduler_func = scheduler_bandit
 
-            eta_0 = np.array([self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]])
+            eta_0 = np.array(
+                [self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]]
+            )
             self.scheduler = functools.partial(
                 scheduler_func,
                 eta_0=eta_0,
@@ -526,7 +539,9 @@ class CBO(Search):
         elif callable(scheduler):
             self.scheduler = functools.partial(
                 scheduler,
-                eta_0=np.array([self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]]),
+                eta_0=np.array(
+                    [self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]]
+                ),
             )
             logging.info(f"Set up scheduler '{scheduler}'")
 
@@ -542,7 +557,9 @@ class CBO(Search):
         if self.scheduler is not None:
             kappa, xi = self.scheduler(i)
             values = {"kappa": float(kappa), "xi": float(xi)}
-            logging.info(f"Updated exploration-exploitation policy with {values} from scheduler")
+            logging.info(
+                f"Updated exploration-exploitation policy with {values} from scheduler"
+            )
             self._opt.acq_func_kwargs.update(values)
 
     def _ask(self, n: int = 1) -> List[Dict]:
@@ -584,7 +601,10 @@ class CBO(Search):
             elif (type(obj) is str and "F" == obj[0]) or any(
                 type(obj_i) is str and "F" == obj_i[0] for obj_i in obj
             ):
-                if self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"] == "ignore":
+                if (
+                    self._opt_kwargs["acq_optimizer_kwargs"]["filter_failures"]
+                    == "ignore"
+                ):
                     continue
                 else:
                     opt_X.append(x)
@@ -778,7 +798,9 @@ class CBO(Search):
         >>> search.fit_surrogate("results.csv")
         """
         if type(df) is not str and not isinstance(df, pd.DataFrame):
-            raise ValueError("The argument 'df' should be a path to a CSV file or a DataFrame!")
+            raise ValueError(
+                "The argument 'df' should be a path to a CSV file or a DataFrame!"
+            )
 
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
@@ -801,7 +823,9 @@ class CBO(Search):
             else:
                 y = df.filter(regex=r"^objective_\d+$").values.tolist()
         except KeyError:
-            raise ValueError("Incompatible dataframe 'df' to fit surrogate model of CBO.")
+            raise ValueError(
+                "Incompatible dataframe 'df' to fit surrogate model of CBO."
+            )
 
         y = [np.negative(yi).tolist() for yi in y] + ["F"] * len(df_failures)
 
@@ -881,7 +905,9 @@ class CBO(Search):
             req_df = df.loc[top]
 
         req_df = req_df[hp_cols]
-        req_df = req_df.rename(columns={k: k[2:] for k in hp_cols if k.startswith("p:")})
+        req_df = req_df.rename(
+            columns={k: k[2:] for k in hp_cols if k.startswith("p:")}
+        )
 
         model = GMMSampler(self._problem.space, random_state=self._random_state)
         model.fit(req_df)
@@ -938,7 +964,9 @@ class CBO(Search):
             best_index = np.argmax(res_df["objective"].values)
             best_param = res_df.iloc[best_index]
         else:
-            best_index = non_dominated_set(-np.asarray(res_df[objcol]), return_mask=False)[0]
+            best_index = non_dominated_set(
+                -np.asarray(res_df[objcol]), return_mask=False
+            )[0]
             best_param = res_df.iloc[best_index]
 
         cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**31))
@@ -993,7 +1021,9 @@ class CBO(Search):
                     logging.warning(f"Not fitting {hp} because it is not supported!")
                     cst_new.add(hp)
             else:
-                logging.warning(f"Not fitting {hp} because it was not found in the dataframe!")
+                logging.warning(
+                    f"Not fitting {hp} because it was not found in the dataframe!"
+                )
                 cst_new.add(hp)
 
         # For conditions
@@ -1019,7 +1049,10 @@ class CBO(Search):
                 for comp in cond.components:
                     cond_list.append(self._return_forbid(comp, cst_new))
                 cond_new = CS.ForbiddenAndConjunction(*cond_list)
-            elif type(cond) is CS.ForbiddenEqualsClause or type(cond) is CS.ForbiddenInClause:
+            elif (
+                type(cond) is CS.ForbiddenEqualsClause
+                or type(cond) is CS.ForbiddenInClause
+            ):
                 cond_new = self._return_forbid(cond, cst_new)
             else:
                 logging.warning(f"Forbidden {type(cond)} is not implemented!")
