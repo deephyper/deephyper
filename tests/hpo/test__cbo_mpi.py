@@ -42,6 +42,7 @@ def _test_mpi_timeout(tmp_path):
     if evaluator.is_master:
         duration = time.time() - t1
         print(f"DEEPHYPER-OUTPUT: {duration}")
+    evaluator.close()
 
 
 @pytest.mark.mpi

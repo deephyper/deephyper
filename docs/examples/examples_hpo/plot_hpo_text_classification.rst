@@ -29,39 +29,42 @@ In this tutorial we present how to use hyperparameter optimization on a text cla
 **Reference**:
 This tutorial is based on materials from the Pytorch Documentation: `Text classification with the torchtext library <https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html>`_
 
-.. GENERATED FROM PYTHON SOURCE LINES 15-21
+.. GENERATED FROM PYTHON SOURCE LINES 15-19
 
 .. code-block:: bash
 
     %%bash
-    pip install deephyper
-    pip install ray
-    pip install torch torchtext torchdata
+    pip install deephyper ray numpy==1.26.4 torch torchtext==0.17.2 torchdata==0.7.1 'portalocker>=2.0.0'
 
-.. GENERATED FROM PYTHON SOURCE LINES 24-26
+.. GENERATED FROM PYTHON SOURCE LINES 22-26
 
 Imports
 -------
 
-.. GENERATED FROM PYTHON SOURCE LINES 28-44
+All imports used in the tutorial are declared at the top of the file.
 
-.. code-block:: Python
+.. GENERATED FROM PYTHON SOURCE LINES 26-44
 
-    import ray
-    import json
-    import pandas as pd
-    from functools import partial
+.. dropdown:: Code (Imports)
 
-    import torch
+    .. code-block:: Python
 
-    from torchtext.data.utils import get_tokenizer
-    from torchtext.data.functional import to_map_style_dataset
-    from torchtext.vocab import build_vocab_from_iterator
 
-    from torch.utils.data import DataLoader
-    from torch.utils.data.dataset import random_split
+        import ray
+        import json
+        from functools import partial
 
-    from torch import nn
+        import torch
+
+        from torchtext.data.utils import get_tokenizer
+        from torchtext.data.functional import to_map_style_dataset
+        from torchtext.vocab import build_vocab_from_iterator
+        from torchtext.datasets import AG_NEWS
+
+        from torch.utils.data import DataLoader
+        from torch.utils.data.dataset import random_split
+
+        from torch import nn
 
 
 
@@ -73,24 +76,31 @@ Imports
 .. GENERATED FROM PYTHON SOURCE LINES 45-48
 
 .. note::
-  The following can be used to detect if <b>CUDA</b> devices are available on the current host. Therefore, this notebook will automatically adapt the parallel execution based on the ressources available locally. However, it will not be the case if many compute nodes are requested.
+  The following can be used to detect if **CUDA** devices are available on the current host. Therefore, this notebook will automatically adapt the parallel execution based on the ressources available locally. However, it will not be the case if many compute nodes are requested.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 50-53
+.. GENERATED FROM PYTHON SOURCE LINES 50-51
 
-.. code-block:: Python
+If GPU is available, this code will enabled the tutorial to use the GPU for pytorch operations.
 
-    is_gpu_available = torch.cuda.is_available()
-    n_gpus = torch.cuda.device_count()
+.. GENERATED FROM PYTHON SOURCE LINES 52-57
 
+.. dropdown:: Code (Code to check if using CPU or GPU)
 
-
-
-
+    .. code-block:: Python
 
 
+        is_gpu_available = torch.cuda.is_available()
+        n_gpus = torch.cuda.device_count()
 
-.. GENERATED FROM PYTHON SOURCE LINES 54-59
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 58-63
 
 The dataset
 -----------
@@ -98,36 +108,37 @@ The dataset
 The torchtext library provides a few raw dataset iterators, which yield the raw text strings. For example, the :code:`AG_NEWS` dataset iterators yield the raw data as a tuple of label and text. It has four labels (1 : World 2 : Sports 3 : Business 4 : Sci/Tec).
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-79
+.. GENERATED FROM PYTHON SOURCE LINES 63-81
 
-.. code-block:: Python
+.. dropdown:: Code (Loading the data)
 
-    from torchtext.datasets import AG_NEWS
+    .. code-block:: Python
 
-    def load_data(train_ratio, fast=False):
-        train_iter, test_iter = AG_NEWS()
-        train_dataset = to_map_style_dataset(train_iter)
-        test_dataset = to_map_style_dataset(test_iter)
-        num_train = int(len(train_dataset) * train_ratio)
-        split_train, split_valid = \
-            random_split(train_dataset, [num_train, len(train_dataset) - num_train])
+
+        def load_data(train_ratio, fast=False):
+            train_iter, test_iter = AG_NEWS()
+            train_dataset = to_map_style_dataset(train_iter)
+            test_dataset = to_map_style_dataset(test_iter)
+            num_train = int(len(train_dataset) * train_ratio)
+            split_train, split_valid = \
+                random_split(train_dataset, [num_train, len(train_dataset) - num_train])
     
-        ## downsample
-        if fast:
-            split_train, _ = random_split(split_train, [int(len(split_train)*.05), int(len(split_train)*.95)])
-            split_valid, _ = random_split(split_valid, [int(len(split_valid)*.05), int(len(split_valid)*.95)])
-            test_dataset, _ = random_split(test_dataset, [int(len(test_dataset)*.05), int(len(test_dataset)*.95)])
+            ## downsample
+            if fast:
+                split_train, _ = random_split(split_train, [int(len(split_train)*.05), int(len(split_train)*.95)])
+                split_valid, _ = random_split(split_valid, [int(len(split_valid)*.05), int(len(split_valid)*.95)])
+                test_dataset, _ = random_split(test_dataset, [int(len(test_dataset)*.05), int(len(test_dataset)*.95)])
 
-        return split_train, split_valid, test_dataset
-
-
+            return split_train, split_valid, test_dataset
 
 
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 80-88
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 82-90
 
 Preprocessing pipelines and Batch generation
 --------------------------------------------
@@ -138,18 +149,18 @@ vocabulary.
 
 The vocabulary block converts a list of tokens into integers.
 
-.. GENERATED FROM PYTHON SOURCE LINES 90-94
+.. GENERATED FROM PYTHON SOURCE LINES 92-96
 
 .. code-block:: python
 
   vocab(['here', 'is', 'an', 'example'])
   >>> [475, 21, 30, 5286]
 
-.. GENERATED FROM PYTHON SOURCE LINES 96-97
+.. GENERATED FROM PYTHON SOURCE LINES 98-99
 
 The text pipeline converts a text string into a list of integers based on the lookup table defined in the vocabulary. The label pipeline converts the label into integers. For example,
 
-.. GENERATED FROM PYTHON SOURCE LINES 99-105
+.. GENERATED FROM PYTHON SOURCE LINES 101-107
 
 .. code-block:: python
 
@@ -158,117 +169,126 @@ The text pipeline converts a text string into a list of integers based on the lo
   label_pipeline('10')
   >>> 9 
 
-.. GENERATED FROM PYTHON SOURCE LINES 107-136
+.. GENERATED FROM PYTHON SOURCE LINES 107-138
 
-.. code-block:: Python
+.. dropdown:: Code (Code to tokenize and build vocabulary for text processing)
 
-    train_iter = AG_NEWS(split='train')
-    num_class = 4
-
-    tokenizer = get_tokenizer('basic_english')
-
-    def yield_tokens(data_iter):
-        for _, text in data_iter:
-            yield tokenizer(text)
-
-    vocab = build_vocab_from_iterator(yield_tokens(train_iter), specials=["<unk>"])
-    vocab.set_default_index(vocab["<unk>"])
-    vocab_size = len(vocab)
-
-    text_pipeline = lambda x: vocab(tokenizer(x))
-    label_pipeline = lambda x: int(x) - 1
+    .. code-block:: Python
 
 
-    def collate_batch(batch, device):
-        label_list, text_list, offsets = [], [], [0]
-        for (_label, _text) in batch:
-            label_list.append(label_pipeline(_label))
-            processed_text = torch.tensor(text_pipeline(_text), dtype=torch.int64)
-            text_list.append(processed_text)
-            offsets.append(processed_text.size(0))
-        label_list = torch.tensor(label_list, dtype=torch.int64)
-        offsets = torch.tensor(offsets[:-1]).cumsum(dim=0)
-        text_list = torch.cat(text_list)
-        return label_list.to(device), text_list.to(device), offsets.to(device)
+        train_iter = AG_NEWS(split='train')
+        num_class = 4
+
+        tokenizer = get_tokenizer('basic_english')
+
+        def yield_tokens(data_iter):
+            for _, text in data_iter:
+                yield tokenizer(text)
+
+        vocab = build_vocab_from_iterator(yield_tokens(train_iter), specials=["<unk>"])
+        vocab.set_default_index(vocab["<unk>"])
+        vocab_size = len(vocab)
+
+        text_pipeline = lambda x: vocab(tokenizer(x))
+        label_pipeline = lambda x: int(x) - 1
 
 
-
-
-
+        def collate_batch(batch, device):
+            label_list, text_list, offsets = [], [], [0]
+            for (_label, _text) in batch:
+                label_list.append(label_pipeline(_label))
+                processed_text = torch.tensor(text_pipeline(_text), dtype=torch.int64)
+                text_list.append(processed_text)
+                offsets.append(processed_text.size(0))
+            label_list = torch.tensor(label_list, dtype=torch.int64)
+            offsets = torch.tensor(offsets[:-1]).cumsum(dim=0)
+            text_list = torch.cat(text_list)
+            return label_list.to(device), text_list.to(device), offsets.to(device)
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-139
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 139-141
 
 .. note:: The :code:`collate_fn` function works on a batch of samples generated from :code:`DataLoader`. The input to :code:`collate_fn` is a batch of data with the batch size in :code:`DataLoader`, and :code:`collate_fn` processes them according to the data processing pipelines declared previously.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 141-145
+.. GENERATED FROM PYTHON SOURCE LINES 143-147
 
 Define the model
 ----------------
 
 The model is composed of the `nn.EmbeddingBag <https://pytorch.org/docs/stable/nn.html?highlight=embeddingbag#torch.nn.EmbeddingBag>`_ layer plus a linear layer for the classification purpose.
 
-.. GENERATED FROM PYTHON SOURCE LINES 147-165
+.. GENERATED FROM PYTHON SOURCE LINES 147-167
 
-.. code-block:: Python
+.. dropdown:: Code (Defining the Text Classification model)
 
-    class TextClassificationModel(nn.Module):
-
-        def __init__(self, vocab_size, embed_dim, num_class):
-            super(TextClassificationModel, self).__init__()
-            self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=False)
-            self.fc = nn.Linear(embed_dim, num_class)
-            self.init_weights()
-
-        def init_weights(self):
-            initrange = 0.5
-            self.embedding.weight.data.uniform_(-initrange, initrange)
-            self.fc.weight.data.uniform_(-initrange, initrange)
-            self.fc.bias.data.zero_()
-
-        def forward(self, text, offsets):
-            embedded = self.embedding(text, offsets)
-            return self.fc(embedded)
+    .. code-block:: Python
 
 
+        class TextClassificationModel(nn.Module):
 
+            def __init__(self, vocab_size, embed_dim, num_class):
+                super().__init__()
+                self.embedding = nn.EmbeddingBag(vocab_size, embed_dim, sparse=False)
+                self.fc = nn.Linear(embed_dim, num_class)
+                self.init_weights()
 
+            def init_weights(self):
+                initrange = 0.5
+                self.embedding.weight.data.uniform_(-initrange, initrange)
+                self.fc.weight.data.uniform_(-initrange, initrange)
+                self.fc.bias.data.zero_()
 
+            def forward(self, text, offsets):
+                embedded = self.embedding(text, offsets)
+                return self.fc(embedded)
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 166-168
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 168-170
 
 Define functions to train the model and evaluate results.
 ---------------------------------------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 170-192
+.. GENERATED FROM PYTHON SOURCE LINES 170-194
 
-.. code-block:: Python
+.. dropdown:: Code (Define the training and evaluation of the Text Classification model)
 
-    def train(model, criterion, optimizer, dataloader):
-        model.train()
+    .. code-block:: Python
 
-        for _, (label, text, offsets) in enumerate(dataloader):
-            optimizer.zero_grad()
-            predicted_label = model(text, offsets)
-            loss = criterion(predicted_label, label)
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
-            optimizer.step()
 
-    def evaluate(model, dataloader):
-        model.eval()
-        total_acc, total_count = 0, 0
+        def train(model, criterion, optimizer, dataloader):
+            model.train()
 
-        with torch.no_grad():
             for _, (label, text, offsets) in enumerate(dataloader):
+                optimizer.zero_grad()
                 predicted_label = model(text, offsets)
-                total_acc += (predicted_label.argmax(1) == label).sum().item()
-                total_count += label.size(0)
-        return total_acc/total_count
+                loss = criterion(predicted_label, label)
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
+                optimizer.step()
+
+        def evaluate(model, dataloader):
+            model.eval()
+            total_acc, total_count = 0, 0
+
+            with torch.no_grad():
+                for _, (label, text, offsets) in enumerate(dataloader):
+                    predicted_label = model(text, offsets)
+                    total_acc += (predicted_label.argmax(1) == label).sum().item()
+                    total_count += label.size(0)
+            return total_acc/total_count
 
 
 
@@ -277,7 +297,7 @@ Define functions to train the model and evaluate results.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 193-203
+.. GENERATED FROM PYTHON SOURCE LINES 195-205
 
 Define the run-function
 -----------------------
@@ -290,34 +310,37 @@ The run-function defines how the objective that we want to maximize is computed.
 
 A hyperparameter value can be acessed easily in the dictionary through the corresponding key, for example :code:`config["units"]`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 205-230
+.. GENERATED FROM PYTHON SOURCE LINES 205-232
 
-.. code-block:: Python
+.. dropdown:: Code (Run the Text Classification model)
 
-    def get_run(train_ratio=0.95):
-      def run(config: dict):
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    .. code-block:: Python
 
-        embed_dim = 64
+
+        def get_run(train_ratio=0.95):
+          def run(config: dict):
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+            embed_dim = 64
     
-        collate_fn = partial(collate_batch, device=device)
-        split_train, split_valid, _ = load_data(train_ratio, fast=True) # set fast=false for longer running, more accurate example
-        train_dataloader = DataLoader(split_train, batch_size=int(config["batch_size"]),
-                                    shuffle=True, collate_fn=collate_fn)
-        valid_dataloader = DataLoader(split_valid, batch_size=int(config["batch_size"]),
-                                    shuffle=True, collate_fn=collate_fn)
+            collate_fn = partial(collate_batch, device=device)
+            split_train, split_valid, _ = load_data(train_ratio, fast=True) # set fast=false for longer running, more accurate example
+            train_dataloader = DataLoader(split_train, batch_size=int(config["batch_size"]),
+                                        shuffle=True, collate_fn=collate_fn)
+            valid_dataloader = DataLoader(split_valid, batch_size=int(config["batch_size"]),
+                                        shuffle=True, collate_fn=collate_fn)
 
-        model = TextClassificationModel(vocab_size, int(embed_dim), num_class).to(device)
+            model = TextClassificationModel(vocab_size, int(embed_dim), num_class).to(device)
       
-        criterion = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.SGD(model.parameters(), lr=config["learning_rate"])
+            criterion = torch.nn.CrossEntropyLoss()
+            optimizer = torch.optim.SGD(model.parameters(), lr=config["learning_rate"])
 
-        for _ in range(1, int(config["num_epochs"]) + 1):
-            train(model, criterion, optimizer, train_dataloader)
+            for _ in range(1, int(config["num_epochs"]) + 1):
+                train(model, criterion, optimizer, train_dataloader)
     
-        accu_test = evaluate(model, valid_dataloader)
-        return accu_test
-      return run
+            accu_test = evaluate(model, valid_dataloader)
+            return accu_test
+          return run
 
 
 
@@ -326,11 +349,11 @@ A hyperparameter value can be acessed easily in the dictionary through the corre
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 231-232
+.. GENERATED FROM PYTHON SOURCE LINES 233-234
 
 We create two versions of :code:`run`, one quicker to evaluate for the search, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
 
-.. GENERATED FROM PYTHON SOURCE LINES 234-237
+.. GENERATED FROM PYTHON SOURCE LINES 236-239
 
 .. code-block:: Python
 
@@ -344,13 +367,13 @@ We create two versions of :code:`run`, one quicker to evaluate for the search, w
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 238-241
+.. GENERATED FROM PYTHON SOURCE LINES 240-243
 
 .. note:: The objective maximised by DeepHyper is the scalar value returned by the :code:`run`-function.
 
 In this tutorial it corresponds to the validation accuracy of the model after training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 243-253
+.. GENERATED FROM PYTHON SOURCE LINES 245-255
 
 Define the Hyperparameter optimization problem
 ---------------------------------------------- 
@@ -363,7 +386,7 @@ Hyperparameter ranges are defined using the following syntax:
 
 We provide the default configuration of hyperparameters as a starting point of the problem.
 
-.. GENERATED FROM PYTHON SOURCE LINES 255-268
+.. GENERATED FROM PYTHON SOURCE LINES 257-270
 
 .. code-block:: Python
 
@@ -398,14 +421,14 @@ We provide the default configuration of hyperparameters as a starting point of t
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 269-273
+.. GENERATED FROM PYTHON SOURCE LINES 271-275
 
 Evaluate a default configuration
 --------------------------------
 
 We evaluate the performance of the default set of hyperparameters provided in the Pytorch tutorial.
 
-.. GENERATED FROM PYTHON SOURCE LINES 273-290
+.. GENERATED FROM PYTHON SOURCE LINES 275-292
 
 .. code-block:: Python
 
@@ -434,13 +457,13 @@ We evaluate the performance of the default set of hyperparameters provided in th
 
  .. code-block:: none
 
-    2025-03-18 00:44:17,179 INFO worker.py:1832 -- Started a local Ray instance. View the dashboard at http://127.0.0.1:8265 
-    Accuracy Default Configuration:  0.867
+    2025-04-22 17:20:37,925 INFO worker.py:1852 -- Started a local Ray instance.
+    Accuracy Default Configuration:  0.823
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 291-297
+.. GENERATED FROM PYTHON SOURCE LINES 293-299
 
 Define the evaluator object
 ---------------------------
@@ -449,19 +472,19 @@ The :code:`Evaluator` object allows to change the parallelization backend used b
 It is a standalone object which schedules the execution of remote tasks. All evaluators needs a :code:`run_function` to be instantiated.  
 Then a keyword :code:`method` defines the backend (e.g., :code:`"ray"`) and the :code:`method_kwargs` corresponds to keyword arguments of this chosen :code:`method`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 299-302
+.. GENERATED FROM PYTHON SOURCE LINES 301-304
 
 .. code-block:: python
 
   evaluator = Evaluator.create(run_function, method, method_kwargs)
 
-.. GENERATED FROM PYTHON SOURCE LINES 304-307
+.. GENERATED FROM PYTHON SOURCE LINES 306-309
 
 Once created the :code:`evaluator.num_workers` gives access to the number of available parallel workers.
 
 Finally, to submit and collect tasks to the evaluator one just needs to use the following interface:
 
-.. GENERATED FROM PYTHON SOURCE LINES 309-316
+.. GENERATED FROM PYTHON SOURCE LINES 311-318
 
 .. code-block:: python
 
@@ -471,11 +494,11 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
 	tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
 	tasks_done = evaluator.get("ALL") # For batch synchronous
 
-.. GENERATED FROM PYTHON SOURCE LINES 318-319
+.. GENERATED FROM PYTHON SOURCE LINES 320-321
 
 .. warning:: Each `Evaluator` saves its own state, therefore it is crucial to create a new evaluator when launching a fresh search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 321-351
+.. GENERATED FROM PYTHON SOURCE LINES 323-353
 
 .. code-block:: Python
 
@@ -517,19 +540,19 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
 
  .. code-block:: none
 
-    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x1339d1e20>]}
+    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x12fdeaab0>]}
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 352-356
+.. GENERATED FROM PYTHON SOURCE LINES 354-358
 
 Define and run the Centralized Bayesian Optimization search (CBO)
 -----------------------------------------------------------------
 
 We create the CBO using the :code:`problem` and :code:`evaluator` defined above.
 
-.. GENERATED FROM PYTHON SOURCE LINES 358-360
+.. GENERATED FROM PYTHON SOURCE LINES 360-362
 
 .. code-block:: Python
 
@@ -542,11 +565,11 @@ We create the CBO using the :code:`problem` and :code:`evaluator` defined above.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 361-362
+.. GENERATED FROM PYTHON SOURCE LINES 363-364
 
 Instanciate the search with the problem and a specific evaluator
 
-.. GENERATED FROM PYTHON SOURCE LINES 362-364
+.. GENERATED FROM PYTHON SOURCE LINES 364-366
 
 .. code-block:: Python
 
@@ -560,12 +583,12 @@ Instanciate the search with the problem and a specific evaluator
 
  .. code-block:: none
 
-    WARNING:root:Results file already exists, it will be renamed to /Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/results_20250318-004434.csv
+    WARNING:root:Results file already exists, it will be renamed to /Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/results_20250422-172057.csv
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 365-370
+.. GENERATED FROM PYTHON SOURCE LINES 367-372
 
 .. note:: 
   All DeepHyper's search algorithm have two stopping criteria:
@@ -573,7 +596,7 @@ Instanciate the search with the problem and a specific evaluator
       * :code:`timeout (int)`: Defines a time budget (in seconds) before stopping the search. Default to :code:`None` for an infinite time budget.
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 372-374
+.. GENERATED FROM PYTHON SOURCE LINES 374-376
 
 .. code-block:: Python
 
@@ -587,11 +610,12 @@ Instanciate the search with the problem and a specific evaluator
 
  .. code-block:: none
 
-      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 1901.32it/s, failures=0, objective=0.357]      7%|▋         | 2/30 [00:04<01:08,  2.46s/it, failures=0, objective=0.357]        7%|▋         | 2/30 [00:04<01:08,  2.46s/it, failures=0, objective=0.357]     10%|█         | 3/30 [00:09<01:29,  3.30s/it, failures=0, objective=0.357]     10%|█         | 3/30 [00:09<01:29,  3.30s/it, failures=0, objective=0.357]     13%|█▎        | 4/30 [00:13<01:29,  3.45s/it, failures=0, objective=0.357]     13%|█▎        | 4/30 [00:13<01:29,  3.45s/it, failures=0, objective=0.576]     17%|█▋        | 5/30 [00:48<06:05, 14.63s/it, failures=0, objective=0.576]     17%|█▋        | 5/30 [00:48<06:05, 14.63s/it, failures=0, objective=0.586]     20%|██        | 6/30 [01:02<05:41, 14.24s/it, failures=0, objective=0.586]     20%|██        | 6/30 [01:02<05:41, 14.24s/it, failures=0, objective=0.586]     23%|██▎       | 7/30 [01:04<04:03, 10.57s/it, failures=0, objective=0.586]     23%|██▎       | 7/30 [01:04<04:03, 10.57s/it, failures=0, objective=0.586]     27%|██▋       | 8/30 [01:08<03:06,  8.48s/it, failures=0, objective=0.586]     27%|██▋       | 8/30 [01:08<03:06,  8.48s/it, failures=0, objective=0.586]     30%|███       | 9/30 [01:12<02:26,  6.97s/it, failures=0, objective=0.586]     30%|███       | 9/30 [01:12<02:26,  6.97s/it, failures=0, objective=0.586]     33%|███▎      | 10/30 [01:20<02:25,  7.28s/it, failures=0, objective=0.586]     33%|███▎      | 10/30 [01:20<02:25,  7.28s/it, failures=0, objective=0.776]     37%|███▋      | 11/30 [01:25<02:07,  6.71s/it, failures=0, objective=0.776]     37%|███▋      | 11/30 [01:25<02:07,  6.71s/it, failures=0, objective=0.776]     40%|████      | 12/30 [01:32<02:01,  6.78s/it, failures=0, objective=0.776]     40%|████      | 12/30 [01:32<02:01,  6.78s/it, failures=0, objective=0.776]     43%|████▎     | 13/30 [01:41<02:03,  7.27s/it, failures=0, objective=0.776]     43%|████▎     | 13/30 [01:41<02:03,  7.27s/it, failures=0, objective=0.776]     47%|████▋     | 14/30 [01:50<02:05,  7.83s/it, failures=0, objective=0.776]     47%|████▋     | 14/30 [01:50<02:05,  7.83s/it, failures=0, objective=0.794]     50%|█████     | 15/30 [01:56<01:51,  7.44s/it, failures=0, objective=0.794]     50%|█████     | 15/30 [01:56<01:51,  7.44s/it, failures=0, objective=0.797]     53%|█████▎    | 16/30 [02:03<01:38,  7.04s/it, failures=0, objective=0.797]     53%|█████▎    | 16/30 [02:03<01:38,  7.04s/it, failures=0, objective=0.805]     57%|█████▋    | 17/30 [02:08<01:24,  6.48s/it, failures=0, objective=0.805]     57%|█████▋    | 17/30 [02:08<01:24,  6.48s/it, failures=0, objective=0.805]     60%|██████    | 18/30 [02:10<01:03,  5.27s/it, failures=0, objective=0.805]     60%|██████    | 18/30 [02:10<01:03,  5.27s/it, failures=0, objective=0.805]     63%|██████▎   | 19/30 [02:16<00:59,  5.43s/it, failures=0, objective=0.805]     63%|██████▎   | 19/30 [02:16<00:59,  5.43s/it, failures=0, objective=0.805]     67%|██████▋   | 20/30 [02:23<00:58,  5.84s/it, failures=0, objective=0.805]     67%|██████▋   | 20/30 [02:23<00:58,  5.84s/it, failures=0, objective=0.805]     70%|███████   | 21/30 [02:28<00:50,  5.65s/it, failures=0, objective=0.805]     70%|███████   | 21/30 [02:28<00:50,  5.65s/it, failures=0, objective=0.805]     73%|███████▎  | 22/30 [02:33<00:44,  5.58s/it, failures=0, objective=0.805]     73%|███████▎  | 22/30 [02:33<00:44,  5.58s/it, failures=0, objective=0.805]     77%|███████▋  | 23/30 [02:39<00:40,  5.73s/it, failures=0, objective=0.805]     77%|███████▋  | 23/30 [02:39<00:40,  5.73s/it, failures=0, objective=0.805]     80%|████████  | 24/30 [03:01<01:03, 10.59s/it, failures=0, objective=0.805]     80%|████████  | 24/30 [03:01<01:03, 10.59s/it, failures=0, objective=0.814]     83%|████████▎ | 25/30 [03:27<01:15, 15.03s/it, failures=0, objective=0.814]     83%|████████▎ | 25/30 [03:27<01:15, 15.03s/it, failures=0, objective=0.814]     87%|████████▋ | 26/30 [03:50<01:09, 17.36s/it, failures=0, objective=0.814]     87%|████████▋ | 26/30 [03:50<01:09, 17.36s/it, failures=0, objective=0.814]     90%|█████████ | 27/30 [04:13<00:57, 19.06s/it, failures=0, objective=0.814]     90%|█████████ | 27/30 [04:13<00:57, 19.06s/it, failures=0, objective=0.814]     93%|█████████▎| 28/30 [04:31<00:37, 18.84s/it, failures=0, objective=0.814]     93%|█████████▎| 28/30 [04:31<00:37, 18.84s/it, failures=0, objective=0.814]     97%|█████████▋| 29/30 [05:12<00:25, 25.55s/it, failures=0, objective=0.814]     97%|█████████▋| 29/30 [05:12<00:25, 25.55s/it, failures=0, objective=0.814]    100%|██████████| 30/30 [05:32<00:00, 23.86s/it, failures=0, objective=0.814]    100%|██████████| 30/30 [05:32<00:00, 23.86s/it, failures=0, objective=0.814]
+      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 2053.01it/s, failures=0, objective=0.258]      7%|▋         | 2/30 [00:06<01:32,  3.30s/it, failures=0, objective=0.258]        7%|▋         | 2/30 [00:06<01:32,  3.30s/it, failures=0, objective=0.425]     10%|█         | 3/30 [00:21<03:43,  8.29s/it, failures=0, objective=0.425]     10%|█         | 3/30 [00:21<03:43,  8.29s/it, failures=0, objective=0.425]     13%|█▎        | 4/30 [00:31<03:48,  8.79s/it, failures=0, objective=0.425]     13%|█▎        | 4/30 [00:31<03:48,  8.79s/it, failures=0, objective=0.426]     17%|█▋        | 5/30 [00:40<03:44,  8.97s/it, failures=0, objective=0.426]     17%|█▋        | 5/30 [00:40<03:44,  8.97s/it, failures=0, objective=0.79]      20%|██        | 6/30 [01:15<07:02, 17.62s/it, failures=0, objective=0.79]     20%|██        | 6/30 [01:15<07:02, 17.62s/it, failures=0, objective=0.79]     23%|██▎       | 7/30 [01:30<06:24, 16.71s/it, failures=0, objective=0.79]     23%|██▎       | 7/30 [01:30<06:24, 16.71s/it, failures=0, objective=0.807]     27%|██▋       | 8/30 [01:34<04:39, 12.71s/it, failures=0, objective=0.807]     27%|██▋       | 8/30 [01:34<04:39, 12.71s/it, failures=0, objective=0.807]     30%|███       | 9/30 [01:50<04:49, 13.80s/it, failures=0, objective=0.807]     30%|███       | 9/30 [01:50<04:49, 13.80s/it, failures=0, objective=0.807]     33%|███▎      | 10/30 [02:03<04:26, 13.32s/it, failures=0, objective=0.807]     33%|███▎      | 10/30 [02:03<04:26, 13.32s/it, failures=0, objective=0.807]     37%|███▋      | 11/30 [02:21<04:44, 14.97s/it, failures=0, objective=0.807]     37%|███▋      | 11/30 [02:21<04:44, 14.97s/it, failures=0, objective=0.821]     40%|████      | 12/30 [02:54<06:07, 20.42s/it, failures=0, objective=0.821]     40%|████      | 12/30 [02:54<06:07, 20.42s/it, failures=0, objective=0.821]     43%|████▎     | 13/30 [03:03<04:45, 16.80s/it, failures=0, objective=0.821]     43%|████▎     | 13/30 [03:03<04:45, 16.80s/it, failures=0, objective=0.821]     47%|████▋     | 14/30 [03:41<06:13, 23.34s/it, failures=0, objective=0.821]     47%|████▋     | 14/30 [03:41<06:13, 23.34s/it, failures=0, objective=0.821]     50%|█████     | 15/30 [03:52<04:51, 19.43s/it, failures=0, objective=0.821]     50%|█████     | 15/30 [03:52<04:51, 19.43s/it, failures=0, objective=0.821]     53%|█████▎    | 16/30 [04:16<04:51, 20.84s/it, failures=0, objective=0.821]     53%|█████▎    | 16/30 [04:16<04:51, 20.84s/it, failures=0, objective=0.821]     57%|█████▋    | 17/30 [04:45<05:04, 23.40s/it, failures=0, objective=0.821]     57%|█████▋    | 17/30 [04:45<05:04, 23.40s/it, failures=0, objective=0.821]     60%|██████    | 18/30 [05:11<04:50, 24.21s/it, failures=0, objective=0.821]     60%|██████    | 18/30 [05:11<04:50, 24.21s/it, failures=0, objective=0.821]     63%|██████▎   | 19/30 [05:20<03:36, 19.66s/it, failures=0, objective=0.821]     63%|██████▎   | 19/30 [05:20<03:36, 19.66s/it, failures=0, objective=0.821]     67%|██████▋   | 20/30 [05:26<02:35, 15.58s/it, failures=0, objective=0.821]     67%|██████▋   | 20/30 [05:26<02:35, 15.58s/it, failures=0, objective=0.821]     70%|███████   | 21/30 [05:34<01:59, 13.26s/it, failures=0, objective=0.821]     70%|███████   | 21/30 [05:34<01:59, 13.26s/it, failures=0, objective=0.821]     73%|███████▎  | 22/30 [05:40<01:29, 11.14s/it, failures=0, objective=0.821]     73%|███████▎  | 22/30 [05:40<01:29, 11.14s/it, failures=0, objective=0.821]     77%|███████▋  | 23/30 [06:00<01:35, 13.58s/it, failures=0, objective=0.821]     77%|███████▋  | 23/30 [06:00<01:35, 13.58s/it, failures=0, objective=0.821]     80%|████████  | 24/30 [06:14<01:22, 13.69s/it, failures=0, objective=0.821]     80%|████████  | 24/30 [06:14<01:22, 13.69s/it, failures=0, objective=0.821]     83%|████████▎ | 25/30 [06:26<01:07, 13.44s/it, failures=0, objective=0.821]     83%|████████▎ | 25/30 [06:26<01:07, 13.44s/it, failures=0, objective=0.821]     87%|████████▋ | 26/30 [06:41<00:55, 13.93s/it, failures=0, objective=0.821]     87%|████████▋ | 26/30 [06:41<00:55, 13.93s/it, failures=0, objective=0.821]     90%|█████████ | 27/30 [07:09<00:53, 17.89s/it, failures=0, objective=0.821]     90%|█████████ | 27/30 [07:09<00:53, 17.89s/it, failures=0, objective=0.821]     93%|█████████▎| 28/30 [07:27<00:36, 18.18s/it, failures=0, objective=0.821]     93%|█████████▎| 28/30 [07:27<00:36, 18.18s/it, failures=0, objective=0.821]     97%|█████████▋| 29/30 [07:33<00:14, 14.30s/it, failures=0, objective=0.821]     97%|█████████▋| 29/30 [07:33<00:14, 14.30s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 17.71s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 17.71s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 15.96s/it, failures=0, objective=0.821]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 375-381
+
+.. GENERATED FROM PYTHON SOURCE LINES 377-383
 
 The returned :code:`results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
 
@@ -600,7 +624,7 @@ The returned :code:`results` is a Pandas Dataframe where columns are hyperparame
 * :code:`timestamp_submit` is the time (in seconds) when the hyperparameter configuration was submitted by the :code:`Evaluator` relative to the creation of the evaluator.
 * :code:`timestamp_gather` is the time (in seconds) when the hyperparameter configuration was collected by the :code:`Evaluator` relative to the creation of the evaluator.
 
-.. GENERATED FROM PYTHON SOURCE LINES 383-385
+.. GENERATED FROM PYTHON SOURCE LINES 385-387
 
 .. code-block:: Python
 
@@ -645,333 +669,333 @@ The returned :code:`results` is a Pandas Dataframe where columns are hyperparame
       <tbody>
         <tr>
           <th>0</th>
-          <td>218</td>
-          <td>1.603682</td>
-          <td>5</td>
-          <td>0.356667</td>
+          <td>263</td>
+          <td>0.307330</td>
+          <td>9</td>
+          <td>0.258095</td>
           <td>0</td>
           <td>DONE</td>
-          <td>1.201744</td>
-          <td>10.083410</td>
+          <td>3.127765</td>
+          <td>14.453226</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>154</td>
-          <td>0.105166</td>
-          <td>16</td>
-          <td>0.301429</td>
+          <td>184</td>
+          <td>0.619315</td>
+          <td>18</td>
+          <td>0.424762</td>
           <td>1</td>
           <td>DONE</td>
-          <td>10.165432</td>
-          <td>15.010249</td>
+          <td>14.539550</td>
+          <td>21.074172</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>200</td>
-          <td>0.144150</td>
-          <td>17</td>
-          <td>0.294762</td>
+          <td>11</td>
+          <td>0.267404</td>
+          <td>7</td>
+          <td>0.414048</td>
           <td>2</td>
           <td>DONE</td>
-          <td>15.043195</td>
-          <td>19.502163</td>
+          <td>21.106992</td>
+          <td>36.337234</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>286</td>
-          <td>3.508177</td>
-          <td>15</td>
-          <td>0.576190</td>
+          <td>16</td>
+          <td>0.327795</td>
+          <td>6</td>
+          <td>0.426429</td>
           <td>3</td>
           <td>DONE</td>
-          <td>19.533200</td>
-          <td>23.204575</td>
+          <td>36.368617</td>
+          <td>45.965276</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>10</td>
-          <td>0.374523</td>
-          <td>16</td>
-          <td>0.586190</td>
+          <td>23</td>
+          <td>5.655336</td>
+          <td>8</td>
+          <td>0.790000</td>
           <td>4</td>
           <td>DONE</td>
-          <td>23.234220</td>
-          <td>58.793532</td>
+          <td>45.995517</td>
+          <td>55.273026</td>
         </tr>
         <tr>
           <th>5</th>
-          <td>31</td>
-          <td>0.165805</td>
-          <td>16</td>
-          <td>0.398095</td>
+          <td>9</td>
+          <td>0.879577</td>
+          <td>13</td>
+          <td>0.699762</td>
           <td>5</td>
           <td>DONE</td>
-          <td>58.824440</td>
-          <td>72.247476</td>
+          <td>55.305938</td>
+          <td>90.301269</td>
         </tr>
         <tr>
           <th>6</th>
-          <td>356</td>
-          <td>0.135121</td>
-          <td>11</td>
-          <td>0.265238</td>
+          <td>32</td>
+          <td>8.432492</td>
+          <td>18</td>
+          <td>0.806905</td>
           <td>6</td>
           <td>DONE</td>
-          <td>72.277940</td>
-          <td>75.083312</td>
+          <td>90.331885</td>
+          <td>105.113069</td>
         </tr>
         <tr>
           <th>7</th>
-          <td>234</td>
-          <td>0.219208</td>
-          <td>15</td>
-          <td>0.308095</td>
+          <td>353</td>
+          <td>5.803402</td>
+          <td>13</td>
+          <td>0.586667</td>
           <td>7</td>
           <td>DONE</td>
-          <td>75.113756</td>
-          <td>79.015994</td>
+          <td>105.901583</td>
+          <td>109.096179</td>
         </tr>
         <tr>
           <th>8</th>
-          <td>239</td>
-          <td>0.949777</td>
-          <td>14</td>
-          <td>0.439048</td>
+          <td>32</td>
+          <td>4.693885</td>
+          <td>19</td>
+          <td>0.794524</td>
           <td>8</td>
           <td>DONE</td>
-          <td>79.045637</td>
-          <td>82.634237</td>
+          <td>109.777105</td>
+          <td>125.332508</td>
         </tr>
         <tr>
           <th>9</th>
-          <td>53</td>
-          <td>3.226746</td>
-          <td>14</td>
-          <td>0.776190</td>
+          <td>17</td>
+          <td>2.967434</td>
+          <td>8</td>
+          <td>0.762857</td>
           <td>9</td>
           <td>DONE</td>
-          <td>82.664993</td>
-          <td>90.600132</td>
+          <td>125.989688</td>
+          <td>137.581629</td>
         </tr>
         <tr>
           <th>10</th>
-          <td>42</td>
-          <td>3.250431</td>
-          <td>7</td>
-          <td>0.664048</td>
+          <td>29</td>
+          <td>3.046464</td>
+          <td>20</td>
+          <td>0.821190</td>
           <td>10</td>
           <td>DONE</td>
-          <td>90.804079</td>
-          <td>96.020963</td>
+          <td>138.640750</td>
+          <td>156.303423</td>
         </tr>
         <tr>
           <th>11</th>
-          <td>67</td>
-          <td>2.493013</td>
-          <td>14</td>
-          <td>0.702143</td>
+          <td>12</td>
+          <td>3.004998</td>
+          <td>17</td>
+          <td>0.804048</td>
           <td>11</td>
           <td>DONE</td>
-          <td>96.205311</td>
-          <td>102.946039</td>
+          <td>156.985886</td>
+          <td>189.248511</td>
         </tr>
         <tr>
           <th>12</th>
-          <td>52</td>
-          <td>1.969489</td>
-          <td>14</td>
-          <td>0.706429</td>
+          <td>66</td>
+          <td>4.342034</td>
+          <td>16</td>
+          <td>0.783810</td>
           <td>12</td>
           <td>DONE</td>
-          <td>103.129317</td>
-          <td>111.346218</td>
+          <td>189.890529</td>
+          <td>197.676170</td>
         </tr>
         <tr>
           <th>13</th>
-          <td>53</td>
-          <td>5.363429</td>
-          <td>16</td>
-          <td>0.793810</td>
+          <td>12</td>
+          <td>4.922773</td>
+          <td>20</td>
+          <td>0.803571</td>
           <td>13</td>
           <td>DONE</td>
-          <td>111.526737</td>
-          <td>120.479798</td>
+          <td>198.329679</td>
+          <td>236.173472</td>
         </tr>
         <tr>
           <th>14</th>
-          <td>96</td>
-          <td>6.516995</td>
+          <td>52</td>
+          <td>3.529654</td>
           <td>17</td>
-          <td>0.796667</td>
+          <td>0.788095</td>
           <td>14</td>
           <td>DONE</td>
-          <td>120.659979</td>
-          <td>127.026014</td>
+          <td>236.840004</td>
+          <td>246.533402</td>
         </tr>
         <tr>
           <th>15</th>
-          <td>135</td>
-          <td>6.515920</td>
-          <td>19</td>
-          <td>0.804762</td>
+          <td>16</td>
+          <td>7.520990</td>
+          <td>16</td>
+          <td>0.787857</td>
           <td>15</td>
           <td>DONE</td>
-          <td>127.209640</td>
-          <td>133.142229</td>
+          <td>247.194122</td>
+          <td>270.638290</td>
         </tr>
         <tr>
           <th>16</th>
-          <td>223</td>
-          <td>6.444707</td>
-          <td>20</td>
-          <td>0.737619</td>
+          <td>13</td>
+          <td>9.459284</td>
+          <td>16</td>
+          <td>0.820476</td>
           <td>16</td>
           <td>DONE</td>
-          <td>133.326585</td>
-          <td>138.320355</td>
+          <td>271.455738</td>
+          <td>300.009493</td>
         </tr>
         <tr>
           <th>17</th>
-          <td>143</td>
-          <td>8.122533</td>
-          <td>5</td>
-          <td>0.534286</td>
+          <td>14</td>
+          <td>6.333043</td>
+          <td>15</td>
+          <td>0.812857</td>
           <td>17</td>
           <td>DONE</td>
-          <td>138.506371</td>
-          <td>140.751131</td>
+          <td>300.733284</td>
+          <td>326.092465</td>
         </tr>
         <tr>
           <th>18</th>
-          <td>137</td>
-          <td>8.871360</td>
-          <td>18</td>
-          <td>0.766429</td>
+          <td>76</td>
+          <td>2.864959</td>
+          <td>19</td>
+          <td>0.771905</td>
           <td>18</td>
           <td>DONE</td>
-          <td>140.939695</td>
-          <td>146.575524</td>
+          <td>326.893129</td>
+          <td>335.169225</td>
         </tr>
         <tr>
           <th>19</th>
-          <td>109</td>
-          <td>4.227949</td>
-          <td>19</td>
-          <td>0.780952</td>
+          <td>34</td>
+          <td>3.699183</td>
+          <td>6</td>
+          <td>0.687619</td>
           <td>19</td>
           <td>DONE</td>
-          <td>146.764230</td>
-          <td>153.347868</td>
+          <td>335.842253</td>
+          <td>341.226246</td>
         </tr>
         <tr>
           <th>20</th>
-          <td>123</td>
-          <td>5.800259</td>
-          <td>15</td>
-          <td>0.755000</td>
+          <td>101</td>
+          <td>9.631699</td>
+          <td>20</td>
+          <td>0.806905</td>
           <td>20</td>
           <td>DONE</td>
-          <td>153.535532</td>
-          <td>158.566730</td>
+          <td>341.890406</td>
+          <td>349.094039</td>
         </tr>
         <tr>
           <th>21</th>
-          <td>164</td>
-          <td>5.829206</td>
-          <td>19</td>
-          <td>0.762143</td>
+          <td>129</td>
+          <td>7.667238</td>
+          <td>17</td>
+          <td>0.777857</td>
           <td>21</td>
           <td>DONE</td>
-          <td>158.759242</td>
-          <td>163.985452</td>
+          <td>349.768611</td>
+          <td>355.277805</td>
         </tr>
         <tr>
           <th>22</th>
-          <td>135</td>
-          <td>3.215795</td>
-          <td>19</td>
-          <td>0.731667</td>
+          <td>23</td>
+          <td>6.802672</td>
+          <td>17</td>
+          <td>0.803333</td>
           <td>22</td>
           <td>DONE</td>
-          <td>164.173174</td>
-          <td>170.059973</td>
+          <td>356.129515</td>
+          <td>374.547178</td>
         </tr>
         <tr>
           <th>23</th>
-          <td>22</td>
-          <td>6.480428</td>
-          <td>19</td>
-          <td>0.814286</td>
+          <td>36</td>
+          <td>8.862987</td>
+          <td>18</td>
+          <td>0.806905</td>
           <td>23</td>
           <td>DONE</td>
-          <td>170.249493</td>
-          <td>192.001965</td>
+          <td>375.217385</td>
+          <td>388.509987</td>
         </tr>
         <tr>
           <th>24</th>
-          <td>17</td>
-          <td>3.658221</td>
-          <td>18</td>
-          <td>0.804048</td>
+          <td>43</td>
+          <td>5.716999</td>
+          <td>19</td>
+          <td>0.809048</td>
           <td>24</td>
           <td>DONE</td>
-          <td>192.192851</td>
-          <td>217.386762</td>
+          <td>389.156084</td>
+          <td>401.360895</td>
         </tr>
         <tr>
           <th>25</th>
-          <td>20</td>
-          <td>2.774962</td>
-          <td>19</td>
-          <td>0.808810</td>
+          <td>33</td>
+          <td>3.940563</td>
+          <td>18</td>
+          <td>0.785952</td>
           <td>25</td>
           <td>DONE</td>
-          <td>217.577718</td>
-          <td>240.172801</td>
+          <td>402.023900</td>
+          <td>416.426354</td>
         </tr>
         <tr>
           <th>26</th>
-          <td>20</td>
-          <td>1.502854</td>
-          <td>19</td>
-          <td>0.781429</td>
+          <td>15</td>
+          <td>4.065718</td>
+          <td>17</td>
+          <td>0.814524</td>
           <td>26</td>
           <td>DONE</td>
-          <td>240.363467</td>
-          <td>263.214262</td>
+          <td>417.259908</td>
+          <td>443.559158</td>
         </tr>
         <tr>
           <th>27</th>
           <td>28</td>
-          <td>3.161690</td>
-          <td>19</td>
-          <td>0.802143</td>
+          <td>3.023265</td>
+          <td>20</td>
+          <td>0.786190</td>
           <td>27</td>
           <td>DONE</td>
-          <td>263.547650</td>
-          <td>281.546914</td>
+          <td>444.360056</td>
+          <td>462.428190</td>
         </tr>
         <tr>
           <th>28</th>
-          <td>11</td>
-          <td>8.864483</td>
-          <td>20</td>
-          <td>0.802381</td>
+          <td>152</td>
+          <td>9.811295</td>
+          <td>15</td>
+          <td>0.770000</td>
           <td>28</td>
           <td>DONE</td>
-          <td>281.738626</td>
-          <td>322.728173</td>
+          <td>463.098771</td>
+          <td>467.679759</td>
         </tr>
         <tr>
           <th>29</th>
-          <td>21</td>
-          <td>4.391751</td>
-          <td>17</td>
-          <td>0.807143</td>
+          <td>13</td>
+          <td>8.953454</td>
+          <td>14</td>
+          <td>0.803571</td>
           <td>29</td>
           <td>DONE</td>
-          <td>322.925621</td>
-          <td>342.655973</td>
+          <td>468.413173</td>
+          <td>493.326741</td>
         </tr>
       </tbody>
     </table>
@@ -980,14 +1004,14 @@ The returned :code:`results` is a Pandas Dataframe where columns are hyperparame
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 386-390
+.. GENERATED FROM PYTHON SOURCE LINES 388-392
 
 Evaluate the best configuration
 -------------------------------
 
 Now that the search is over, let us print the best configuration found during this run and evaluate it on the full training dataset.
 
-.. GENERATED FROM PYTHON SOURCE LINES 392-402
+.. GENERATED FROM PYTHON SOURCE LINES 394-404
 
 .. code-block:: Python
 
@@ -1009,20 +1033,20 @@ Now that the search is over, let us print the best configuration found during th
 
  .. code-block:: none
 
-    The default configuration has an accuracy of 0.867. 
-    The best configuration found by DeepHyper has an accuracy 0.814, 
-    finished after 192.00 secondes of search.
+    The default configuration has an accuracy of 0.823. 
+    The best configuration found by DeepHyper has an accuracy 0.821, 
+    finished after 156.30 secondes of search.
 
     {
-        "batch_size": 22,
-        "learning_rate": 6.480428119634669,
-        "num_epochs": 19
+        "batch_size": 29,
+        "learning_rate": 3.0464644512097143,
+        "num_epochs": 20
     }
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 403-404
+.. GENERATED FROM PYTHON SOURCE LINES 405-407
 
 .. code-block:: Python
 
@@ -1031,11 +1055,12 @@ Now that the search is over, let us print the best configuration found during th
 
 
 
+
 .. rst-class:: sphx-glr-script-out
 
  .. code-block:: none
 
-    Accuracy Best Configuration:  0.903
+    Accuracy Best Configuration:  0.837
 
 
 
@@ -1043,7 +1068,7 @@ Now that the search is over, let us print the best configuration found during th
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (7 minutes 12.166 seconds)
+   **Total running time of the script:** (9 minutes 36.821 seconds)
 
 
 .. _sphx_glr_download_examples_examples_hpo_plot_hpo_text_classification.py:
