@@ -1,6 +1,7 @@
 name: Run checks and tests
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
