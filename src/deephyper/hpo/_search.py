@@ -197,11 +197,28 @@ class Search(abc.ABC):
         """Execute the search algorithm.
 
         Args:
-            max_evals: here
+            max_evals: The max number of evaluations for the run function to perform before
+                stopping the search. Defaults to -1 to run indefinitely.
+            timeout: The time budget (in seconds) of the search before stopping. Defaults to
+                ``None`` to not impose a time budget.
+            max_evals_strict: If ``True`` the search will not spawn more than ``max_evals`` jobs.
+                Defaults to ``False``.
+            csv_output: Write the results to a CSV file. Default is True.
 
         Returns:
-            here
-        """
+            A Pandas DataFrame containing the evaluations performed or None if the search could not
+            evaluate any configuration.
+
+            The DataFrame contains the following columns:
+            - ``p:HYPERPARAMETER_NAME``: for each hyperparameter of the problem.
+            - ``objective``: for single objective optimization.
+            - ``objective_0``, ``objective_1``, ...: for multi-objective optimization.
+            - ``job_id``: the identifier of the job.
+            - ``job_status``: the status of the job at the end of the search.
+            - ``m:METADATA_NAME``: for each metadata of the problem. Some metadata are always
+                present like ``m:timestamp_submit`` and ``m:timestamp_gather`` which are the
+                timestamps of the submission and gathering of the job.
+    """
         self.stopped = False
         self.csv_output = csv_output
 
@@ -404,13 +421,8 @@ class Search(abc.ABC):
         """
 
     def dump_results(self):
-        """Dump jobs completed to CSV in log_dir.
-
-        Args:
-            flush (bool, optional): Force the dumping if set to ``True``. Defaults to ``False``.
-        """
+        """Dump job results using the evaluator."""
         if self.is_master:
-            # self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir, flush=flush)
             self._evaluator.dump_job_results(
                 log_dir=self._log_dir, filename="results.csv", csv_output=self.csv_output
             )

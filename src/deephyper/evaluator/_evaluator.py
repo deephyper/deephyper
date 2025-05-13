@@ -553,7 +553,15 @@ class Evaluator(abc.ABC):
         return job
 
     def dump_job_results(self, *, log_dir: str, filename: str, csv_output: bool):
-        """here."""
+        """Dump completed jobs to a CSV file.
+
+        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
+
+        Args:
+            log_dir: Directory where to dump the CSV file.
+            filename: Name of the file where to write the data.
+            csv_output: Write the results to a CSV file.
+        """
         logging.info("Dumping completed jobs to CSV...")
 
         if self._job_class is HPOJob:
@@ -564,8 +572,15 @@ class Evaluator(abc.ABC):
         logging.info("Dumping done")
 
     def _dump_hpo_results(self, log_dir: str, filename: str, csv_output: bool):
-        """here."""
+        """Internal method to dump completed jobs to a CSV file using HPO format.
 
+        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
+
+        Args:
+            log_dir: Directory where to dump the CSV file.
+            filename: Name of the file where to write the data.
+            csv_output: Write the results to a CSV file.
+        """
         for job in self.jobs_done:
             result = copy.deepcopy(job.args)
 
@@ -613,8 +628,15 @@ class Evaluator(abc.ABC):
         self.jobs_done = []
 
     def _dump_results(self, log_dir: str, filename: str, csv_output: bool):
-        """here."""
+        """Internal method to dump completed jobs to a CSV file using normal format.
 
+        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
+
+        Args:
+            log_dir: Directory where to dump the CSV file.
+            filename: Name of the file where to write the data.
+            csv_output: Write the results to a CSV file.
+        """
         for job in self.jobs_done:
             # Start with job.id
             result = {"job_id": int(job.id.split(".")[1])}
