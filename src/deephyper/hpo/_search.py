@@ -1,7 +1,6 @@
 import abc
 import asyncio
 import copy
-import csv
 import json
 import logging
 import os
@@ -218,7 +217,7 @@ class Search(abc.ABC):
             - ``m:METADATA_NAME``: for each metadata of the problem. Some metadata are always
                 present like ``m:timestamp_submit`` and ``m:timestamp_gather`` which are the
                 timestamps of the submission and gathering of the job.
-    """
+        """
         self.stopped = False
         self.csv_output = csv_output
 
