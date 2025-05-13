@@ -1,6 +1,7 @@
 import abc
 import asyncio
 import copy
+import csv
 import json
 import logging
 import os
@@ -74,6 +75,7 @@ class Search(abc.ABC):
         log_dir=".",
         verbose=0,
         stopper=None,
+        csv_output=True,
     ):
         # TODO: stopper should be an argument passed here... check CBO and generalize
         # get the __init__ parameters
@@ -129,8 +131,8 @@ class Search(abc.ABC):
         self.gather_batch_size = 1
 
         self._evaluator._stopper = stopper
-
         self.stopped = False
+        self.csv_output = csv_output
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
@@ -190,51 +192,30 @@ class Search(abc.ABC):
                 raise ValueError("'timeout' should be > 0!")
 
     def search(
-        self,
-        max_evals: int = -1,
-        timeout: int = None,
-        max_evals_strict: bool = False,
-        remove_csv: bool = False,
-    ):
+        self, max_evals=-1, timeout=0, max_evals_strict=False, csv_output=True
+    ) -> pd.DataFrame:
         """Execute the search algorithm.
 
         Args:
-            max_evals (int, optional): The maximum number of evaluations of the run function to
-                perform before stopping the search. Defaults to ``-1``, will run indefinitely.
-            timeout (int, optional): The time budget (in seconds) of the search before stopping.
-                Defaults to ``None``, will not impose a time budget.
-            max_evals_strict (bool, optional): If ``True`` the search will not spawn more than
-                ``max_evals`` jobs. Defaults to ``False``.
-            remove_csv: Remove the CSV results file.
+            max_evals: here
 
         Returns:
-            DataFrame: A pandas DataFrame containing the evaluations performed or ``None`` if the
-                search could not evaluate any configuration.
-
-                This DataFrame contains the following columns:
-                - ``p:HYPERPARAMETER_NAME``: for each hyperparameter of the problem.
-                - ``objective``: for single objective optimization.
-                - ``objective_0``, ``objective_1``, ...: for multi-objective optimization.
-                - ``job_id``: the identifier of the job.
-                - ``job_status``: the status of the job at the end of the search.
-                - ``m:METADATA_NAME``: for each metadata of the problem. Some metadata are always
-                    present like ``m:timestamp_submit`` and ``m:timestamp_gather`` which are the
-                    timestamps of the submission and gathering of the job.
+            here
         """
         self.stopped = False
-        self._check_timeout(timeout)
+        self.csv_output = csv_output
 
         if max_evals_strict:
             # TODO: should be replaced by a property with a setter?
             self._evaluator.set_maximum_num_jobs_submitted(max_evals)
 
-        # save the search call arguments for the context
+        # Save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
 
-        # save the context in the log folder
+        # Save the context in the log folder
         self.dump_context()
 
-        # init tqdm callback
+        # Setup the tqdm callback
         if max_evals > 1:
             for cb in self._evaluator._callbacks:
                 if isinstance(cb, TqdmCallback):
@@ -243,15 +224,13 @@ class Search(abc.ABC):
         wait_all_running_jobs = True
 
         try:
-            if np.isscalar(timeout) and timeout > 0:
+            if timeout > 0:
                 self._evaluator.timeout = timeout
             self._search(max_evals, max_evals_strict)
         except MaximumJobsSpawnReached:
             self.stopped = True
-            logging.warning(
-                "Search is being stopped because the maximum number of spawned jobs has been "
-                "reached."
-            )
+            msg = "Search is stopping because max number of spawned jobs has been reached."
+            logging.warning(msg)
 
         # Collect remaining jobs
         logging.info("Collect remaining jobs...")
@@ -259,36 +238,31 @@ class Search(abc.ABC):
         if wait_all_running_jobs:
             while self._evaluator.num_jobs_submitted > self._evaluator.num_jobs_gathered:
                 self._evaluator.gather("ALL")
-                self.dump_jobs_done_to_csv()
+                self.dump_results()
         else:
             self._evaluator.gather_other_jobs_done()
-            self.dump_jobs_done_to_csv()
+            self.dump_results()
 
         self._evaluator.close()
 
-        if not (os.path.exists(self._path_results)):
-            logging.warning(f"Could not find results file at {self._path_results}!")
-            return None
+        # Force dumping if all configurations failed
+        self.dump_results()
 
-        # Force dumping if all configurations were failed
-        self.dump_jobs_done_to_csv(flush=True)
+        # Get job results and dataframe
+        res = self._evaluator.job_results
+        df_res = pd.DataFrame(res)
 
-        self.extend_results_with_pareto_efficient_indicator()
+        # Extend dataframe with pareto front
+        df_rev = self.extend_results_with_pareto_efficient_indicator(df_res)
 
-        df_results = pd.read_csv(self._path_results)
-
-        # Remove the CSV results file
-        if remove_csv and os.path.isfile(self._path_results):
-            os.remove(self._path_results)
-
-        return df_results
+        return df_rev
 
     @property
     def search_id(self):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
 
-    def extend_results_with_pareto_efficient_indicator(self):
+    def extend_results_with_pareto_efficient_indicator(self, df: pd.DataFrame) -> pd.DataFrame:
         """Extend the results DataFrame with Pareto-Front.
 
         A column ``pareto_efficient`` is added to the dataframe. It is ``True`` if the
@@ -296,8 +270,6 @@ class Search(abc.ABC):
         """
         if self.is_master:
             logging.info("Extends results with pareto efficient indicator...")
-            df_path = self._path_results
-            df = pd.read_csv(df_path)
 
             # Check if Multi-Objective Optimization was performed to save the pareto front
             objective_columns = [col for col in df.columns if col.startswith("objective")]
@@ -311,9 +283,10 @@ class Search(abc.ABC):
                 mask_pareto_front = non_dominated_set(objectives)
                 df["pareto_efficient"] = False
                 df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
-                df.to_csv(df_path, index=False)
 
-    def _search(self, max_evals, max_evals_strict=False):
+        return df
+
+    def _search(self, max_evals, max_evals_strict):
         """Search algorithm logic.
 
         Args:
@@ -322,14 +295,11 @@ class Search(abc.ABC):
             max_evals_strict (bool, optional): Wether the number of submitted jobs should be
             strictly equal to ``max_evals``.
         """
-        if max_evals_strict:
 
-            def num_evals():
+        def num_evals():
+            if max_evals_strict:
                 return self._evaluator.num_jobs_submitted
-
-        else:
-
-            def num_evals():
+            else:
                 return self._evaluator.num_jobs_gathered
 
         # Update the number of evals in case the `search.search(...)` was previously called
@@ -366,7 +336,7 @@ class Search(abc.ABC):
 
             logging.info("Dumping evaluations...")
             t1 = time.time()
-            self.dump_jobs_done_to_csv()
+            self.dump_results()
             logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
             logging.info(f"Telling {len(new_results)} new result(s)...")
@@ -433,11 +403,14 @@ class Search(abc.ABC):
                 be retrieved.
         """
 
-    def dump_jobs_done_to_csv(self, flush: bool = False):
+    def dump_results(self):
         """Dump jobs completed to CSV in log_dir.
 
         Args:
             flush (bool, optional): Force the dumping if set to ``True``. Defaults to ``False``.
         """
         if self.is_master:
-            self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir, flush=flush)
+            # self._evaluator.dump_jobs_done_to_csv(log_dir=self._log_dir, flush=flush)
+            self._evaluator.dump_job_results(
+                log_dir=self._log_dir, filename="results.csv", csv_output=self.csv_output
+            )

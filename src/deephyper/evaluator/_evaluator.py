@@ -1,7 +1,6 @@
 import abc
 import asyncio
 import copy
-import csv
 import importlib
 import json
 import logging
@@ -12,6 +11,7 @@ import warnings
 from typing import Dict, Hashable, List
 
 import numpy as np
+import pandas as pd
 
 from deephyper.evaluator._job import HPOJob, Job, JobStatus
 from deephyper.evaluator.storage import MemoryStorage, Storage
@@ -132,6 +132,7 @@ class Evaluator(abc.ABC):
             Evaluator.NEST_ASYNCIO_PATCHED = True
 
         self._job_class = Job
+        self.job_results: list[dict] = []
 
     def __enter__(self):
         return self
@@ -551,96 +552,19 @@ class Evaluator(abc.ABC):
             job.set_output(output)
         return job
 
-    def dump_jobs_done_to_csv(
-        self,
-        log_dir: str = ".",
-        filename="results.csv",
-        flush: bool = False,
-    ):
-        """Dump completed jobs to a CSV file.
-
-        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
-
-        Args:
-            log_dir (str):
-                Directory where to dump the CSV file.
-            filename (str):
-                Name of the file where to write the data.
-            flush (bool):
-                A boolean indicating if the results should be flushed (i.e., forcing the dumping).
-        """
+    def dump_job_results(self, *, log_dir: str, filename: str, csv_output: bool):
+        """here."""
         logging.info("Dumping completed jobs to CSV...")
 
-        if not os.path.exists(log_dir):
-            raise FileNotFoundError(f"No such directory: {log_dir}")
-
         if self._job_class is HPOJob:
-            self._dump_jobs_done_to_csv_as_hpo_format(log_dir, filename, flush)
+            self._dump_hpo_results(log_dir, filename, csv_output)
         else:
-            self._dump_jobs_done_to_csv_as_regular_format(log_dir, filename, flush)
+            self._dump_results(log_dir, filename, csv_output)
+
         logging.info("Dumping done")
 
-    def _dump_jobs_done_to_csv_as_regular_format(
-        self, log_dir: str = ".", filename="results.csv", flush: bool = False
-    ):
-        records_list = []
-
-        for job in self.jobs_done:
-            # Start with job.id
-            result = {"job_id": int(job.id.split(".")[1])}
-
-            # Add job.status
-            result["job_status"] = job.status.name
-
-            # input arguments: add prefix for all keys found in "args"
-            result.update({f"p:{k}": v for k, v in job.args.items()})
-
-            # output
-            if isinstance(job.output, dict):
-                output = {f"o:{k}": v for k, v in job.output.items()}
-            else:
-                output = {"o:": job.output}
-            result.update(output)
-
-            # metadata
-            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
-            result.update(metadata)
-
-            records_list.append(result)
-
-        if len(records_list) != 0:
-            mode = "a" if self._start_dumping else "w"
-
-            with open(os.path.join(log_dir, filename), mode) as fp:
-                if not (self._start_dumping):
-                    self._columns_dumped = records_list[0].keys()
-
-                if self._columns_dumped is not None:
-                    writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
-
-                    if not (self._start_dumping):
-                        writer.writeheader()
-                        self._start_dumping = True
-
-                    writer.writerows(records_list)
-                    self.jobs_done = []
-
-    def _dump_jobs_done_to_csv_as_hpo_format(
-        self, log_dir: str = ".", filename="results.csv", flush: bool = False
-    ):
-        """Dump completed jobs to a CSV file.
-
-        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
-
-        Args:
-            log_dir (str):
-                Directory where to dump the CSV file.
-            filename (str):
-                Name of the file where to write the data.
-            flush (bool):
-                A boolean indicating if the results should be flushed (i.e., forcing the dumping).
-        """
-        resultsList = []
+    def _dump_hpo_results(self, log_dir: str, filename: str, csv_output: bool):
+        """here."""
 
         for job in self.jobs_done:
             result = copy.deepcopy(job.args)
@@ -680,35 +604,45 @@ class Evaluator(abc.ABC):
             metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
             result.update(metadata)
 
-            resultsList.append(result)
+            self.job_results.append(result)
 
-        if len(resultsList) != 0:
-            mode = "a" if self._start_dumping else "w"
+            if csv_output:
+                df = pd.DataFrame(self.job_results)
+                df.to_csv(os.path.join(log_dir, filename), index=False)
 
-            with open(os.path.join(log_dir, filename), mode) as fp:
-                if not (self._start_dumping):
-                    for result in resultsList:
-                        # Waiting to start receiving non-failed jobs before dumping results
-                        is_single_obj_and_has_success = (
-                            "objective" in result and type(result["objective"]) is not str
-                        )
-                        is_multi_obj_and_has_success = (
-                            "objective_0" in result and type(result["objective_0"]) is not str
-                        )
-                        if is_single_obj_and_has_success or is_multi_obj_and_has_success or flush:
-                            self._columns_dumped = result.keys()
+        self.jobs_done = []
 
-                            break
+    def _dump_results(self, log_dir: str, filename: str, csv_output: bool):
+        """here."""
 
-                if self._columns_dumped is not None:
-                    writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
+        for job in self.jobs_done:
+            # Start with job.id
+            result = {"job_id": int(job.id.split(".")[1])}
 
-                    if not (self._start_dumping):
-                        writer.writeheader()
-                        self._start_dumping = True
+            # Add job.status
+            result["job_status"] = job.status.name
 
-                    writer.writerows(resultsList)
-                    self.jobs_done = []
+            # input arguments: add prefix for all keys found in "args"
+            result.update({f"p:{k}": v for k, v in job.args.items()})
+
+            # output
+            if isinstance(job.output, dict):
+                output = {f"o:{k}": v for k, v in job.output.items()}
+            else:
+                output = {"o:": job.output}
+            result.update(output)
+
+            # metadata
+            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
+            result.update(metadata)
+
+            self.job_results.append(result)
+
+            if csv_output:
+                df = pd.DataFrame(self.job_results)
+                df.to_csv(os.path.join(log_dir, filename), index=False)
+
+        self.jobs_done = []
 
     @property
     def is_master(self):
