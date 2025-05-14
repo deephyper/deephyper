@@ -67,7 +67,7 @@ def test_run_function_standards(tmp_path):
 
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert all(
         results.columns
@@ -95,7 +95,7 @@ def test_run_function_standards(tmp_path):
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     results = pd.read_csv(os.path.join(tmp_path, "results.csv")).sort_values(by="job_id")
     assert all(
         results.columns
@@ -120,7 +120,7 @@ def test_run_function_standards(tmp_path):
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert all(
         results.columns
@@ -148,7 +148,7 @@ def test_run_function_standards(tmp_path):
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert list(sorted(results.columns)) == list(
         sorted(
@@ -181,7 +181,7 @@ def test_run_function_standards(tmp_path):
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert list(sorted(results.columns)) == list(
         sorted(
@@ -216,7 +216,7 @@ def test_run_function_standards(tmp_path):
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert list(sorted(results.columns)) == list(
         sorted(
@@ -255,7 +255,7 @@ def test_run_function_standards(tmp_path):
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert list(sorted(results.columns)) == list(
         sorted(
@@ -292,7 +292,7 @@ def test_run_function_standards(tmp_path):
     evaluator.num_objective = 2
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert list(sorted(results.columns)) == list(
         sorted(
@@ -346,7 +346,7 @@ def execute_evaluator(method, tmp_path):
     assert len(jobs) == 1
     evaluator.close()
 
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     result = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(result) == 20
     assert all(s == "CANCELLED" for s in result["job_status"].iloc[-9:])
@@ -448,7 +448,7 @@ def test_evaluator_with_Job(tmp_path):
     jobs_done = evaluator.gather("ALL")
     for jobi in jobs_done:
         assert jobi.output == 0
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(df) == 10
     assert len(df.columns) == 6
@@ -461,7 +461,7 @@ def test_evaluator_with_Job(tmp_path):
     jobs_done = evaluator.gather("ALL")
     for jobi in jobs_done:
         assert isinstance(jobi.output, dict)
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(df) == 10
     assert len(df.columns) == 10
@@ -476,7 +476,7 @@ def test_evaluator_with_Job(tmp_path):
         assert jobi.output == 0
         assert "timestamp_start" in jobi.metadata
         assert "timestamp_end" in jobi.metadata
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(df) == 10
     assert len(df.columns) == 8
@@ -493,7 +493,7 @@ def test_evaluator_with_Job(tmp_path):
         assert jobi.output["y2"] == jobi.args["x2"]
         assert "timestamp_start" in jobi.metadata
         assert "timestamp_end" in jobi.metadata
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
+    evaluator.dump_job_results(log_dir=tmp_path, filename="results.csv", csv_output=True)
     df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
     assert len(df) == 10
     assert len(df.columns) == 12
