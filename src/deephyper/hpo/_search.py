@@ -55,8 +55,12 @@ class SearchHistory:
         self.problem = problem
         self.num_objective = None
         self.jobs = []
+        self.pareto_efficient = []
         self._csv_cursor = 0
         self._csv_columns = None
+
+    def __len__(self):
+        return len(self.jobs)
 
     def __getitem__(self, idx) -> HPOJob:
         return self.jobs[idx]
@@ -65,7 +69,7 @@ class SearchHistory:
         self.jobs.append(job)
 
     def extend(self, jobs: List[HPOJob]):
-        self.jobs.extends(jobs)
+        self.jobs.extend(jobs)
 
     def _to_dict(self, jobs: List[HPOJob]) -> List[dict]:
         jobs_as_dict = []
@@ -107,11 +111,14 @@ class SearchHistory:
             metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
             result.update(metadata)
 
+            if hasattr(job, "pareto_efficient"):
+                result["pareto_efficient"] = job.pareto_efficient
+
             jobs_as_dict.append(result)
 
         return jobs_as_dict
 
-    def to_dataframe(self) -> pd.Dataframe:
+    def to_dataframe(self) -> pd.DataFrame:
         df = pd.DataFrame(self._to_dict(self.jobs))
         return df
 
@@ -119,56 +126,27 @@ class SearchHistory:
         """Write results to CSV file.
 
         Args:
-            path (str): _description_
-            partial (bool, optional): _description_. Defaults to False.
-            flush (bool, optional): ...
+            path (str):
+
+                Path of the CSV file.
+
+            partial (bool, optional):
+
+                A boolean that indicates if the CSV write is only writing the last non-writen
+                chunk. Defaults to ``False``.
+
+            flush (bool, optional):
+
+                A boolean that indicates if the CSV write in the case where ``partial=True`` should
+                be flushed anyway. Otherwise if ``False`` it will not write to disk until there is
+                a successful job. Defaults to ``False``.
         """
         if not partial:
             df = self.to_dataframe()
             df.to_csv(path, index=False)
             return
 
-        resultsList = []
-
-        for job in self.jobs[self._csv_cursor :]:
-            result = copy.deepcopy(job.args)
-
-            # add prefix for all keys found in "args"
-            result = {f"p:{k}": v for k, v in result.items()}
-
-            # when the returned value of the run-function is a dict we flatten it to add in csv
-            result["objective"] = job.objective
-
-            # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
-            if isinstance(result["objective"], tuple) or isinstance(result["objective"], list):
-                obj = result.pop("objective")
-
-                if self.num_objective is None:
-                    self.num_objective = len(obj)
-
-                for i, objval in enumerate(obj):
-                    result[f"objective_{i}"] = objval
-            else:
-                if self.num_objective is None:
-                    self.num_objective = 1
-
-                if self.num_objective > 1:
-                    obj = result.pop("objective")
-                    for i in range(self.num_objective):
-                        result[f"objective_{i}"] = obj
-
-            # Add job.id
-            result["job_id"] = int(job.id.split(".")[1])
-
-            # Add job.status
-            result["job_status"] = job.status.name
-
-            # Profiling and other
-            # methdata keys starting with "_" are not saved (considered as internal)
-            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
-            result.update(metadata)
-
-            resultsList.append(result)
+        resultsList = self._to_dict(self.jobs[self._csv_cursor :])
 
         if len(resultsList) > 0:
             started_dumping = self._csv_cursor > 0
@@ -194,6 +172,34 @@ class SearchHistory:
                         writer.writeheader()
                     writer.writerows(resultsList)
                     self._csv_cursor += len(resultsList)
+
+    def compute_pareto_efficiency(self):
+        """Compute the Pareto-Front from the current history.
+
+        A column ``pareto_efficient`` is added to the dataframe. It is ``True`` if the
+        point is Pareto efficient.
+        """
+        logging.info("Computing pareto efficient indicator...")
+        df = self.to_dataframe()
+
+        # Check if Multi-Objective Optimization was performed to save the pareto front
+        objective_columns = [col for col in df.columns if col.startswith("objective")]
+
+        if len(objective_columns) > 1:
+            if pd.api.types.is_object_dtype(df[objective_columns[0]].dtype):
+                mask_no_failures = (
+                    df[objective_columns[0]].map(lambda x: isinstance(x, float)).values
+                )
+            else:
+                mask_no_failures = np.ones(len(df), dtype=bool)
+            objectives = -df.loc[mask_no_failures, objective_columns].values.astype(float)
+            mask_pareto_front = non_dominated_set(objectives)
+
+            self.pareto_efficient = np.zeros((len(self.jobs),), dtype=bool)
+            self.pareto_efficient[mask_no_failures] = mask_pareto_front
+
+            for job, pf in zip(self.jobs, self.pareto_efficient):
+                job.pareto_efficient = pf
 
 
 class Search(abc.ABC):
@@ -276,7 +282,7 @@ class Search(abc.ABC):
         self._evaluator._stopper = stopper
 
         self.stopped = False
-        self.history = SearchHistory()
+        self.history = SearchHistory(self._problem)
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
@@ -407,8 +413,9 @@ class Search(abc.ABC):
 
         self.dump_jobs_done_to_csv(flush=True)
 
-        # TODO: adapt the following to directly work on the history
-        self.extend_results_with_pareto_efficient_indicator()
+        self.history.compute_pareto_efficiency()
+
+        df_results = self.history.to_dataframe()
 
         df_results = pd.read_csv(self._path_results)
 
@@ -418,31 +425,6 @@ class Search(abc.ABC):
     def search_id(self):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
-
-    def extend_results_with_pareto_efficient_indicator(self):
-        """Extend the results DataFrame with Pareto-Front.
-
-        A column ``pareto_efficient`` is added to the dataframe. It is ``True`` if the
-        point is Pareto efficient.
-        """
-        if self.is_master:
-            logging.info("Extends results with pareto efficient indicator...")
-            df_path = self._path_results
-            df = pd.read_csv(df_path)
-
-            # Check if Multi-Objective Optimization was performed to save the pareto front
-            objective_columns = [col for col in df.columns if col.startswith("objective")]
-
-            if len(objective_columns) > 1:
-                if pd.api.types.is_string_dtype(df[objective_columns[0]]):
-                    mask_no_failures = ~df[objective_columns[0]].str.startswith("F")
-                else:
-                    mask_no_failures = np.ones(len(df), dtype=bool)
-                objectives = -df.loc[mask_no_failures, objective_columns].values.astype(float)
-                mask_pareto_front = non_dominated_set(objectives)
-                df["pareto_efficient"] = False
-                df.loc[mask_no_failures, "pareto_efficient"] = mask_pareto_front
-                df.to_csv(df_path, index=False)
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
         """Search algorithm logic.
