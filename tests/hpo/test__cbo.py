@@ -536,7 +536,7 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         **search_kwargs,
     )
-    
+
     search_b.fit_surrogate(results_a)
     new_results_b = search_b.search(20)
     assert len(new_results_b) == 20
