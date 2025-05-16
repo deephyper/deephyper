@@ -7,7 +7,7 @@ import logging
 import os
 import pathlib
 import time
-from typing import Dict, List
+from typing import Dict, List, Any
 
 import numpy as np
 import pandas as pd
@@ -72,52 +72,43 @@ class SearchHistory:
     def extend(self, jobs: List[HPOJob]):
         self.jobs.extend(jobs)
 
-    def _to_dict(self, jobs: List[HPOJob]) -> List[dict]:
-        jobs_as_dict = []
+    def _to_dict(self, jobs: List[HPOJob]) -> List[Dict[str, Any]]:
+        results = []
+
         for job in jobs:
-            result = copy.deepcopy(job.args)
+            # Prefix args with "p:"
+            result = {f"p:{k}": v for k, v in job.args.items()}
 
-            # add prefix for all keys found in "args"
-            result = {f"p:{k}": v for k, v in result.items()}
-
-            # when the returned value of the run-function is a dict we flatten it to add in csv
-            result["objective"] = job.objective
-
-            # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
-            if isinstance(result["objective"], tuple) or isinstance(result["objective"], list):
-                obj = result.pop("objective")
-
+            # Extract and process the objective
+            obj = job.objective
+            if isinstance(obj, (tuple, list)):
                 if self.num_objective is None:
                     self.num_objective = len(obj)
-
-                for i, objval in enumerate(obj):
-                    result[f"objective_{i}"] = objval
+                for i, val in enumerate(obj):
+                    result[f"objective_{i}"] = val
             else:
                 if self.num_objective is None:
                     self.num_objective = 1
-
                 if self.num_objective > 1:
-                    obj = result.pop("objective")
                     for i in range(self.num_objective):
                         result[f"objective_{i}"] = obj
+                else:
+                    result["objective"] = obj
 
-            # Add job.id
+            # Add job metadata
             result["job_id"] = int(job.id.split(".")[1])
-
-            # Add job.status
             result["job_status"] = job.status.name
 
-            # Profiling and other
-            # metadata keys starting with "_" are not saved (considered as internal/private)
-            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
-            result.update(metadata)
+            # Add filtered metadata with "m:" prefix
+            result.update({f"m:{k}": v for k, v in job.metadata.items() if not k.startswith("_")})
 
+            # Optional Pareto-efficient tag
             if hasattr(job, "pareto_efficient"):
                 result["pareto_efficient"] = job.pareto_efficient
 
-            jobs_as_dict.append(result)
+            results.append(result)
 
-        return jobs_as_dict
+        return results
 
     def to_dataframe(self) -> pd.DataFrame:
         df = pd.DataFrame(self._to_dict(self.jobs))
