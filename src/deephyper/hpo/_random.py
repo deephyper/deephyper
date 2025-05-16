@@ -24,25 +24,25 @@ class RandomSearch(Search):
           - ✅
 
     Args:
-        problem: 
+        problem:
             object describing the search/optimization problem.
-        
-        evaluator: 
+
+        evaluator:
             object describing the evaluation process.
-        
-        random_state (np.random.RandomState, optional): 
+
+        random_state (np.random.RandomState, optional):
             Initial random state of the search. Defaults to ``None``.
-        
-        log_dir (str, optional): 
+
+        log_dir (str, optional):
             Path to the directoy where results of the search are stored. Defaults to ``"."``.
-        
-        verbose (int, optional): 
+
+        verbose (int, optional):
             Use verbose mode. Defaults to ``0``.
-        
-        stopper (Stopper, optional): 
+
+        stopper (Stopper, optional):
             a stopper to leverage multi-fidelity when evaluating the
             function. Defaults to ``None`` which does not use any stopper.
-        
+
         checkpoint_history_to_csv (bool, optional):
             wether the results from progressively collected evaluations should be checkpointed
             regularly to disc as a csv. Defaults to ``True``.

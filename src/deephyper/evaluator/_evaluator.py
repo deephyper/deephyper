@@ -7,7 +7,7 @@ import os
 import sys
 import time
 import warnings
-from typing import Dict, Hashable, List, Union
+from typing import Dict, Hashable, List
 
 import numpy as np
 
@@ -386,7 +386,7 @@ class Evaluator(abc.ABC):
             Exception: Raised when a gather operation other than "ALL" or "BATCH" is provided.
 
         Returns:
-            list[Job] | tuple[list[Job], list[Job]]: A batch of completed jobs that is at minimum 
+            list[Job] | tuple[list[Job], list[Job]]: A batch of completed jobs that is at minimum
             the given size.
         """
         logging.info(f"gather({type}, size={size}) starts...")

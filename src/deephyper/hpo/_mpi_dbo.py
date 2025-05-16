@@ -43,7 +43,7 @@ class MPIDistributedBO(CBO):
 
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
             function. Defaults to ``None`` which does not use any stopper.
-        
+
         checkpoint_history_to_csv (bool, optional):
             wether the results from progressively collected evaluations should be checkpointed
             regularly to disc as a csv. Defaults to ``True``.
