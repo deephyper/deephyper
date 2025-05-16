@@ -10,6 +10,7 @@ from matplotlib.ticker import MaxNLocator
 
 from deephyper.analysis import rank
 from deephyper.analysis.hpo._paxplot import pax_parallel
+from deephyper.hpo.utils import get_mask_of_rows_without_failures
 
 
 def read_results_from_csv(file_path: str) -> pd.DataFrame:
@@ -39,12 +40,10 @@ def filter_failed_objectives(
     """
     # Single-Objective
     if "objective" in df.columns:
-        if pd.api.types.is_string_dtype(df["objective"]):
-            mask = df["objective"].str.startswith("F")
-
-            df_with_failures = df[mask]
-
-            df_without_failures = df[~mask]
+        has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, "objective")
+        if has_any_failure:
+            df_with_failures = df[~mask_no_failures]
+            df_without_failures = df[mask_no_failures]
             df_without_failures = df_without_failures.astype({"objective": float})
         else:
             df_without_failures = df
@@ -56,8 +55,8 @@ def filter_failed_objectives(
 
         mask = np.zeros(len(df), dtype=bool)
         for col in objcol:
-            if pd.api.types.is_string_dtype(df[col]):
-                mask = mask | df[col].str.startswith("F")
+            has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, col)
+            mask = mask | ~mask_no_failures
 
         df_with_failures = df[mask]
         df_without_failures = df[~mask]

@@ -1,12 +1,12 @@
-import pytest
 import time
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from deephyper.evaluator import RunningJob
-from deephyper.hpo import HpProblem
-from deephyper.hpo import CBO
+from deephyper.hpo import CBO, HpProblem
+from deephyper.hpo.utils import get_mask_of_rows_without_failures
 from deephyper.stopper import SuccessiveHalvingStopper
 
 
@@ -81,7 +81,9 @@ def run_slow(job: RunningJob) -> dict:
 @pytest.mark.ray
 def test_successive_halving_stopper_with_ray(tmp_path):
     import os
+
     import ray
+
     from deephyper.evaluator import Evaluator
 
     if ray.is_initialized():
@@ -172,9 +174,10 @@ def test_successive_halving_stopper_with_failing_evaluations(tmp_path):
     assert "p:x" in results.columns
     assert "objective" in results.columns
 
-    assert pd.api.types.is_string_dtype(results.objective)
+    has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(results, "objective")
+    assert has_any_failure
 
-    results = results[~results.objective.str.startswith("F")]
+    results = results[mask_no_failures]
     results.objective = results.objective.astype(float)
 
     # The constraint inside the run-function should make the job fail if > 450

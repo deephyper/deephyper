@@ -16,6 +16,7 @@ import yaml
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.skopt.moo import non_dominated_set
+from deephyper.hpo.utils import get_mask_of_rows_without_failures
 
 __all__ = ["Search"]
 
@@ -186,12 +187,7 @@ class SearchHistory:
         objective_columns = [col for col in df.columns if col.startswith("objective")]
 
         if len(objective_columns) > 1:
-            if pd.api.types.is_object_dtype(df[objective_columns[0]].dtype):
-                mask_no_failures = (
-                    df[objective_columns[0]].map(lambda x: isinstance(x, float)).values
-                )
-            else:
-                mask_no_failures = np.ones(len(df), dtype=bool)
+            _, mask_no_failures = get_mask_of_rows_without_failures(df, objective_columns[0])
             objectives = -df.loc[mask_no_failures, objective_columns].values.astype(float)
             mask_pareto_front = non_dominated_set(objectives)
 
@@ -416,8 +412,6 @@ class Search(abc.ABC):
         self.history.compute_pareto_efficiency()
 
         df_results = self.history.to_dataframe()
-
-        df_results = pd.read_csv(self._path_results)
 
         return df_results
 

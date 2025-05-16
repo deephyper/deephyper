@@ -972,14 +972,15 @@ class Optimizer(object):
 
                     if not np.isinf(self.outliers_iqr_factor):
                         mask_no_failures = np.where(yi != "F")
-                        q1 = np.quantile(yi[mask_no_failures], q=0.25)
-                        q3 = np.quantile(yi[mask_no_failures], q=0.75)
-                        threshold = q3 + self.outliers_iqr_factor * (q3 - q1)
-                        mask = np.where(
-                            (yi != "F")
-                            & np.array([v != "F" and v > threshold for v in yi])
-                        )
-                        yi[mask] = threshold
+                        if np.any(mask_no_failures):
+                            q1 = np.quantile(yi[mask_no_failures], q=0.25)
+                            q3 = np.quantile(yi[mask_no_failures], q=0.75)
+                            threshold = q3 + self.outliers_iqr_factor * (q3 - q1)
+                            mask = np.where(
+                                (yi != "F")
+                                & np.array([v != "F" and v > threshold for v in yi])
+                            )
+                            yi[mask] = threshold
 
                     if "F" in yi:
                         mask_no_failures = np.where(yi != "F")

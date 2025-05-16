@@ -18,6 +18,7 @@ from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
 from deephyper.hpo.gmm import GMMSampler
+from deephyper.hpo.utils import get_mask_of_rows_without_failures
 from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
@@ -865,8 +866,9 @@ class CBO(Search):
         hp_cols = [k for k in df.columns if "p:" == k[:2]]
         if "objective" in df.columns:
             # filter failures
-            if pd.api.types.is_string_dtype(df.objective):
-                df = df[~df.objective.str.startswith("F")]
+            has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, "objective")
+            if has_any_failure:
+                df = df[mask_no_failures]
                 df.objective = df.objective.astype(float)
 
             q_val = np.quantile(df.objective.values, q)
@@ -875,8 +877,9 @@ class CBO(Search):
             # filter failures
             objcol = list(df.filter(regex=r"^objective_\d+$").columns)
             for col in objcol:
-                if pd.api.types.is_string_dtype(df[col]):
-                    df = df[~df[col].str.startswith("F")]
+                has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, col)
+                if has_any_failure:
+                    df = df[mask_no_failures]
                     df[col] = df[col].astype(float)
 
             top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
@@ -919,15 +922,17 @@ class CBO(Search):
         # check single or multiple objectives
         if "objective" in df.columns:
             # filter failures
-            if pd.api.types.is_string_dtype(df.objective):
-                df = df[~df.objective.str.startswith("F")]
+            has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, "objective")
+            if has_any_failure:
+                df = df[mask_no_failures]
                 df.objective = df.objective.astype(float)
         else:
             # filter failures
             objcol = df.filter(regex=r"^objective_\d+$").columns
             for col in objcol:
-                if pd.api.types.is_string_dtype(df[col]):
-                    df = df[~df[col].str.startswith("F")]
+                has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, col)
+                if has_any_failure:
+                    df = df[mask_no_failures]
                     df[col] = df[col].astype(float)
 
         cst = self._problem.space
