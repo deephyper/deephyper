@@ -50,7 +50,7 @@ def profile(  # noqa: D417
 
     It will add the ``m:timestamp_start``, ``m:timestamp_end`` and optionaly ``m:memory`` metadata
     columns to the results.
-    
+
     By default, only the run-time is measured, for example by using the decorator as follows:
 
     .. code-block::

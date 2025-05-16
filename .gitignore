@@ -160,11 +160,8 @@ Data/
 *.swp
 logdir
 *.html
-*.png
-*.jpg
 *.h5
 *.gv
-*.pdf
 *log*
 !deephyper/core/logs
 !CHANGELOG.md
