@@ -215,6 +215,9 @@ def run_sync(job: RunningJob) -> dict:
 def _test_mpi_win_storage_with_evaluator():
     from deephyper.evaluator.mpi import MPI
     from deephyper.evaluator.storage._mpi_win_storage import MPIWinStorage
+    from deephyper.evaluator.callback import CSVLoggerCallback
+
+    csv_path = "results.csv"
 
     if not MPI.Is_initialized():
         MPI.Init_thread()
@@ -230,6 +233,7 @@ def _test_mpi_win_storage_with_evaluator():
         method_kwargs={
             "storage": storage_0,
             "root": 0,
+            "callbacks": [CSVLoggerCallback(csv_path)],
         },
     ) as evaluator:
         if evaluator.is_master:
@@ -243,7 +247,6 @@ def _test_mpi_win_storage_with_evaluator():
             )
             job_done = evaluator.gather("ALL")[0]
             assert job_done.metadata["storage_id"] != id(storage_0)
-            evaluator.dump_jobs_done_to_csv()
 
     comm.Barrier()
 
@@ -261,6 +264,7 @@ def _test_mpi_win_storage_with_evaluator():
         method_kwargs={
             "storage": storage_1,
             "root": 0,
+            "callbacks": [CSVLoggerCallback(csv_path)],
         },
     ) as evaluator:
         if evaluator.is_master:
@@ -268,7 +272,6 @@ def _test_mpi_win_storage_with_evaluator():
             evaluator.submit([{"x": i} for i in range(20)])
             job_done = evaluator.gather("BATCH", size=3)[0]
             assert job_done.metadata["storage_id"] != id(storage_1)
-            evaluator.dump_jobs_done_to_csv()
 
 
 @pytest.mark.mpi

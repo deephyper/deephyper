@@ -372,7 +372,6 @@ class Search(abc.ABC):
                 if isinstance(cb, TqdmCallback):
                     cb.set_max_evals(max_evals)
 
-        wait_all_running_jobs = True
         try:
             if np.isscalar(timeout) and timeout > 0:
                 self._evaluator.timeout = timeout
@@ -386,16 +385,17 @@ class Search(abc.ABC):
 
         # Collect remaining jobs
         logging.info("Collect remaining jobs...")
-        if wait_all_running_jobs:
-            while self._evaluator.num_jobs_submitted > self._evaluator.num_jobs_gathered:
-                self._evaluator.gather("ALL")
-        else:
-            self._evaluator.gather_other_jobs_done()
+        last_results = []
+        while self._evaluator.num_jobs_submitted > self._evaluator.num_jobs_gathered:
+            results = self._evaluator.gather("ALL")
+            if isinstance(results, tuple) and len(results) == 2:
+                results = results[0] + results[1]
+            last_results += results
 
-        self._evaluator.close()
+        results = self._evaluator.close()
+        last_results += results
 
-        self.history.extend(self._evaluator.jobs_done)
-        self._evaluator.jobs_done = []
+        self.history.extend(last_results)
 
         if len(self.history) == 0:
             logging.warning("No results found in search history")
@@ -467,8 +467,7 @@ class Search(abc.ABC):
                 n_ask = len(new_results)
                 logging.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
 
-            self.history.extend(self._evaluator.jobs_done)
-            self._evaluator.jobs_done = []
+            self.history.extend(new_results)
 
             logging.info("Dumping evaluations...")
             t1 = time.time()
