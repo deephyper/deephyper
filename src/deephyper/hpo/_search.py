@@ -278,7 +278,10 @@ class Search(abc.ABC):
         self._evaluator._stopper = stopper
 
         self.stopped = False
+
+        # Related to management of history of results
         self.history = SearchHistory(self._problem)
+        self.history_to_csv = True
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
@@ -551,6 +554,6 @@ class Search(abc.ABC):
         Args:
             flush (bool, optional): Force the dumping if set to ``True``. Defaults to ``False``.
         """
-        if self.is_master:
+        if self.is_master and self.history_to_csv:
             path = os.path.join(self._log_dir, "results.csv")
             self.history.to_csv(path, partial=True, flush=flush)
