@@ -7,7 +7,7 @@ import os
 import sys
 import time
 import warnings
-from typing import Dict, Hashable, List
+from typing import Dict, Hashable, List, Union
 
 import numpy as np
 
@@ -365,7 +365,7 @@ class Evaluator(abc.ABC):
         self._create_tasks(args_list)
         logging.info("submit done")
 
-    def gather(self, type, size=1):
+    def gather(self, type, size=1) -> list[Job] | tuple[list[Job], list[Job]]:
         """Collect the completed tasks from the evaluator in batches of one or more.
 
         Args:
@@ -386,7 +386,8 @@ class Evaluator(abc.ABC):
             Exception: Raised when a gather operation other than "ALL" or "BATCH" is provided.
 
         Returns:
-            List[Job]: A batch of completed jobs that is at minimum the given size.
+            list[Job] | tuple[list[Job], list[Job]]: A batch of completed jobs that is at minimum 
+            the given size.
         """
         logging.info(f"gather({type}, size={size}) starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
@@ -460,6 +461,7 @@ class Evaluator(abc.ABC):
             raise ValueError(f"Expected dict, but got {type(x)}")
         return x
 
+    # TODO: check if used otherwise clean
     def convert_for_csv(self, val):
         """Convert an input value to an accepted format.
 

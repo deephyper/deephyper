@@ -173,6 +173,10 @@ class CBO(Search):
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
             function. Defaults to ``None`` which does not use any stopper.
 
+        checkpoint_history_to_csv (bool, optional):
+            wether the results from progressively collected evaluations should be checkpointed
+            regularly to disc as a csv. Defaults to ``True``.
+
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
             the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
             "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
@@ -302,6 +306,7 @@ class CBO(Search):
         log_dir: str = ".",
         verbose: int = 0,
         stopper: Optional[Stopper] = None,
+        checkpoint_history_to_csv: bool = True,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -316,9 +321,10 @@ class CBO(Search):
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         objective_scaler="minmax",
-        **kwargs,
     ):
-        super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
+        super().__init__(
+            problem, evaluator, random_state, log_dir, verbose, stopper, checkpoint_history_to_csv
+        )
         # get the __init__ parameters
         self._init_params = locals()
 

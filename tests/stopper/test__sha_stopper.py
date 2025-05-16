@@ -159,11 +159,11 @@ def test_successive_halving_stopper_with_failing_evaluations(tmp_path):
     search = CBO(
         problem,
         run_with_failures,
-        surrogate_model="RF",
+        surrogate_model="ET",
         stopper=stopper,
         random_state=42,
-        filter_failures="mean",
         log_dir=tmp_path,
+        acq_optimizer_kwargs=dict(filter_failures="mean"),
     )
 
     results = search.search(max_evals=50)

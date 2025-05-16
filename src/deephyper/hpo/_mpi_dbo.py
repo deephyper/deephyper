@@ -43,6 +43,10 @@ class MPIDistributedBO(CBO):
 
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
             function. Defaults to ``None`` which does not use any stopper.
+        
+        checkpoint_history_to_csv (bool, optional):
+            wether the results from progressively collected evaluations should be checkpointed
+            regularly to disc as a csv. Defaults to ``True``.
 
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
             the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
@@ -175,6 +179,7 @@ class MPIDistributedBO(CBO):
         log_dir: str = ".",
         verbose: int = 0,
         stopper: Stopper = None,
+        checkpoint_history_to_csv: bool = True,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -190,7 +195,6 @@ class MPIDistributedBO(CBO):
         moo_scalarization_weight=None,
         objective_scaler="minmax",
         comm: MPI.Comm = None,
-        **kwargs,
     ):
         # get the __init__ parameters
         _init_params = locals()
@@ -241,6 +245,7 @@ class MPIDistributedBO(CBO):
                 log_dir=log_dir,
                 verbose=verbose,
                 stopper=stopper,
+                checkpoint_history_to_csv=checkpoint_history_to_csv,
                 surrogate_model=surrogate_model,
                 surrogate_model_kwargs=surrogate_model_kwargs,
                 acq_func=acq_func,
@@ -255,7 +260,6 @@ class MPIDistributedBO(CBO):
                 moo_scalarization_strategy=moo_scalarization_strategy,
                 moo_scalarization_weight=moo_scalarization_weight,
                 objective_scaler=objective_scaler,
-                **kwargs,
             )
         self.comm.Barrier()
         if self.rank > 0:
@@ -266,6 +270,7 @@ class MPIDistributedBO(CBO):
                 log_dir=log_dir,
                 verbose=verbose,
                 stopper=stopper,
+                checkpoint_history_to_csv=False,
                 surrogate_model=surrogate_model,
                 surrogate_model_kwargs=surrogate_model_kwargs,
                 acq_func=acq_func,
@@ -280,7 +285,6 @@ class MPIDistributedBO(CBO):
                 moo_scalarization_strategy=moo_scalarization_strategy,
                 moo_scalarization_weight=moo_scalarization_weight,
                 objective_scaler=objective_scaler,
-                **kwargs,
             )
 
         self.comm.Barrier()

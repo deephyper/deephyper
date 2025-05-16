@@ -55,7 +55,7 @@ class SearchHistory:
     def __init__(self, problem):
         self.problem = problem
         self.num_objective = None
-        self.jobs = []
+        self.jobs: list[HPOJob] = []
         self.pareto_efficient = []
         self._csv_cursor = 0
         self._csv_columns = None
@@ -114,7 +114,12 @@ class SearchHistory:
         df = pd.DataFrame(self._to_dict(self.jobs))
         return df
 
-    def to_csv(self, path: str, partial: bool = False, flush: bool = False):
+    def to_csv_complete(self, path: str) -> pd.DataFrame:
+        df = self.to_dataframe()
+        df.to_csv(path, index=False)
+        return df
+
+    def to_csv_partial(self, path: str, flush: bool = False):
         """Write results to CSV file.
 
         Args:
@@ -122,22 +127,12 @@ class SearchHistory:
 
                 Path of the CSV file.
 
-            partial (bool, optional):
-
-                A boolean that indicates if the CSV write is only writing the last non-writen
-                chunk. Defaults to ``False``.
-
             flush (bool, optional):
 
                 A boolean that indicates if the CSV write in the case where ``partial=True`` should
                 be flushed anyway. Otherwise if ``False`` it will not write to disk until there is
                 a successful job. Defaults to ``False``.
         """
-        if not partial:
-            df = self.to_dataframe()
-            df.to_csv(path, index=False)
-            return
-
         resultsList = self._to_dict(self.jobs[self._csv_cursor :])
 
         if len(resultsList) > 0:
@@ -193,15 +188,22 @@ class Search(abc.ABC):
     """Abstract class which represents a search algorithm.
 
     Args:
-        problem: object describing the search/optimization problem.
-        evaluator: object describing the evaluation process.
-        random_state (np.random.RandomState, optional): Initial random state of the search.
-            Defaults to ``None``.
-        log_dir (str, optional): Path to the directoy where results of the search are stored.
-            Defaults to ``"."``.
-        verbose (int, optional): Use verbose mode. Defaults to ``0``.
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
-            function. Defaults to ``None`` which does not use any stopper.
+        problem:
+            object describing the search/optimization problem.
+        evaluator:
+            object describing the evaluation process.
+        random_state (np.random.RandomState, optional):
+            Initial random state of the search. Defaults to ``None``.
+        log_dir (str, optional):
+            Path to the directoy where results of the search are stored. Defaults to ``"."``.
+        verbose (int, optional):
+            Use verbose mode. Defaults to ``0``.
+        stopper (Stopper, optional):
+            a stopper to leverage multi-fidelity when evaluating the function. Defaults
+            to ``None`` which does not use any stopper.
+        checkpoint_history_to_csv (bool, optional):
+            wether the results from progressively collected evaluations should be checkpointed
+            regularly to disc as a csv. Defaults to ``True``.
     """
 
     def __init__(
@@ -212,7 +214,7 @@ class Search(abc.ABC):
         log_dir=".",
         verbose=0,
         stopper=None,
-        **kwargs,
+        checkpoint_history_to_csv=True,
     ):
         # TODO: stopper should be an argument passed here... check CBO and generalize
         # get the __init__ parameters
@@ -272,7 +274,7 @@ class Search(abc.ABC):
 
         # Related to management of history of results
         self.history = SearchHistory(self._problem)
-        self.history_to_csv = True
+        self.checkpoint_history_to_csv = checkpoint_history_to_csv
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
@@ -405,7 +407,10 @@ class Search(abc.ABC):
 
         self.history.compute_pareto_efficiency()
 
-        df_results = self.history.to_dataframe()
+        if self.checkpoint_history_to_csv:
+            df_results = self.history.to_csv_complete(os.path.join(self._log_dir, "results.csv"))
+        else:
+            df_results = self.history.to_dataframe()
 
         return df_results
 
@@ -544,6 +549,6 @@ class Search(abc.ABC):
         Args:
             flush (bool, optional): Force the dumping if set to ``True``. Defaults to ``False``.
         """
-        if self.is_master and self.history_to_csv:
+        if self.is_master and self.checkpoint_history_to_csv:
             path = os.path.join(self._log_dir, "results.csv")
-            self.history.to_csv(path, partial=True, flush=flush)
+            self.history.to_csv_partial(path, flush=flush)
