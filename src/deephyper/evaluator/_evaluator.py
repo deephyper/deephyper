@@ -461,23 +461,6 @@ class Evaluator(abc.ABC):
             raise ValueError(f"Expected dict, but got {type(x)}")
         return x
 
-    # TODO: check if used otherwise clean
-    def convert_for_csv(self, val):
-        """Convert an input value to an accepted format.
-
-        This is to be saved as a value of a CSV file (e.g., a list becomes it's str representation).
-
-        Args:
-            val (Any): The input value to convert.
-
-        Returns:
-            Any: The converted value.
-        """
-        if type(val) is list:
-            return str(val)
-        else:
-            return val
-
     def process_local_tasks_done(self, tasks):
         local_results = []
         for task in tasks:
