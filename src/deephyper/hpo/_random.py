@@ -24,15 +24,28 @@ class RandomSearch(Search):
           - ✅
 
     Args:
-        problem: object describing the search/optimization problem.
-        evaluator: object describing the evaluation process.
-        random_state (np.random.RandomState, optional): Initial random state of the search.
-            Defaults to ``None``.
-        log_dir (str, optional): Path to the directoy where results of the search are stored.
-            Defaults to ``"."``.
-        verbose (int, optional): Use verbose mode. Defaults to ``0``.
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
+        problem:
+            object describing the search/optimization problem.
+
+        evaluator:
+            object describing the evaluation process.
+
+        random_state (np.random.RandomState, optional):
+            Initial random state of the search. Defaults to ``None``.
+
+        log_dir (str, optional):
+            Path to the directoy where results of the search are stored. Defaults to ``"."``.
+
+        verbose (int, optional):
+            Use verbose mode. Defaults to ``0``.
+
+        stopper (Stopper, optional):
+            a stopper to leverage multi-fidelity when evaluating the
             function. Defaults to ``None`` which does not use any stopper.
+
+        checkpoint_history_to_csv (bool, optional):
+            wether the results from progressively collected evaluations should be checkpointed
+            regularly to disc as a csv. Defaults to ``True``.
     """
 
     def __init__(
@@ -43,8 +56,11 @@ class RandomSearch(Search):
         log_dir=".",
         verbose=0,
         stopper=None,
+        checkpoint_history_to_csv: bool = True,
     ):
-        super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
+        super().__init__(
+            problem, evaluator, random_state, log_dir, verbose, stopper, checkpoint_history_to_csv
+        )
         self._problem.space.seed(self._random_state.randint(0, 2**31))
 
     def _ask(self, n: int = 1) -> List[Dict]:

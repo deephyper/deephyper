@@ -739,4 +739,6 @@ def test_cbo_fit_generative_model(tmp_path):
 if __name__ == "__main__":
     # test_sample_types(".")
     # test_gp(".")
-    test_cbo_categorical_variable(".")
+    # test_cbo_categorical_variable(".")
+    # test_cbo_checkpoint_restart_moo_with_failures(".")
+    test_cbo_checkpoint_restart_with_failures(".")

@@ -49,6 +49,9 @@ def test_wrong_evaluator():
 
 def test_run_function_standards(tmp_path):
     from deephyper.evaluator import HPOJob, SerialEvaluator, ThreadPoolEvaluator
+    from deephyper.evaluator.callback import CSVLoggerCallback
+
+    csv_path = os.path.join(tmp_path, "results.csv")
 
     configs = [{"x": i} for i in range(10)]
 
@@ -62,13 +65,12 @@ def test_run_function_standards(tmp_path):
     async def run(job):
         return 42.0
 
-    evaluator = SerialEvaluator(run)
+    evaluator = SerialEvaluator(run, callbacks=[CSVLoggerCallback(csv_path)])
     evaluator._job_class = HPOJob
-
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    evaluator.close()
+    results = pd.read_csv(csv_path)
     assert all(
         results.columns
         == [
@@ -82,7 +84,7 @@ def test_run_function_standards(tmp_path):
     )
     assert len(results) == 10
     assert results["objective"][0] == 42.0
-    evaluator.close()
+    os.remove(csv_path)
 
     # str with "F" prefix for failed evaluation
     async def run(job):
@@ -91,12 +93,12 @@ def test_run_function_standards(tmp_path):
         else:
             return 42.0
 
-    evaluator = SerialEvaluator(run)
+    evaluator = SerialEvaluator(run, callbacks=[CSVLoggerCallback(csv_path)])
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv")).sort_values(by="job_id")
+    evaluator.close()
+    results = pd.read_csv(csv_path).sort_values(by="job_id")
     assert all(
         results.columns
         == [
@@ -110,18 +112,18 @@ def test_run_function_standards(tmp_path):
     )
     assert len(results) == 10
     assert results.iloc[0]["objective"] == "F_out_of_memory"
-    evaluator.close()
+    os.remove(csv_path)
 
     # dict
     async def run(job):
         return {"objective": 42.0}
 
-    evaluator = SerialEvaluator(run)
+    evaluator = SerialEvaluator(run, callbacks=[CSVLoggerCallback(csv_path)])
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    evaluator.close()
+    results = pd.read_csv(csv_path)
     assert all(
         results.columns
         == [
@@ -135,7 +137,7 @@ def test_run_function_standards(tmp_path):
     )
     assert len(results) == 10
     assert results["objective"][0] == 42.0
-    evaluator.close()
+    os.remove(csv_path)
 
     # dict with additional information
     async def run(job):
@@ -144,12 +146,12 @@ def test_run_function_standards(tmp_path):
             "metadata": {"num_epochs_trained": 25, "num_parameters": 420000},
         }
 
-    evaluator = SerialEvaluator(run)
+    evaluator = SerialEvaluator(run, callbacks=[CSVLoggerCallback(csv_path)])
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    evaluator.close()
+    results = pd.read_csv(csv_path)
     assert list(sorted(results.columns)) == list(
         sorted(
             [
@@ -168,7 +170,7 @@ def test_run_function_standards(tmp_path):
     assert results["objective"][0] == 42.0
     assert results["m:num_epochs_trained"][0] == 25
     assert results["m:num_parameters"][0] == 420000
-    evaluator.close()
+    os.remove(csv_path)
 
     # dict with reserved keywords (when @profile decorator is used)
     from deephyper.evaluator import profile
@@ -177,12 +179,12 @@ def test_run_function_standards(tmp_path):
     async def run(job):
         return 42.0
 
-    evaluator = SerialEvaluator(run)
+    evaluator = SerialEvaluator(run, callbacks=[CSVLoggerCallback(csv_path)])
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    evaluator.close()
+    results = pd.read_csv(csv_path)
     assert list(sorted(results.columns)) == list(
         sorted(
             [
@@ -199,7 +201,7 @@ def test_run_function_standards(tmp_path):
     )
     assert len(results) == 10
     assert results["objective"][0] == 42.0
-    evaluator.close()
+    os.remove(csv_path)
 
     # combine the two previous tests
     @profile
@@ -212,12 +214,12 @@ def test_run_function_standards(tmp_path):
             },
         }
 
-    evaluator = SerialEvaluator(run)
+    evaluator = SerialEvaluator(run, callbacks=[CSVLoggerCallback(csv_path)])
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    evaluator.close()
+    results = pd.read_csv(csv_path)
     assert list(sorted(results.columns)) == list(
         sorted(
             [
@@ -238,7 +240,7 @@ def test_run_function_standards(tmp_path):
     assert results["objective"][0] == 42.0
     assert results["m:num_epochs_trained"][0] == 25
     assert results["m:num_parameters"][0] == 420000
-    evaluator.close()
+    os.remove(csv_path)
 
     # do the previous test with sync function and thread evaluator
     @profile
@@ -251,12 +253,12 @@ def test_run_function_standards(tmp_path):
             },
         }
 
-    evaluator = ThreadPoolEvaluator(run)
+    evaluator = ThreadPoolEvaluator(run, callbacks=[CSVLoggerCallback(csv_path)])
     evaluator._job_class = HPOJob
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    evaluator.close()
+    results = pd.read_csv(csv_path)
     assert list(sorted(results.columns)) == list(
         sorted(
             [
@@ -277,7 +279,7 @@ def test_run_function_standards(tmp_path):
     assert results["objective"][0] == 42.0
     assert results["m:num_epochs_trained"][0] == 25
     assert results["m:num_parameters"][0] == 420000
-    evaluator.close()
+    os.remove(csv_path)
 
     # Tuple of float for multi-objective optimization
     # It will appear as "objective_0" and "objective_1" in the results
@@ -285,15 +287,16 @@ def test_run_function_standards(tmp_path):
         if config["x"] < 5:
             return 42.0, 0.42
         else:
-            return "F_out_of_memory"
+            return "F_out_of_memory", "F_out_of_memory"
 
-    evaluator = SerialEvaluator(run)
+    evaluator = SerialEvaluator(run, callbacks=[CSVLoggerCallback(csv_path)])
     evaluator._job_class = HPOJob
     evaluator.num_objective = 2
     evaluator.submit(configs)
     evaluator.gather(type="ALL")
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    results = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    evaluator.close()
+    results = pd.read_csv(csv_path)
+    print(results)
     assert list(sorted(results.columns)) == list(
         sorted(
             [
@@ -308,20 +311,24 @@ def test_run_function_standards(tmp_path):
         )
     )
     assert len(results) == 10
-    evaluator.close()
-
     counter = Counter(results["objective_0"])
     assert counter["42.0"] == 5 and counter["F_out_of_memory"] == 5
+    os.remove(csv_path)
 
 
 def execute_evaluator(method, tmp_path):
     from deephyper.evaluator import Evaluator, HPOJob
+    from deephyper.evaluator.callback import CSVLoggerCallback
 
     # Create the directory where results from tests are potentially saved
     pathlib.Path(tmp_path).mkdir(parents=True, exist_ok=True)
+    csv_path = os.path.join(tmp_path, "results.csv")
 
     # without kwargs
-    method_kwargs = {"num_workers": 1}
+    method_kwargs = {
+        "num_workers": 1,
+        "callbacks": [CSVLoggerCallback(csv_path)],
+    }
     if method == "ray":
         HERE = os.path.dirname(os.path.abspath(__file__))
         method_kwargs["ray_kwargs"] = {"runtime_env": {"working_dir": HERE}}
@@ -346,16 +353,19 @@ def execute_evaluator(method, tmp_path):
     assert len(jobs) == 1
     evaluator.close()
 
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    result = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    result = pd.read_csv(csv_path)
     assert len(result) == 20
     assert all(s == "CANCELLED" for s in result["job_status"].iloc[-9:])
+    os.remove(csv_path)
 
     # with kwargs
     evaluator = Evaluator.create(
         run_async if method == "serial" else run_sync,
         method=method,
-        method_kwargs={"num_workers": 1, "run_function_kwargs": {"y": 1}},
+        method_kwargs={
+            "num_workers": 1,
+            "run_function_kwargs": {"y": 1},
+        },
     )
     evaluator._job_class = HPOJob
 
@@ -440,64 +450,82 @@ async def run_job_dict_output_profiled_async(job):
 
 def test_evaluator_with_Job(tmp_path):
     from deephyper.evaluator import Evaluator
+    from deephyper.evaluator.callback import CSVLoggerCallback
+
+    csv_path = os.path.join(tmp_path, "results.csv")
 
     # Scalar output
-    evaluator = Evaluator.create(run_job_scalar_output_async, method="serial")
+    evaluator = Evaluator.create(
+        run_job_scalar_output_async,
+        method="serial",
+        method_kwargs={"callbacks": [CSVLoggerCallback(csv_path)]},
+    )
     input_parameters = [{"x": i} for i in range(10)]
     evaluator.submit(input_parameters)
     jobs_done = evaluator.gather("ALL")
+    evaluator.close()
     for jobi in jobs_done:
         assert jobi.output == 0
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    df = pd.read_csv(csv_path)
     assert len(df) == 10
     assert len(df.columns) == 6
-    evaluator.close()
+    os.remove(csv_path)
 
     # Dict output
-    evaluator = Evaluator.create(run_job_dict_output_async, method="serial")
+    evaluator = Evaluator.create(
+        run_job_dict_output_async,
+        method="serial",
+        method_kwargs={"callbacks": [CSVLoggerCallback(csv_path)]},
+    )
     input_parameters = [{"x1": i, "x2": i + 1} for i in range(10)]
     evaluator.submit(input_parameters)
     jobs_done = evaluator.gather("ALL")
+    evaluator.close()
     for jobi in jobs_done:
         assert isinstance(jobi.output, dict)
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    df = pd.read_csv(csv_path)
     assert len(df) == 10
     assert len(df.columns) == 10
-    evaluator.close()
+    os.remove(csv_path)
 
     # Scalar output with profiled function
-    evaluator = Evaluator.create(run_job_scalar_output_profiled_async, method="serial")
+    evaluator = Evaluator.create(
+        run_job_scalar_output_profiled_async,
+        method="serial",
+        method_kwargs={"callbacks": [CSVLoggerCallback(csv_path)]},
+    )
     input_parameters = [{"x": i} for i in range(10)]
     evaluator.submit(input_parameters)
     jobs_done = evaluator.gather("ALL")
+    evaluator.close()
     for jobi in jobs_done:
         assert jobi.output == 0
         assert "timestamp_start" in jobi.metadata
         assert "timestamp_end" in jobi.metadata
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    df = pd.read_csv(csv_path)
     assert len(df) == 10
     assert len(df.columns) == 8
-    evaluator.close()
+    os.remove(csv_path)
 
     # Dict output with profiled function
-    evaluator = Evaluator.create(run_job_dict_output_profiled_async, method="serial")
+    evaluator = Evaluator.create(
+        run_job_dict_output_profiled_async,
+        method="serial",
+        method_kwargs={"callbacks": [CSVLoggerCallback(csv_path)]},
+    )
     input_parameters = [{"x1": i, "x2": i + 1} for i in range(10)]
     evaluator.submit(input_parameters)
     jobs_done = evaluator.gather("ALL")
+    evaluator.close()
     for jobi in jobs_done:
         assert isinstance(jobi.output, dict)
         assert jobi.output["y1"] == jobi.args["x1"]
         assert jobi.output["y2"] == jobi.args["x2"]
         assert "timestamp_start" in jobi.metadata
         assert "timestamp_end" in jobi.metadata
-    evaluator.dump_jobs_done_to_csv(log_dir=tmp_path)
-    df = pd.read_csv(os.path.join(tmp_path, "results.csv"))
+    df = pd.read_csv(csv_path)
     assert len(df) == 10
     assert len(df.columns) == 12
-    evaluator.close()
 
 
 if __name__ == "__main__":
@@ -511,10 +539,10 @@ if __name__ == "__main__":
     )
 
     tmp_path = "/tmp/deephyper_test/"
-    # test_run_function_standards(tmp_path)
+    test_run_function_standards(tmp_path)
     # test_serial(tmp_path)
     # test_thread(tmp_path)
     # test_process(tmp_path)
     # test_ray(tmp_path)
     # test_wrong_evaluator()
-    test_evaluator_with_Job(tmp_path)
+    # test_evaluator_with_Job(tmp_path)
