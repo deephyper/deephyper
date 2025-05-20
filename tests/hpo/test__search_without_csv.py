@@ -42,5 +42,5 @@ def test_search_pareto():
     results = search.search(max_evals=10)
 
     assert "pareto_efficient" in results.columns
-    assert results["pareto_efficient"][0] is True
+    assert results["pareto_efficient"][0]
     assert not os.path.exists("results.csv")
