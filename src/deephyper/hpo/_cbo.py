@@ -18,6 +18,7 @@ from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
 from deephyper.hpo.gmm import GMMSampler
+from deephyper.hpo.utils import get_mask_of_rows_without_failures
 from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
@@ -172,6 +173,10 @@ class CBO(Search):
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
             function. Defaults to ``None`` which does not use any stopper.
 
+        checkpoint_history_to_csv (bool, optional):
+            wether the results from progressively collected evaluations should be checkpointed
+            regularly to disc as a csv. Defaults to ``True``.
+
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
             the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
             "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
@@ -301,6 +306,7 @@ class CBO(Search):
         log_dir: str = ".",
         verbose: int = 0,
         stopper: Optional[Stopper] = None,
+        checkpoint_history_to_csv: bool = True,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -315,9 +321,10 @@ class CBO(Search):
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         objective_scaler="minmax",
-        **kwargs,
     ):
-        super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
+        super().__init__(
+            problem, evaluator, random_state, log_dir, verbose, stopper, checkpoint_history_to_csv
+        )
         # get the __init__ parameters
         self._init_params = locals()
 
@@ -865,8 +872,9 @@ class CBO(Search):
         hp_cols = [k for k in df.columns if "p:" == k[:2]]
         if "objective" in df.columns:
             # filter failures
-            if pd.api.types.is_string_dtype(df.objective):
-                df = df[~df.objective.str.startswith("F")]
+            has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, "objective")
+            if has_any_failure:
+                df = df[mask_no_failures]
                 df.objective = df.objective.astype(float)
 
             q_val = np.quantile(df.objective.values, q)
@@ -875,8 +883,9 @@ class CBO(Search):
             # filter failures
             objcol = list(df.filter(regex=r"^objective_\d+$").columns)
             for col in objcol:
-                if pd.api.types.is_string_dtype(df[col]):
-                    df = df[~df[col].str.startswith("F")]
+                has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, col)
+                if has_any_failure:
+                    df = df[mask_no_failures]
                     df[col] = df[col].astype(float)
 
             top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
@@ -919,15 +928,17 @@ class CBO(Search):
         # check single or multiple objectives
         if "objective" in df.columns:
             # filter failures
-            if pd.api.types.is_string_dtype(df.objective):
-                df = df[~df.objective.str.startswith("F")]
+            has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, "objective")
+            if has_any_failure:
+                df = df[mask_no_failures]
                 df.objective = df.objective.astype(float)
         else:
             # filter failures
             objcol = df.filter(regex=r"^objective_\d+$").columns
             for col in objcol:
-                if pd.api.types.is_string_dtype(df[col]):
-                    df = df[~df[col].str.startswith("F")]
+                has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, col)
+                if has_any_failure:
+                    df = df[mask_no_failures]
                     df[col] = df[col].astype(float)
 
         cst = self._problem.space
