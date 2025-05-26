@@ -103,16 +103,21 @@ Check out our online documentation with API reference and examples: <https://dee
 
 ## Citing DeepHyper
 
-If you wish to cite the Software, please use the following:
+To cite this repository:
 
 ```
-@misc{deephyper_software,
-    title = {"DeepHyper: A Python Package for Scalable Neural Architecture and Hyperparameter Search"},
-    author = {Balaprakash, Prasanna and Egele, Romain and Salim, Misha and Maulik, Romit and Vishwanath, Venkat and Wild, Stefan and others},
-    organization = {DeepHyper Team},
-    year = 2018,
-    url = {https://github.com/deephyper/deephyper}
-} 
+@article{Egele2025,
+    doi = {10.21105/joss.07975},
+    url = {https://doi.org/10.21105/joss.07975},
+    year = {2025},
+    publisher = {The Open Journal},
+    volume = {10},
+    number = {109},
+    pages = {7975},
+    author = {Romain Egele and Prasanna Balaprakash and Gavin M. Wiggins and Brett Eiffert},
+    title = {DeepHyper: A Python Package for Massively Parallel Hyperparameter Optimization in Machine Learning},
+    journal = {Journal of Open Source Software}
+}
 ```
 
 ## How can I participate?
