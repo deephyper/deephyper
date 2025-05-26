@@ -7,7 +7,7 @@ import logging
 import os
 import pathlib
 import time
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -333,7 +333,9 @@ class Search(abc.ABC):
             if timeout <= 0:
                 raise ValueError("'timeout' should be > 0!")
 
-    def search(self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False):
+    def search(
+        self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False
+    ) -> pd.DataFrame:
         """Execute the search algorithm.
 
         Args:
@@ -345,7 +347,7 @@ class Search(abc.ABC):
                 ``max_evals`` jobs. Defaults to ``False``.
 
         Returns:
-            DataFrame: A pandas DataFrame containing the evaluations performed or ``None`` if the
+            pd.DataFrame: A pandas DataFrame containing the evaluations performed or ``None`` if the
                 search could not evaluate any configuration.
 
                 This DataFrame contains the following columns:
@@ -419,7 +421,7 @@ class Search(abc.ABC):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
 
-    def _search(self, max_evals, timeout, max_evals_strict=False):
+    def _search(self, max_evals: int, timeout: Optional[int], max_evals_strict=False):
         """Search algorithm logic.
 
         Args:
