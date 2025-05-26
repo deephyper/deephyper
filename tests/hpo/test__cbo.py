@@ -460,6 +460,12 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
     results_a = search_a.search(4)
     assert len(results_a) == 4
 
+    # a column must be named "pareto_efficient"
+    assert "pareto_efficient" in results_a.columns
+
+    # at lest one element must be set to True
+    assert any(results_a["pareto_efficient"])
+
     new_results_a = search_a.search(6)
     assert all(results_a["p:x_int"] == new_results_a.iloc[:4]["p:x_int"])
     assert len(new_results_a) == 10
@@ -741,4 +747,5 @@ if __name__ == "__main__":
     # test_gp(".")
     # test_cbo_categorical_variable(".")
     # test_cbo_checkpoint_restart_moo_with_failures(".")
-    test_cbo_checkpoint_restart_with_failures(".")
+    # test_cbo_checkpoint_restart_with_failures(".")
+    test_cbo_checkpoint_restart_moo(".")
