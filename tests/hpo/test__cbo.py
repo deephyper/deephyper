@@ -357,6 +357,30 @@ def test_initial_points(tmp_path):
     assert result.loc[0, "objective"] == problem.default_configuration["x"]
 
 
+def test_many_initial_points(tmp_path):
+    from deephyper.hpo import CBO, HpProblem
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0.0, 10.0), "x")
+
+    def run(config):
+        return config["x"]
+
+    max_evals = 100
+    search = CBO(
+        problem,
+        run,
+        initial_points=[{"x": v} for v in np.linspace(0.0, 10.0, max_evals)],
+        acq_optimizer="sampling",
+        random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        surrogate_model="DUMMY",
+        log_dir=tmp_path,
+    )
+
+    result = search.search(max_evals, max_evals_strict=True)
+    assert len(result) == max_evals
+
+
 def test_cbo_checkpoint_restart(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 
@@ -748,4 +772,5 @@ if __name__ == "__main__":
     # test_cbo_categorical_variable(".")
     # test_cbo_checkpoint_restart_moo_with_failures(".")
     # test_cbo_checkpoint_restart_with_failures(".")
-    test_cbo_checkpoint_restart_moo(".")
+    # test_cbo_checkpoint_restart_moo(".")
+    test_many_initial_points(".")
