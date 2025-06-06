@@ -2,7 +2,7 @@ import copy
 from collections.abc import MutableMapping
 from enum import Enum
 from numbers import Number
-from typing import Any, Callable, Hashable, Union
+from typing import Any, Callable, Union, Optional
 
 import numpy as np
 
@@ -35,7 +35,7 @@ class Job:
 
     def __init__(
         self,
-        id: Hashable,
+        id: str,
         args: dict,
         run_function: Callable,
         storage: Storage,
@@ -167,7 +167,7 @@ class RunningJob(MutableMapping):
 
     def __init__(
         self,
-        id: Hashable = None,
+        id: Optional[str] = None,
         parameters: dict = None,
         storage: Storage = None,
         stopper: Stopper = None,
@@ -183,7 +183,7 @@ class RunningJob(MutableMapping):
             self.storage = storage
 
         self.stopper = stopper
-        self.obs = None
+        self._record = None
 
     def __repr__(self) -> str:
         return f"RunningJob(id={self.id}, status={self.status}, parameters={self.parameters})"
@@ -211,6 +211,7 @@ class RunningJob(MutableMapping):
 
     @property
     def status(self):
+        """The job status."""
         return JobStatus(self.storage.load_job_status(self.id))
 
     def record(self, budget: float, objective: float):
@@ -222,10 +223,9 @@ class RunningJob(MutableMapping):
             budget (float): the budget used.
             objective (float): the objective value obtained.
         """
+        self._record = (budget, objective)
         if self.stopper:
             self.stopper.observe(budget, objective)
-        else:
-            self.obs = objective
 
     def stopped(self) -> bool:
         """Returns True if the RunningJob is using a Stopper and it is stopped.
@@ -239,11 +239,14 @@ class RunningJob(MutableMapping):
 
     @property
     def objective(self):
-        """If the RunningJob is using a Stopper then it will return observations from the it.
+        """If the RunningJob is using a Stopper then it will return observations from it.
 
         Otherwise it will simply return the last objective value recorded.
         """
         if self.stopper:
             return self.stopper.objective
         else:
-            return self.obs
+            if self._record:
+                return self._record[1]
+            else:
+                return None

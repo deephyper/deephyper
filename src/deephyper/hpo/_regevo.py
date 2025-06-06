@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Dict, List
+from typing import Dict, List, Literal
 
 import numpy as np
 
@@ -7,6 +7,7 @@ from ConfigSpace.util import deactivate_inactive_hyperparameters
 
 from deephyper.evaluator import HPOJob
 from deephyper.hpo._search import Search
+from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
 
 __all__ = ["RegularizedEvolution"]
@@ -52,6 +53,11 @@ class RegularizedEvolution(Search):
             wether the results from progressively collected evaluations should be checkpointed
             regularly to disc as a csv. Defaults to ``True``.
 
+        solution_selection (Literal["argmax_obs", "argmax_est"] | SolutionSelection, optional):
+            the solution selection strategy. It can be a string where ``"argmax_obs"`` would
+            select the argmax of observed objective values, and ``"argmax_est"`` would select the
+            argmax of estimated objective values (through a predictive model).
+
         population_size (int, optional):
             The size of the population. Defaults to ``100``.
 
@@ -68,11 +74,19 @@ class RegularizedEvolution(Search):
         verbose=0,
         stopper=None,
         checkpoint_history_to_csv: bool = True,
+        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
         population_size=100,
         sample_size=10,
     ):
         super().__init__(
-            problem, evaluator, random_state, log_dir, verbose, stopper, checkpoint_history_to_csv
+            problem,
+            evaluator,
+            random_state,
+            log_dir,
+            verbose,
+            stopper,
+            checkpoint_history_to_csv,
+            solution_selection,
         )
         self._problem.space.seed(self._random_state.randint(0, 2**31))
         assert population_size > sample_size, "population_size must be greater than sample_size"

@@ -7,7 +7,7 @@ import logging
 import os
 import pathlib
 import time
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -15,8 +15,15 @@ import yaml
 
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
-from deephyper.skopt.moo import non_dominated_set
+from deephyper.hpo._problem import HpProblem
+from deephyper.hpo._solution import (
+    ArgMaxEstSelection,
+    ArgMaxObsSelection,
+    Solution,
+    SolutionSelection,
+)
 from deephyper.hpo.utils import get_mask_of_rows_without_failures
+from deephyper.skopt.moo import non_dominated_set
 
 __all__ = ["Search"]
 
@@ -52,13 +59,20 @@ def get_init_params_as_json(obj):
 class SearchHistory:
     """Represents the history of a search."""
 
-    def __init__(self, problem):
+    def __init__(
+        self,
+        problem: HpProblem,
+        solution_selection: SolutionSelection,
+    ):
         self.problem = problem
+        self.solution_selection = solution_selection
+
         self.num_objective = None
         self.jobs: list[HPOJob] = []
         self.pareto_efficient = []
         self._csv_cursor = 0
         self._csv_columns = None
+        self.solution_history = {}
 
     def __len__(self):
         return len(self.jobs)
@@ -71,6 +85,13 @@ class SearchHistory:
 
     def extend(self, jobs: List[HPOJob]):
         self.jobs.extend(jobs)
+        self.solution_selection.update(jobs)
+        for job in jobs:
+            self.solution_history[job.id] = self.solution
+
+    @property
+    def solution(self) -> Solution:
+        return self.solution_selection.solution
 
     def _to_dict(self, jobs: List[HPOJob]) -> List[Dict[str, Any]]:
         results = []
@@ -105,6 +126,12 @@ class SearchHistory:
             # Optional Pareto-efficient tag
             if hasattr(job, "pareto_efficient"):
                 result["pareto_efficient"] = job.pareto_efficient
+
+            # Solution
+            result.update(
+                {f"sol.p:{k}": v for k, v in self.solution_history[job.id].parameters.items()}
+            )
+            result.update({"sol.objective": self.solution_history[job.id].objective})
 
             results.append(result)
 
@@ -190,20 +217,31 @@ class Search(abc.ABC):
     Args:
         problem:
             object describing the search/optimization problem.
+
         evaluator:
             object describing the evaluation process.
+
         random_state (np.random.RandomState, optional):
             Initial random state of the search. Defaults to ``None``.
+
         log_dir (str, optional):
             Path to the directoy where results of the search are stored. Defaults to ``"."``.
+
         verbose (int, optional):
             Use verbose mode. Defaults to ``0``.
+
         stopper (Stopper, optional):
             a stopper to leverage multi-fidelity when evaluating the function. Defaults
             to ``None`` which does not use any stopper.
+
         checkpoint_history_to_csv (bool, optional):
             wether the results from progressively collected evaluations should be checkpointed
             regularly to disc as a csv. Defaults to ``True``.
+
+        solution_selection (Literal["argmax_obs", "argmax_est"] | SolutionSelection, optional):
+            the solution selection strategy. It can be a string where ``"argmax_obs"`` would 
+            select the argmax of observed objective values, and ``"argmax_est"`` would select the
+            argmax of estimated objective values (through a predictive model).
     """
 
     def __init__(
@@ -215,8 +253,8 @@ class Search(abc.ABC):
         verbose=0,
         stopper=None,
         checkpoint_history_to_csv=True,
+        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
     ):
-        # TODO: stopper should be an argument passed here... check CBO and generalize
         # get the __init__ parameters
         self._init_params = locals()
         self._call_args = []
@@ -273,7 +311,24 @@ class Search(abc.ABC):
         self.stopped = False
 
         # Related to management of history of results
-        self.history = SearchHistory(self._problem)
+        if type(solution_selection) is str:
+            if solution_selection == "argmax_obs":
+                solution_selection = ArgMaxObsSelection()
+            elif solution_selection == "argmax_est":
+                solution_selection = ArgMaxEstSelection(
+                    problem, random_state=self._random_state.randint(0, 2**31)
+                )
+            else:
+                raise ValueError(
+                    f"{solution_selection=} should be in ['argmax_obs', 'argmax_est'] when a str."
+                )
+        elif isinstance(solution_selection, SolutionSelection):
+            pass
+        else:
+            raise ValueError(
+                f"{solution_selection=} should be a str or an instance of SolutionSelection"
+            )
+        self.history = SearchHistory(self._problem, solution_selection=solution_selection)
         self.checkpoint_history_to_csv = checkpoint_history_to_csv
 
     def check_evaluator(self, evaluator):

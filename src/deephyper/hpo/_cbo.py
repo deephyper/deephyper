@@ -9,7 +9,7 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, ValidationInfo, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 from sklearn.base import is_regressor
 
 import deephyper.skopt
@@ -17,6 +17,7 @@ from deephyper.analysis.hpo import filter_failed_objectives
 from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
+from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.gmm import GMMSampler
 from deephyper.hpo.utils import get_mask_of_rows_without_failures
 from deephyper.skopt.moo import (
@@ -43,7 +44,7 @@ MAP_filter_failures = {"min": "max"}
 
 
 class AcqFuncKwargsScheduler(BaseModel):
-    type: Optional[Literal["bandit", "periodic-exp-decay"]] = "periodic-exp-decay"
+    type: Optional[Literal["constant", "bandit", "periodic-exp-decay"]] = "periodic-exp-decay"
     delay: Optional[Union[int, Literal["n-initial-points"]]] = "n-initial-points"
     # "periodic-exp-decay" parameters
     kappa_final: Optional[float] = 0.01
@@ -136,6 +137,10 @@ def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2, delay=0):
     return eta_i
 
 
+def scheduler_constant(i, eta_0, num_dim):
+    return eta_0
+
+
 class CBO(Search):
     """Centralized Bayesian Optimisation Search.
 
@@ -176,6 +181,11 @@ class CBO(Search):
         checkpoint_history_to_csv (bool, optional):
             wether the results from progressively collected evaluations should be checkpointed
             regularly to disc as a csv. Defaults to ``True``.
+
+        solution_selection (Literal["argmax_obs", "argmax_est"] | SolutionSelection, optional):
+            the solution selection strategy. It can be a string where ``"argmax_obs"`` would
+            select the argmax of observed objective values, and ``"argmax_est"`` would select the
+            argmax of estimated objective values (through a predictive model).
 
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
             the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
@@ -307,6 +317,7 @@ class CBO(Search):
         verbose: int = 0,
         stopper: Optional[Stopper] = None,
         checkpoint_history_to_csv: bool = True,
+        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -323,7 +334,14 @@ class CBO(Search):
         objective_scaler="minmax",
     ):
         super().__init__(
-            problem, evaluator, random_state, log_dir, verbose, stopper, checkpoint_history_to_csv
+            problem,
+            evaluator,
+            random_state,
+            log_dir,
+            verbose,
+            stopper,
+            checkpoint_history_to_csv,
+            solution_selection,
         )
         # get the __init__ parameters
         self._init_params = locals()
@@ -487,7 +505,6 @@ class CBO(Search):
         if isinstance(scheduler, dict):
             scheduler = scheduler.copy()
             scheduler_type = scheduler.pop("type", None)
-            assert scheduler_type in ["periodic-exp-decay", "bandit"]
 
             if scheduler_type == "periodic-exp-decay":
                 rate = scheduler.get("rate", None)
@@ -521,6 +538,10 @@ class CBO(Search):
                     "delay": self._n_initial_points,
                 }
                 scheduler_func = scheduler_bandit
+
+            elif scheduler_type == "constant":
+                scheduler_params = {}
+                scheduler_func = scheduler_constant
 
             eta_0 = np.array([self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]])
             self.scheduler = functools.partial(
@@ -580,9 +601,9 @@ class CBO(Search):
 
         opt_X = []  # input configuration
         opt_y = []  # objective value
-        # for cfg, obj in new_results:
         for job_i in results:
             cfg, obj = job_i
+            # TODO: check if order of values is maintained
             x = list(cfg.values())
 
             if isinstance(obj, numbers.Number) or all(
