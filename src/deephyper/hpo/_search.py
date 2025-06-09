@@ -282,6 +282,7 @@ class Search(abc.ABC):
         pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
 
         self._verbose = verbose
+        self.checkpoint_history_to_csv = checkpoint_history_to_csv
 
         self.is_master = True
 
@@ -334,7 +335,7 @@ class Search(abc.ABC):
                 f"{solution_selection=} should be a str or an instance of SolutionSelection"
             )
         self.history = SearchHistory(self._problem, solution_selection=solution_selection)
-        self.checkpoint_history_to_csv = checkpoint_history_to_csv
+        
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
