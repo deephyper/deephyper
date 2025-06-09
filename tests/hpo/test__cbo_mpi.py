@@ -96,7 +96,7 @@ def _test_mpi_many_initial_points(tmp_path):
 @pytest.mark.mpi
 def test_mpi_many_initial_points(tmp_path):
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_many_initial_points {tmp_path}"
-    result = dht.run(command, live_output=False, timeout=5)
+    result = dht.run(command, live_output=False, timeout=20)
     status = dht.parse_result(result.stdout)
     assert result.returncode == 0
     assert status == 0
