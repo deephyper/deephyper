@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from deephyper.hpo import CBO, ArgMaxEstSelection, ArgMaxObsSelection, HpProblem, SolutionSelection
+from deephyper.hpo import CBO, ArgMaxEstSelection, ArgMaxObsSelection, HpProblem
 
 CBO_DEFAULT_KWARGS = dict(
     random_state=42,
