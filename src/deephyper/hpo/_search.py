@@ -335,7 +335,6 @@ class Search(abc.ABC):
                 f"{solution_selection=} should be a str or an instance of SolutionSelection"
             )
         self.history = SearchHistory(self._problem, solution_selection=solution_selection)
-        
 
     def check_evaluator(self, evaluator):
         if not (isinstance(evaluator, Evaluator)):
