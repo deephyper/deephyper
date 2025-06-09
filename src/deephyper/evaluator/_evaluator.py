@@ -91,8 +91,6 @@ class Evaluator(abc.ABC):
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop = None  # Event loop for asyncio.
-        self._start_dumping = False
-        self._columns_dumped = None  # columns names dumped in csv file
         self.num_objective = None  # record if multi-objective are recorded
         self._stopper = None  # stopper object
         self.search = None  # search instance

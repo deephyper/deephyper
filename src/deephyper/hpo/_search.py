@@ -80,10 +80,14 @@ class SearchHistory:
     def __getitem__(self, idx) -> HPOJob:
         return self.jobs[idx]
 
-    def append(self, job: HPOJob):
-        self.jobs.append(job)
-
     def extend(self, jobs: List[HPOJob]):
+        if self.num_objective is None:
+            obj = jobs[0].objective
+            if isinstance(obj, (tuple, list)):
+                self.num_objective = len(obj)
+            else:
+                self.num_objective = 1
+            self.solution_selection.num_objective = self.num_objective
         self.jobs.extend(jobs)
         self.solution_selection.update(jobs)
         for job in jobs:
@@ -105,11 +109,13 @@ class SearchHistory:
             if isinstance(obj, (tuple, list)):
                 if self.num_objective is None:
                     self.num_objective = len(obj)
+                    self.solution_selection.num_objective = self.num_objective
                 for i, val in enumerate(obj):
                     result[f"objective_{i}"] = val
             else:
                 if self.num_objective is None:
                     self.num_objective = 1
+                    self.solution_selection.num_objective = self.num_objective
                 if self.num_objective > 1:
                     for i in range(self.num_objective):
                         result[f"objective_{i}"] = obj
@@ -128,10 +134,11 @@ class SearchHistory:
                 result["pareto_efficient"] = job.pareto_efficient
 
             # Solution
-            result.update(
-                {f"sol.p:{k}": v for k, v in self.solution_history[job.id].parameters.items()}
-            )
-            result.update({"sol.objective": self.solution_history[job.id].objective})
+            if self.num_objective == 1:
+                result.update(
+                    {f"sol.p:{k}": v for k, v in self.solution_history[job.id].parameters.items()}
+                )
+                result.update({"sol.objective": self.solution_history[job.id].objective})
 
             results.append(result)
 
@@ -239,7 +246,7 @@ class Search(abc.ABC):
             regularly to disc as a csv. Defaults to ``True``.
 
         solution_selection (Literal["argmax_obs", "argmax_est"] | SolutionSelection, optional):
-            the solution selection strategy. It can be a string where ``"argmax_obs"`` would 
+            the solution selection strategy. It can be a string where ``"argmax_obs"`` would
             select the argmax of observed objective values, and ``"argmax_est"`` would select the
             argmax of estimated objective values (through a predictive model).
     """
@@ -286,7 +293,7 @@ class Search(abc.ABC):
 
         # Check if results already exist
         self._path_results = os.path.join(self._log_dir, "results.csv")
-        if os.path.exists(self._path_results):
+        if os.path.exists(self._path_results) and self.checkpoint_history_to_csv:
             str_current_time = time.strftime("%Y%m%d-%H%M%S")
             path_results_dirname = os.path.dirname(self._path_results)
             path_results_basename = os.path.basename(self._path_results)
@@ -299,8 +306,6 @@ class Search(abc.ABC):
                 self._path_results,
                 path_results_renamed,
             )
-            evaluator._columns_dumped = None
-            evaluator._start_dumping = False
 
         # Default setting is asynchronous
         self.gather_type = "BATCH"

@@ -27,8 +27,13 @@ class SolutionSelection(abc.ABC):
 
     def __init__(self):
         self.solution = Solution(parameters=None, objective=None)
+        # Value set by the SearchHistory
+        self.num_objective: int = None
 
     def update(self, jobs: Sequence[HPOJob]) -> None:
+        # TODO: currently skipped and only applied for single objective optimization
+        if self.num_objective > 1:
+            return
         self._update(jobs)
         logger.info(f"Updated search solution: {self.solution}")
 
@@ -37,7 +42,7 @@ class SolutionSelection(abc.ABC):
 
 
 class ArgMaxObsSelection(SolutionSelection):
-    """Selects the best solution based on maximum observed objective."""
+    """Selects the best solution based on maximum observed objective(s)."""
 
     def _update(self, jobs: Sequence[HPOJob]) -> None:
         for job in jobs:
