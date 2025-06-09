@@ -284,6 +284,9 @@ class SearchEarlyStopping(Callback):
                     self.search_stopped = True
 
 
+# TODO: Add unit tests
+# This class is made to be used by people who wants to log results from the
+# evaluator without using it within the Search.
 class CSVLoggerCallback(Callback):
     """Dump jobs done to a CSV file.
 

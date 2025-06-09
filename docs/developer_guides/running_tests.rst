@@ -21,14 +21,13 @@ We use markers to classify tests that have specific requirements. Possible marks
 - ``mpi``: marks tests which needs mpi4py and an MPI implementation (e.g., openmpi, mpich) installed.
 - ``redis``: marks tests which needs Redis-Stack installed (i.e., includes RedisJSON).
 - ``jax``: marks tests which needs JAX installed.
-- ``sdv``: marks tests which needs SDV package installed.
 - ``memory_profiling``: marks tests which use ``psutil`` installed to profile memory as its behaviour can vary depending on the system were it installed.
 
 The command that we use to run tests with specific markers is:
 
 .. code-block:: console
 
-    pytest --run-marks-subset "slow,torch,tf_keras2,mpi,redis" tests/
+    pytest --run-marks-subset "slow,torch,mpi,redis" tests/
 
 This command will run all the tests in the ``tests/`` folder that have a subset of mentionned markers such as:
 
