@@ -7,7 +7,7 @@ import os
 import sys
 import time
 import warnings
-from typing import Dict, Hashable, List
+from typing import Dict, Hashable, List, Optional
 
 import numpy as np
 
@@ -62,11 +62,11 @@ class Evaluator(abc.ABC):
     def __init__(
         self,
         run_function,
-        num_workers: int = 1,
-        callbacks: list = None,
-        run_function_kwargs: dict = None,
-        storage: Storage = None,
-        search_id: Hashable = None,
+        num_workers: Optional[int] = 1,
+        callbacks: Optional[list] = None,
+        run_function_kwargs: Optional[dict] = None,
+        storage: Optional[Storage] = None,
+        search_id: Optional[Hashable] = None,
     ):
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
             logging.info(
@@ -90,7 +90,7 @@ class Evaluator(abc.ABC):
         self.timestamp = time.time()  # Recorded time of when this evaluator interface was created.
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
-        self.loop = None  # Event loop for asyncio.
+        self.loop: Optional[asyncio.AbstractEventLoop] = None  # Event loop for asyncio.
         self.num_objective = None  # record if multi-objective are recorded
         self._stopper = None  # stopper object
         self.search = None  # search instance
@@ -133,7 +133,7 @@ class Evaluator(abc.ABC):
 
     def __exit__(self, type, value, traceback):
         if hasattr(self, "executor"):
-            self.executor.__exit__(type, value, traceback)
+            self.executor.__exit__(type, value, traceback)  # type: ignore
 
     @property
     def timeout(self):
@@ -151,11 +151,15 @@ class Evaluator(abc.ABC):
 
     @property
     def time_left(self):
+        """Returns the time remaining according to a previously set timeout."""
         if self.timeout is None:
             val = None
         else:
-            time_consumed = time.time() - self._time_timeout_set
-            val = self._timeout - time_consumed
+            if self._time_timeout_set is not None:
+                time_consumed = time.time() - self._time_timeout_set
+                val = self.timeout - time_consumed
+            else:
+                raise RuntimeError(f"{self._time_timeout_set=} should not be set to a float")
         logging.info(f"time_left={val}")
         return val
 
@@ -258,7 +262,9 @@ class Evaluator(abc.ABC):
                     return_when="FIRST_COMPLETED",
                 )
 
-    def _create_tasks(self, args_list: list) -> int:
+    def _create_tasks(self, args_list: list):
+        assert isinstance(self.loop, asyncio.AbstractEventLoop)
+
         for args in args_list:
             if (
                 self.maximum_num_jobs_submitted > 0
@@ -389,6 +395,7 @@ class Evaluator(abc.ABC):
         """
         logging.info(f"gather({type}, size={size}) starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
+        assert isinstance(self.loop, asyncio.AbstractEventLoop)
 
         if type == "ALL":
             size = len(self._tasks_running)  # Get all tasks.
