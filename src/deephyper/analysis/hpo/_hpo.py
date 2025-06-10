@@ -80,7 +80,8 @@ def parameters_from_row(row: pd.Series, prefix: str = "p:") -> dict:
     Returns:
         dict: the parameters of the row.
     """
-    return {k[2:]: v for k, v in row.to_dict().items() if k.startswith(prefix)}
+    lp = len(prefix)
+    return {k[lp:]: v for k, v in row.to_dict().items() if k.startswith(prefix)}
 
 
 def parameters_at_max(
