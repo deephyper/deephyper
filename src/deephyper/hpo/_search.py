@@ -394,15 +394,20 @@ class Search(abc.ABC):
                 raise ValueError("'timeout' should be > 0!")
 
     def search(
-        self, max_evals: int = -1, timeout: int = None, max_evals_strict: bool = False
+        self,
+        max_evals: int = -1,
+        timeout: Optional[int | float] = None,
+        max_evals_strict: bool = False,
     ) -> pd.DataFrame:
         """Execute the search algorithm.
 
         Args:
             max_evals (int, optional): The maximum number of evaluations of the run function to
                 perform before stopping the search. Defaults to ``-1``, will run indefinitely.
+
             timeout (int, optional): The time budget (in seconds) of the search before stopping.
                 Defaults to ``None``, will not impose a time budget.
+
             max_evals_strict (bool, optional): If ``True`` the search will not spawn more than
                 ``max_evals`` jobs. Defaults to ``False``.
 
@@ -437,8 +442,15 @@ class Search(abc.ABC):
                     cb.set_max_evals(max_evals)
 
         try:
-            if np.isscalar(timeout) and timeout > 0:
-                self._evaluator.timeout = timeout
+            if isinstance(timeout, (int, float)):
+                if timeout > 0:
+                    self._evaluator.timeout = timeout
+                else:
+                    timeout = None
+            elif timeout is None:
+                pass
+            else:
+                raise ValueError(f"{timeout=} but is should be an int, float or None")
             self._search(max_evals, timeout, max_evals_strict)
         except MaximumJobsSpawnReached:
             self.stopped = True
@@ -487,8 +499,10 @@ class Search(abc.ABC):
         Args:
             max_evals (int): The maximum number of evaluations of the run function to perform
                 before stopping the search. Defaults to -1, will run indefinitely.
+
             timeout (int): The time budget of the search before stopping. Defaults to ``None``,
                 will not impose a time budget.
+
             max_evals_strict (bool, optional): Wether the number of submitted jobs should be
             strictly equal to ``max_evals``.
         """
@@ -546,7 +560,9 @@ class Search(abc.ABC):
             # Test if search should be stopped due to timeout
             time_left = self._evaluator.time_left
             if time_left is not None and time_left <= 0:
-                logging.info(f"Searching time remaining is {time_left:.3f} <= 0 therefore stopping the search...")
+                logging.info(
+                    f"Searching time remaining is {time_left:.3f} <= 0 therefore stopping the search..."
+                )
                 self.stopped = True
 
             # Test if search should be stopped because a callback requested it
