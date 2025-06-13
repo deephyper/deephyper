@@ -22,7 +22,7 @@ from deephyper.hpo._solution import (
     Solution,
     SolutionSelection,
 )
-from deephyper.hpo.utils import get_mask_of_rows_without_failures
+from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.skopt.moo import non_dominated_set
 
 __all__ = ["Search"]
@@ -561,7 +561,7 @@ class Search(abc.ABC):
             time_left = self._evaluator.time_left
             if time_left is not None and time_left <= 0:
                 logging.info(
-                    f"Searching time remaining is {time_left:.3f} <= 0 therefore stopping the search..."
+                    f"Searching time remaining is {time_left:.3f} <= 0 stopping the search..."
                 )
                 self.stopped = True
 

@@ -10,7 +10,20 @@ from matplotlib.ticker import MaxNLocator
 
 from deephyper.analysis import rank
 from deephyper.analysis.hpo._paxplot import pax_parallel
-from deephyper.hpo.utils import get_mask_of_rows_without_failures
+
+
+def get_mask_of_rows_without_failures(df: pd.DataFrame, column: str) -> Tuple[bool, np.ndarray]:
+    """Return a boolean mask where true values are non-failures.
+
+    Returns:
+        bool, Array[bool]: a boolean that indicates if there is any failure, the mask array.
+    """
+    if pd.api.types.is_string_dtype(df[column]):
+        mask_no_failures = ~df[column].str.startswith("F").to_numpy()
+    else:
+        mask_no_failures = df[column].map(lambda x: isinstance(x, float)).to_numpy()
+    has_any_failure = not np.all(mask_no_failures)
+    return has_any_failure, mask_no_failures
 
 
 def read_results_from_csv(file_path: str) -> pd.DataFrame:
