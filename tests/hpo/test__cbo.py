@@ -357,6 +357,30 @@ def test_initial_points(tmp_path):
     assert result.loc[0, "objective"] == problem.default_configuration["x"]
 
 
+def test_many_initial_points(tmp_path):
+    from deephyper.hpo import CBO, HpProblem
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0.0, 10.0), "x")
+
+    def run(config):
+        return config["x"]
+
+    max_evals = 100
+    search = CBO(
+        problem,
+        run,
+        initial_points=[{"x": v} for v in np.linspace(0.0, 10.0, max_evals)],
+        acq_optimizer="sampling",
+        random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        surrogate_model="DUMMY",
+        log_dir=tmp_path,
+    )
+
+    result = search.search(max_evals, max_evals_strict=True)
+    assert len(result) == max_evals
+
+
 def test_cbo_checkpoint_restart(tmp_path):
     from deephyper.hpo import CBO, HpProblem
 
@@ -459,6 +483,12 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
 
     results_a = search_a.search(4)
     assert len(results_a) == 4
+
+    # a column must be named "pareto_efficient"
+    assert "pareto_efficient" in results_a.columns
+
+    # at lest one element must be set to True
+    assert any(results_a["pareto_efficient"])
 
     new_results_a = search_a.search(6)
     assert all(results_a["p:x_int"] == new_results_a.iloc[:4]["p:x_int"])
@@ -736,7 +766,58 @@ def test_cbo_fit_generative_model(tmp_path):
     assert (results_1["p:x_float"] >= 7).sum() > 5
 
 
+def test_convert_to_skopt_space():
+    from ConfigSpace import ConfigurationSpace, Float, Integer, Categorical
+
+    from deephyper.hpo._cbo import convert_to_skopt_space
+
+    n_samples = 10
+
+    # Case 1: without conditions and forbidden clauses
+    config_space = ConfigurationSpace(
+        {
+            "x_cat": Categorical("x_cat", items=["a", "b", "c"]),
+            "x_float": Float("x_float", bounds=(0.0, 10.0)),
+            "x_int": Integer("x_int", bounds=(0, 1)),
+        }
+    )
+    space = convert_to_skopt_space(config_space)
+    samples_0 = space.rvs(n_samples, random_state=42)
+    samples_1 = space.rvs(n_samples, random_state=42)
+    samples_2 = space.rvs(n_samples, random_state=43)
+    samples_3 = space.rvs(n_samples)
+    assert np.all(samples_0 == samples_1)
+    assert np.any(samples_0 != samples_2)
+    assert np.any(samples_0 != samples_3)
+
+    # Case 2: with conditions and forbidden clauses
+    from ConfigSpace import ForbiddenEqualsClause
+
+    config_space = ConfigurationSpace(
+        {
+            "x_cat": Categorical("x_cat", items=["a", "b", "c"]),
+            "x_float": Float("x_float", bounds=(0.0, 10.0)),
+            "x_int": Integer("x_int", bounds=(0, 10)),
+        }
+    )
+    config_space.add(ForbiddenEqualsClause(config_space["x_cat"], "c"))
+
+    space = convert_to_skopt_space(config_space)
+    samples_0 = space.rvs(n_samples, random_state=42)
+    samples_1 = space.rvs(n_samples, random_state=42)
+    samples_2 = space.rvs(n_samples, random_state=43)
+    samples_3 = space.rvs(n_samples)
+    assert np.all(samples_0 == samples_1)
+    assert np.any(samples_0 != samples_2)
+    assert np.any(samples_0 != samples_3)
+
+
 if __name__ == "__main__":
     # test_sample_types(".")
     # test_gp(".")
-    test_cbo_categorical_variable(".")
+    # test_cbo_categorical_variable(".")
+    # test_cbo_checkpoint_restart_moo_with_failures(".")
+    # test_cbo_checkpoint_restart_with_failures(".")
+    # test_cbo_checkpoint_restart_moo(".")
+    # test_many_initial_points(".")
+    test_convert_to_skopt_space()

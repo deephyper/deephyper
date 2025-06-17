@@ -16,5 +16,5 @@ def parse_result(stream: str) -> float:
     Returns:
         float: The parsed output.
     """
-    res = parse.search("DEEPHYPER-OUTPUT: {:f}", stream)
+    res = parse.search("DEEPHYPER-OUTPUT: {:g}", stream)
     return res[0]

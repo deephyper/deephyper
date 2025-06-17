@@ -1,6 +1,6 @@
 import asyncio
 import warnings
-from typing import Callable, Hashable
+from typing import Callable, Hashable, Optional
 
 import ray
 
@@ -56,19 +56,19 @@ class RayEvaluator(Evaluator):
     def __init__(
         self,
         run_function: Callable,
-        callbacks: list = None,
-        run_function_kwargs: dict = None,
-        storage: Storage = None,
-        search_id: Hashable = None,
-        address: str = None,
-        password: str = None,
-        num_cpus: int = None,
-        num_gpus: int = None,
-        include_dashboard: bool = False,
-        num_cpus_per_task: float = 1,
-        num_gpus_per_task: float = None,
-        ray_kwargs: dict = None,
-        num_workers: int = None,
+        callbacks: Optional[list] = None,
+        run_function_kwargs: Optional[dict] = None,
+        storage: Optional[Storage] = None,
+        search_id: Optional[Hashable] = None,
+        address: Optional[str] = None,
+        password: Optional[str] = None,
+        num_cpus: Optional[int] = None,
+        num_gpus: Optional[int] = None,
+        include_dashboard: Optional[bool] = False,
+        num_cpus_per_task: int | float = 1,
+        num_gpus_per_task: int | float = 0,
+        ray_kwargs: Optional[dict] = None,
+        num_workers: Optional[int] = None,
     ):
         # get the __init__ parameters
         self._init_params = locals()
@@ -135,6 +135,8 @@ class RayEvaluator(Evaluator):
         self.sem = asyncio.Semaphore(self.num_workers)
 
     async def execute(self, job: Job) -> Job:
+        assert isinstance(self.sem, asyncio.Semaphore)
+
         async with self.sem:
             job.status = JobStatus.RUNNING
 

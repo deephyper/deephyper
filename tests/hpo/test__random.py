@@ -67,6 +67,35 @@ def test_centralized_random_search(tmp_path):
     )
 
 
+def run_two_objective(job):
+    y0 = (
+        job.parameters["x_int"]
+        + job.parameters["x_float"]
+        + ord(job.parameters["x_cat"])
+        + job.parameters["x_ord"]
+        + job.parameters["x_const"]
+    )
+    y1 = -y0
+    return y0, y1
+
+
+def test_centralized_random_search_multi_objective():
+    problem = create_problem()
+
+    # Test serial evaluation
+    search = RandomSearch(
+        problem,
+        run_two_objective,
+        random_state=42,
+        checkpoint_history_to_csv=False,
+        verbose=0,
+    )
+    results = search.search(max_evals=100)
+    assert "objective_0" in results.columns
+    assert "objective_1" in results.columns
+    assert "pareto_efficient" in results.columns
+
+
 @pytest.mark.redis
 def test_centralized_random_search_redis_storage(tmp_path):
     from deephyper.evaluator.storage import RedisStorage
@@ -180,6 +209,7 @@ def test_decentralized_random_search_shared_memory_storage(tmp_path):
 
 if __name__ == "__main__":
     # test_centralized_random_search()
+    test_centralized_random_search_multi_objective()
     # test_centralized_random_search_redis_storage()
     # test_decentralized_random_search_redis_storage()
-    test_decentralized_random_search_shared_memory_storage("search_random")
+    # test_decentralized_random_search_shared_memory_storage("search_random")
