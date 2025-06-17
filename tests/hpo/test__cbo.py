@@ -766,6 +766,52 @@ def test_cbo_fit_generative_model(tmp_path):
     assert (results_1["p:x_float"] >= 7).sum() > 5
 
 
+def test_convert_to_skopt_space():
+    from ConfigSpace import ConfigurationSpace, Float, Integer, Categorical
+
+    from deephyper.hpo._cbo import convert_to_skopt_space
+
+    n_samples = 10
+
+    # Case 1: without conditions and forbidden clauses
+    config_space = ConfigurationSpace(
+        {
+            "x_cat": Categorical("x_cat", items=["a", "b", "c"]),
+            "x_float": Float("x_float", bounds=(0.0, 10.0)),
+            "x_int": Integer("x_int", bounds=(0, 1)),
+        }
+    )
+    space = convert_to_skopt_space(config_space)
+    samples_0 = space.rvs(n_samples, random_state=42)
+    samples_1 = space.rvs(n_samples, random_state=42)
+    samples_2 = space.rvs(n_samples, random_state=43)
+    samples_3 = space.rvs(n_samples)
+    assert np.all(samples_0 == samples_1)
+    assert np.any(samples_0 != samples_2)
+    assert np.any(samples_0 != samples_3)
+
+    # Case 2: with conditions and forbidden clauses
+    from ConfigSpace import ForbiddenEqualsClause
+
+    config_space = ConfigurationSpace(
+        {
+            "x_cat": Categorical("x_cat", items=["a", "b", "c"]),
+            "x_float": Float("x_float", bounds=(0.0, 10.0)),
+            "x_int": Integer("x_int", bounds=(0, 10)),
+        }
+    )
+    config_space.add(ForbiddenEqualsClause(config_space["x_cat"], "c"))
+
+    space = convert_to_skopt_space(config_space)
+    samples_0 = space.rvs(n_samples, random_state=42)
+    samples_1 = space.rvs(n_samples, random_state=42)
+    samples_2 = space.rvs(n_samples, random_state=43)
+    samples_3 = space.rvs(n_samples)
+    assert np.all(samples_0 == samples_1)
+    assert np.any(samples_0 != samples_2)
+    assert np.any(samples_0 != samples_3)
+
+
 if __name__ == "__main__":
     # test_sample_types(".")
     # test_gp(".")
@@ -773,4 +819,5 @@ if __name__ == "__main__":
     # test_cbo_checkpoint_restart_moo_with_failures(".")
     # test_cbo_checkpoint_restart_with_failures(".")
     # test_cbo_checkpoint_restart_moo(".")
-    test_many_initial_points(".")
+    # test_many_initial_points(".")
+    test_convert_to_skopt_space()

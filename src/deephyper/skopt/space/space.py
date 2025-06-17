@@ -1083,6 +1083,11 @@ class Space:
         """
         rng = check_random_state(random_state)
         if self.config_space:
+
+            if random_state is not None:
+                # 1 << 31 used in place of 2**31
+                self.config_space.seed(rng.randint(0, 1 << 31))
+
             req_points = []
 
             hps_names = list(self.config_space.keys())
