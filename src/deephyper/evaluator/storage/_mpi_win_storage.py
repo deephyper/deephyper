@@ -14,7 +14,7 @@ class MPIWinStorage(Storage):
         logging.info("Creating MPIWinStorage ...")
         super().__init__()
 
-        self.comm = MPI.COMM_WORLD
+        self.comm = comm
         self.root = root
         self._mapping = MPIWinMutableMapping(
             default_value={"search_id_counter": 0, "data": {}},
@@ -256,5 +256,5 @@ class MPIWinStorage(Storage):
         """
         return self.load_job(job_id)["status"]
 
-    def __del__(self):
-        del self._mapping
+    def close(self):
+        self._mapping.close()

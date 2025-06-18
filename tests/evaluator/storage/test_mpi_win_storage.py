@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+
 import pytest
 
 from deephyper.evaluator import Evaluator, HPOJob, RunningJob
@@ -11,7 +12,7 @@ SCRIPT = os.path.abspath(__file__)
 import deephyper.tests as dht  # noqa: E402
 
 
-def _test_mpi_win_mutable_mapping():
+def _test_mpi_win_mutable_mapping_legacy():
     from deephyper.evaluator.mpi import MPI
     from deephyper.evaluator.storage._mpi_win_mutable_mapping import (
         MPIWinMutableMapping,
@@ -21,7 +22,8 @@ def _test_mpi_win_mutable_mapping():
         MPI.Init_thread()
 
     comm = MPI.COMM_WORLD
-    mapping = MPIWinMutableMapping(comm=comm, size=1024 * 100, root=1)
+
+    mapping = MPIWinMutableMapping(comm=comm, size=1024 * 100, root=0)
 
     if comm.Get_rank() > -1:
         time.sleep(0.01 * comm.Get_rank())
@@ -69,6 +71,7 @@ def _test_mpi_win_mutable_mapping():
     comm.Barrier()
 
     # Delete and create new mapping before next test
+    mapping.close()
     del mapping
 
     class CustomMPIWinMutableMapping(MPIWinMutableMapping):
@@ -77,13 +80,13 @@ def _test_mpi_win_mutable_mapping():
             self.count_write = 0
             super().__init__(*args, **kwargs)
 
-        def _read_dict(self):
+        def _read_dict_unsafe(self):
             self.count_read += 1
-            super()._read_dict()
+            super()._read_dict_unsafe()
 
-        def _write_dict(self):
+        def _write_dict_unsafe(self):
             self.count_write += 1
-            super()._write_dict()
+            super()._write_dict_unsafe()
 
     mapping = CustomMPIWinMutableMapping(
         default_value={"key_0": 0, "key_1": 1},
@@ -101,7 +104,6 @@ def _test_mpi_win_mutable_mapping():
         assert mapping._session_is_started is False
         for key in mapping:  # on read for __getitem__
             mapping[key]  # on read to access each key-val
-
         assert mapping.count_read == 3
 
     comm.Barrier()
@@ -111,20 +113,109 @@ def _test_mpi_win_mutable_mapping():
         mapping.count_write = 0
 
         # Read-only session
-        with mapping(read_only=True):
-            assert mapping._session_is_started is True
+        with mapping(read_only=True) as session:
+            assert session.read_only is True
 
-            for key in mapping:
-                mapping[key]
+            for key in session:
+                session[key]
 
         assert mapping.count_read == 1
 
     comm.Barrier()
+    mapping.close()
 
 
 @pytest.mark.mpi
 def test_mpi_win_mutable_mapping():
-    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_mutable_mapping"
+    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_mutable_mapping_legacy"
+    result = dht.run(command, live_output=False)
+    assert result.returncode == 0
+
+
+def _test_mpi_win_mutable_mapping_basic_usage():
+    from deephyper.evaluator.mpi import MPI
+    from deephyper.evaluator.storage._mpi_win_mutable_mapping import (
+        MPIWinMutableMapping,
+    )
+
+    if not MPI.Is_initialized():
+        MPI.Init_thread()
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    # Create shared dictionary
+    shared_dict = MPIWinMutableMapping(
+        default_value={"counter": 0, "results": {}},
+        comm=comm,
+        size=1024 * 1024,  # 1MB
+        root=0,
+    )
+
+    try:
+        # Each rank increments the counter
+        new_value = shared_dict.incr("counter", 1)
+        print(f"Rank {rank}: counter = {new_value}")
+
+        # Store rank-specific results
+        shared_dict[f"rank_{rank}_result"] = rank * 2
+
+        # Read shared data
+        comm.Barrier()
+        if rank == 0:
+            assert shared_dict["counter"] == size
+            for r in range(size):
+                assert shared_dict[f"rank_{r}_result"] == r * 2
+            print("All results:", dict(shared_dict))
+
+    finally:
+        # Always close explicitly
+        shared_dict.close()
+
+
+@pytest.mark.mpi
+def test_mpi_win_mutable_mapping_basic_usage():
+    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_mutable_mapping_basic_usage"
+    result = dht.run(command, live_output=False)
+    assert result.returncode == 0
+
+
+def _test_mpi_win_mutable_mapping_context_manager_usage():
+    from deephyper.evaluator.mpi import MPI
+    from deephyper.evaluator.storage._mpi_win_mutable_mapping import (
+        MPIWinMutableMapping,
+    )
+
+    if not MPI.Is_initialized():
+        MPI.Init_thread()
+
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    with MPIWinMutableMapping(comm=comm) as shared_dict:
+        # Safe usage within context
+        shared_dict[f"rank_{rank}"] = f"Hello from {rank}"
+
+        # Batch operations using sessions
+        with shared_dict(read_only=False) as session:
+            for i in range(10):
+                session[f"data_{rank}_{i}"] = i * rank
+                time.sleep(0.1)
+
+        comm.Barrier()
+        if rank == 0:
+            for r in range(size):
+                assert shared_dict[f"rank_{r}"] == f"Hello from {r}"
+            assert len(shared_dict) == 10 * size + 10
+            print(shared_dict)
+        # Automatic cleanup happens here
+
+
+@pytest.mark.mpi
+def test_mpi_win_mutable_mapping_context_manager_usage():
+    command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_mutable_mapping_context_manager_usage"
     result = dht.run(command, live_output=False)
     assert result.returncode == 0
 
@@ -190,6 +281,8 @@ def _test_mpi_win_storage_basic():
     job_id0_data = storage.load_job(job_id0)
     assert job_id0_data["metadata"] == {"timestamp": 10}
 
+    storage.close()
+
 
 @pytest.mark.mpi
 def test_mpi_win_storage_basic():
@@ -213,9 +306,9 @@ def run_sync(job: RunningJob) -> dict:
 
 
 def _test_mpi_win_storage_with_evaluator():
+    from deephyper.evaluator.callback import CSVLoggerCallback
     from deephyper.evaluator.mpi import MPI
     from deephyper.evaluator.storage._mpi_win_storage import MPIWinStorage
-    from deephyper.evaluator.callback import CSVLoggerCallback
 
     csv_path = "results.csv"
 
@@ -279,3 +372,9 @@ def test_mpi_win_storage_with_evaluator():
     command = f"mpirun -np 4 {PYTHON} {SCRIPT} _test_mpi_win_storage_with_evaluator"
     result = dht.run(command, live_output=False)
     assert result.returncode == 0
+
+
+if __name__ == "__main__":
+    func = sys.argv[-1]
+    func = globals()[func]
+    func()
