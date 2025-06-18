@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 from deephyper.hpo._cbo import CBO
 from deephyper.hpo._solution import SolutionSelection
 
@@ -83,7 +83,9 @@ class ExperimentalDesignSearch(CBO):
         verbose: int = 0,
         stopper=None,
         checkpoint_history_to_csv: bool = True,
-        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
         n_points: int = None,
         design: str = "random",
         initial_points=None,

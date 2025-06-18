@@ -316,7 +316,9 @@ class CBO(Search):
         verbose: int = 0,
         stopper: Optional[Stopper] = None,
         checkpoint_history_to_csv: bool = True,
-        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -367,7 +369,7 @@ class CBO(Search):
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
-                random_state=self._random_state.randint(0, 2**31),
+                random_state=self._random_state.randint(0, 1 << 31),
                 surrogate_model_kwargs=self._surrogate_model_kwargs,
             )
         elif is_regressor(surrogate_model):
@@ -974,7 +976,7 @@ class CBO(Search):
             best_index = non_dominated_set(-np.asarray(res_df[objcol]), return_mask=False)[0]
             best_param = res_df.iloc[best_index]
 
-        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**31))
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 1 << 31))
         hp_names = list(cst.keys())
         for hp_name in hp_names:
             hp = cst[hp_name]
