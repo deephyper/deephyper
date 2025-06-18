@@ -27,11 +27,8 @@ def test_cbo_solution_selection():
     search = CBO(problem, run, checkpoint_history_to_csv=False, **CBO_DEFAULT_KWARGS)
     results = search.search(max_evals)
 
-    assert "sol.p:x" in results.columns
-    assert "sol.objective" in results.columns
-    idx = results.objective.argmax()
-    assert results["sol.objective"].iloc[-1] == results.objective.iloc[idx]
-    assert np.all(results["sol.p:x"] == results["sol.objective"])
+    assert "sol.p:x" not in results.columns
+    assert "sol.objective" not in results.columns
 
     # test 2: with default value solution_selection="argmax_obs"
     search = CBO(

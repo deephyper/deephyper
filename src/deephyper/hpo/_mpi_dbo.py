@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional
+from typing import Literal, Optional
 
 import numpy as np
 import scipy.stats
@@ -10,6 +10,7 @@ from deephyper.evaluator.callback import TqdmCallback
 from deephyper.evaluator.mpi import MPI
 from deephyper.evaluator.storage import Storage
 from deephyper.hpo._cbo import CBO, AcqFuncKwargs, AcqOptimizerKwargs, SurrogateModelKwargs
+from deephyper.hpo._solution import SolutionSelection
 from deephyper.stopper import Stopper
 
 __all__ = ["MPIDistributedBO"]
@@ -180,6 +181,9 @@ class MPIDistributedBO(CBO):
         verbose: int = 0,
         stopper: Stopper = None,
         checkpoint_history_to_csv: bool = True,
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -233,7 +237,7 @@ class MPIDistributedBO(CBO):
 
         # set random state for given rank
         random_state = np.random.RandomState(
-            random_state.randint(low=0, high=2**31, size=self.size)[self.rank]
+            random_state.randint(low=0, high=1 << 31, size=self.size)[self.rank]
         )
 
         if self.rank == 0:
@@ -246,12 +250,13 @@ class MPIDistributedBO(CBO):
                 verbose=verbose,
                 stopper=stopper,
                 checkpoint_history_to_csv=checkpoint_history_to_csv,
+                solution_selection=solution_selection,
                 surrogate_model=surrogate_model,
                 surrogate_model_kwargs=surrogate_model_kwargs,
                 acq_func=acq_func,
                 acq_func_kwargs=acq_func_kwargs,
                 acq_optimizer=acq_optimizer,
-                acq_optimizer_kwargs=acq_func_kwargs,
+                acq_optimizer_kwargs=acq_optimizer_kwargs,
                 multi_point_strategy=multi_point_strategy,
                 n_initial_points=n_initial_points,
                 initial_point_generator=initial_point_generator,
@@ -271,12 +276,13 @@ class MPIDistributedBO(CBO):
                 verbose=verbose,
                 stopper=stopper,
                 checkpoint_history_to_csv=False,
+                solution_selection=None,
                 surrogate_model=surrogate_model,
                 surrogate_model_kwargs=surrogate_model_kwargs,
                 acq_func=acq_func,
                 acq_func_kwargs=acq_func_kwargs,
                 acq_optimizer=acq_optimizer,
-                acq_optimizer_kwargs=acq_func_kwargs,
+                acq_optimizer_kwargs=acq_optimizer_kwargs,
                 multi_point_strategy=multi_point_strategy,
                 n_initial_points=n_initial_points,
                 initial_point_generator=initial_point_generator,

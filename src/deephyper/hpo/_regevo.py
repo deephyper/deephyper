@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Optional
 
 import numpy as np
 
@@ -74,9 +74,11 @@ class RegularizedEvolution(Search):
         verbose=0,
         stopper=None,
         checkpoint_history_to_csv: bool = True,
-        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
-        population_size=100,
-        sample_size=10,
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
+        population_size: int = 100,
+        sample_size: int = 10,
     ):
         super().__init__(
             problem,
@@ -88,7 +90,7 @@ class RegularizedEvolution(Search):
             checkpoint_history_to_csv,
             solution_selection,
         )
-        self._problem.space.seed(self._random_state.randint(0, 2**31))
+        self._problem.space.seed(self._random_state.randint(0, 1 << 31))
         assert population_size > sample_size, "population_size must be greater than sample_size"
         self.population_size = population_size
         self.sample_size = sample_size

@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.hpo._problem import HpProblem
@@ -22,10 +23,10 @@ from deephyper.hpo._solution import (
     Solution,
     SolutionSelection,
 )
-from deephyper.analysis.hpo import get_mask_of_rows_without_failures
+from deephyper.stopper import Stopper
 from deephyper.skopt.moo import non_dominated_set
 
-__all__ = ["Search"]
+__all__ = ["Search", "SearchHistory"]
 
 
 def get_init_params_as_json(obj):
@@ -62,7 +63,7 @@ class SearchHistory:
     def __init__(
         self,
         problem: HpProblem,
-        solution_selection: SolutionSelection,
+        solution_selection: Optional[SolutionSelection] = None,
     ):
         self.problem = problem
         self.solution_selection = solution_selection
@@ -80,22 +81,31 @@ class SearchHistory:
     def __getitem__(self, idx) -> HPOJob:
         return self.jobs[idx]
 
+    def set_num_objective(self, job):
+        obj = job.objective
+        if isinstance(obj, (tuple, list)):
+            self.num_objective = len(obj)
+        else:
+            self.num_objective = 1
+        if isinstance(self.solution_selection, SolutionSelection):
+            self.solution_selection.num_objective = self.num_objective
+
     def extend(self, jobs: List[HPOJob]):
         if self.num_objective is None:
-            obj = jobs[0].objective
-            if isinstance(obj, (tuple, list)):
-                self.num_objective = len(obj)
-            else:
-                self.num_objective = 1
-            self.solution_selection.num_objective = self.num_objective
+            self.set_num_objective(jobs[0])
         self.jobs.extend(jobs)
-        self.solution_selection.update(jobs)
-        for job in jobs:
-            self.solution_history[job.id] = self.solution
+
+        if isinstance(self.solution_selection, SolutionSelection):
+            self.solution_selection.update(jobs)
+            for job in jobs:
+                self.solution_history[job.id] = self.solution
 
     @property
-    def solution(self) -> Solution:
-        return self.solution_selection.solution
+    def solution(self) -> Solution | None:
+        if isinstance(self.solution_selection, SolutionSelection):
+            return self.solution_selection.solution
+        else:
+            return None
 
     def _to_dict(self, jobs: List[HPOJob]) -> List[Dict[str, Any]]:
         results = []
@@ -134,11 +144,15 @@ class SearchHistory:
                 result["pareto_efficient"] = job.pareto_efficient
 
             # Solution
-            if self.num_objective == 1:
-                result.update(
-                    {f"sol.p:{k}": v for k, v in self.solution_history[job.id].parameters.items()}
-                )
-                result.update({"sol.objective": self.solution_history[job.id].objective})
+            if isinstance(self.solution_selection, SolutionSelection):
+                if self.num_objective == 1:
+                    result.update(
+                        {
+                            f"sol.p:{k}": v
+                            for k, v in self.solution_history[job.id].parameters.items()
+                        }
+                    )
+                    result.update({"sol.objective": self.solution_history[job.id].objective})
 
             results.append(result)
 
@@ -256,11 +270,13 @@ class Search(abc.ABC):
         problem,
         evaluator,
         random_state=None,
-        log_dir=".",
-        verbose=0,
-        stopper=None,
-        checkpoint_history_to_csv=True,
-        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
+        log_dir: str = ".",
+        verbose: int = 0,
+        stopper: Optional[Stopper] = None,
+        checkpoint_history_to_csv: bool = True,
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
     ):
         # get the __init__ parameters
         self._init_params = locals()
@@ -322,13 +338,15 @@ class Search(abc.ABC):
                 solution_selection = ArgMaxObsSelection()
             elif solution_selection == "argmax_est":
                 solution_selection = ArgMaxEstSelection(
-                    problem, random_state=self._random_state.randint(0, 2**31)
+                    problem, random_state=self._random_state.randint(0, 1 << 31)
                 )
             else:
                 raise ValueError(
                     f"{solution_selection=} should be in ['argmax_obs', 'argmax_est'] when a str."
                 )
         elif isinstance(solution_selection, SolutionSelection):
+            pass
+        elif solution_selection is None:
             pass
         else:
             raise ValueError(

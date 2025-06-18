@@ -43,11 +43,6 @@ def test_quickstart(tmp_path):
     assert "p:function" in results.columns
     assert len(results) >= 100
 
-    assert "sol.p:function" in results.columns
-    assert "sol.p:x" in results.columns
-    assert "sol.p:b" in results.columns
-    assert "sol.objective" in results.columns
-
 
 if __name__ == "__main__":
     test_quickstart(".")

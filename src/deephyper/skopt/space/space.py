@@ -1085,7 +1085,7 @@ class Space:
         if self.config_space:
 
             if random_state is not None:
-                # 1 << 31 used in place of 2**31
+                # 1 << 31 used in place of 1 << 31
                 self.config_space.seed(rng.randint(0, 1 << 31))
 
             req_points = []
@@ -1141,7 +1141,7 @@ class Space:
 
                 columns = np.zeros((n_samples, len(self.dimensions)), dtype="O")
                 random_states = rng.randint(
-                    low=0, high=2**31, size=len(self.dimensions)
+                    low=0, high=1 << 31, size=len(self.dimensions)
                 )
                 Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
                     delayed(_sample_dimension)(
