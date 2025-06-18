@@ -87,7 +87,7 @@ class MPIWinMutableMapping(MutableMapping):
     HEADER_SIZE = 8  # Reserve 8 bytes for size header
 
     # Instance tracking for proper cleanup
-    _instances = weakref.WeakSet()
+    _instances = weakref.WeakValueDictionary()
     _instances_lock = threading.Lock()
 
     def __init__(
@@ -110,8 +110,9 @@ class MPIWinMutableMapping(MutableMapping):
         self._local_lock = threading.RLock()  # For thread safety within process
 
         # Register this instance for cleanup tracking
+        self._id = self.comm.bcast(id(self), root=root)
         with self._instances_lock:
-            self._instances.add(self)
+            self._instances[self._id] = self
 
         # Allocate memory (works on multiple nodes)
         logging.info(f"Allocating MPI.Win on rank {comm.Get_rank()}...")
@@ -152,7 +153,7 @@ class MPIWinMutableMapping(MutableMapping):
         logging.info(f"MPIWinMutableMapping created on rank {comm.Get_rank()}")
 
     def __hash__(self):
-        return id(self)
+        return self._id
 
     def __eq__(self, other):
         return self is other  # identity-based equality
@@ -454,7 +455,7 @@ class MPIWinMutableMapping(MutableMapping):
 
         # Remove from instance tracking
         with self._instances_lock:
-            self._instances.discard(self)
+            self._instances.pop(hash(self))
 
         # Free the MPI window (collective operation)
         try:
@@ -467,7 +468,7 @@ class MPIWinMutableMapping(MutableMapping):
     def close_all(cls):
         """Close all active instances. Collective operation."""
         with cls._instances_lock:
-            instances = list(cls._instances)
+            instances = list(cls._instances.values())
 
         for instance in instances:
             try:
