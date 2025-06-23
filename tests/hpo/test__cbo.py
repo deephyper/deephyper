@@ -645,6 +645,31 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
 
     assert len(results_c) == 20
 
+def test_max_failures():
+    from deephyper.hpo import CBO, HpProblem
+
+    def run(job):
+        return "F"
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10000), "x")
+    
+    # use default max_failures 100
+    search = CBO(problem, run, initial_points=[{"x": i} for i in range(150)])
+    results = search.search(150)
+
+    # currently fails
+    assert len(results) == 100
+
+
+    # use max_failures 20
+    #custom_acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"]
+    #custom_acq_optimizer_kwargs["max_failures"] = 20
+    #print(custom_acq_optimizer_kwargs["max_failures"])
+    #search = CBO(problem, run, initial_points=[{"x": i} for i in range(100)], acq_optimizer_kwargs=custom_acq_optimizer_kwargs)
+
+
+    
 
 def test_cbo_categorical_variable(tmp_path):
     from deephyper.evaluator import SerialEvaluator
