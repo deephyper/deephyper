@@ -657,7 +657,6 @@ def test_max_failures():
     problem = HpProblem()
     problem.add_hyperparameter((0, 10000), "x")
 
-    # use default max_failures 100
     search = CBO(
         problem,
         run_only_failures,
@@ -698,6 +697,55 @@ def test_max_failures():
 
     results = search.history.to_dataframe()
     assert len(results) == 15
+
+    # Case 3 - multi objective all failures
+    def run_multi_only_failures(job):
+        return "F", "F"
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10000), "x")
+    problem.add_hyperparameter((0, 10000), "y")
+
+    search = CBO(
+        problem,
+        run_multi_only_failures,
+        acq_optimizer_kwargs={"max_failures": 20},
+        checkpoint_history_to_csv=False,
+    )
+
+    with pytest.raises(ExhaustedFailures):
+        results = search.search(21)
+
+    results = search.history.to_dataframe()
+    assert len(results) == 20
+    
+    
+    # Case 4 - multi objective some failures
+
+    def run_multi_some_success(job):
+        return "F" if ((job.parameters["x"] == 0) and (job.parameters["y"] == 0)) else job.parameters["x"], job.parameters["y"]
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10000), "x")
+    problem.add_hyperparameter((0, 10000), "y")
+
+    search = CBO(
+        problem,
+        run_multi_some_success,
+        acq_optimizer_kwargs={"max_failures": 10},
+        checkpoint_history_to_csv=False,
+        n_initial_points=10,
+        initial_points=[{"x": 0, "y": 0} for i in range(5)]
+        + [{"x": 1, "y": 1} for i in range(5)]
+        + [{"x": 0, "y": 0} for i in range(5)],
+    )
+
+    with pytest.raises(ExhaustedFailures):
+        results = search.search(21)
+
+    results = search.history.to_dataframe()
+    assert len(results) == 15
+    
 
 
 def test_cbo_categorical_variable(tmp_path):
