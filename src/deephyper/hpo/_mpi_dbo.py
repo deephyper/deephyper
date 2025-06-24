@@ -237,7 +237,7 @@ class MPIDistributedBO(CBO):
 
         # set random state for given rank
         random_state = np.random.RandomState(
-            random_state.randint(low=0, high=1 << 31, size=self.size)[self.rank]
+            random_state.randint(low=0, high=np.iinfo(np.int32).max, size=self.size)[self.rank]
         )
 
         if self.rank == 0:

@@ -799,16 +799,12 @@ class Optimizer(object):
         if self.filter_failures in ["mean", "max"]:
             yi_no_failure = [v for v in yi if v != OBJECTIVE_VALUE_FAILURE]
 
-            # when yi_no_failure is empty all configurations are failures
-            if len(yi_no_failure) == 0:
-                if len(yi) >= self.max_failures:
-                    raise ExhaustedFailures
-                # constant value for the acq. func. to return anything
-                yi_failed_value = 0
-            elif self.filter_failures == "mean":
+            if self.filter_failures == "mean":
                 yi_failed_value = np.mean(yi_no_failure).tolist()
-            else:
+            elif self.filter_failures == "max":
                 yi_failed_value = np.max(yi_no_failure).tolist()
+            else:
+                raise ValueError(f"filter_failures={self.filter_failures} is not valid!")
 
             yi = [v if v != OBJECTIVE_VALUE_FAILURE else yi_failed_value for v in yi]
 
@@ -942,6 +938,12 @@ class Optimizer(object):
                 "Type of arguments `x` (%s) and `y` (%s) not compatible."
                 % (type(x), type(y))
             )
+        
+        # Check if the quota of failures to achieve valid n_initial_points is reached
+        if self._n_initial_points > 0:
+            n_failures = sum(1 for v in self.yi if v == OBJECTIVE_VALUE_FAILURE)
+            if n_failures >= self.max_failures:
+                raise ExhaustedFailures
 
         # optimizer learned something new - discard cache
         self.cache_ = {}

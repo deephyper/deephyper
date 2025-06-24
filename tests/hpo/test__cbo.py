@@ -1,6 +1,6 @@
 import os
 import time
-
+import pytest
 import numpy as np
 
 SEARCH_KWARGS_DEFAULTS = dict(
@@ -645,31 +645,60 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
 
     assert len(results_c) == 20
 
+
 def test_max_failures():
     from deephyper.hpo import CBO, HpProblem
+    from deephyper.skopt.optimizer import ExhaustedFailures
 
-    def run(job):
+    # Case 1 - only failures
+    def run_only_failures(job):
         return "F"
 
     problem = HpProblem()
     problem.add_hyperparameter((0, 10000), "x")
-    
+
     # use default max_failures 100
-    search = CBO(problem, run, initial_points=[{"x": i} for i in range(150)])
-    results = search.search(150)
+    search = CBO(
+        problem,
+        run_only_failures,
+        acq_optimizer_kwargs={"max_failures": 20},
+        checkpoint_history_to_csv=False,
+    )
 
-    # currently fails
-    assert len(results) == 100
+    with pytest.raises(ExhaustedFailures):
+        results = search.search(21)
 
+    results = search.history.to_dataframe()
+    assert len(results) == 20
 
-    # use max_failures 20
-    #custom_acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"]
-    #custom_acq_optimizer_kwargs["max_failures"] = 20
-    #print(custom_acq_optimizer_kwargs["max_failures"])
-    #search = CBO(problem, run, initial_points=[{"x": i} for i in range(100)], acq_optimizer_kwargs=custom_acq_optimizer_kwargs)
+    # Case 2 - failures then ok
+    # 5 failures, 5 successes, 5 failures
+    # max_failures allowed is 10 to generate n_initial_points=10
+    # 10 failures are process only 5 successes, the n_initial_points was not reached
+    # therefore raising error
+    def run_some_success(job):
+        return "F" if job.parameters["x"] == 0 else job.parameters["x"]
 
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10000), "x")
 
-    
+    search = CBO(
+        problem,
+        run_some_success,
+        acq_optimizer_kwargs={"max_failures": 10},
+        checkpoint_history_to_csv=False,
+        n_initial_points=10,
+        initial_points=[{"x": 0} for i in range(5)]
+        + [{"x": 1} for i in range(5)]
+        + [{"x": 0} for i in range(5)],
+    )
+
+    with pytest.raises(ExhaustedFailures):
+        results = search.search(21)
+
+    results = search.history.to_dataframe()
+    assert len(results) == 15
+
 
 def test_cbo_categorical_variable(tmp_path):
     from deephyper.evaluator import SerialEvaluator
@@ -845,4 +874,5 @@ if __name__ == "__main__":
     # test_cbo_checkpoint_restart_with_failures(".")
     # test_cbo_checkpoint_restart_moo(".")
     # test_many_initial_points(".")
-    test_convert_to_skopt_space()
+    # test_convert_to_skopt_space()
+    test_max_failures()

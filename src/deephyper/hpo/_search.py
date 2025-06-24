@@ -338,7 +338,7 @@ class Search(abc.ABC):
                 solution_selection = ArgMaxObsSelection()
             elif solution_selection == "argmax_est":
                 solution_selection = ArgMaxEstSelection(
-                    problem, random_state=self._random_state.randint(0, 1 << 31)
+                    problem, random_state=self._random_state.randint(0, np.iinfo(np.int32).max)
                 )
             else:
                 raise ValueError(

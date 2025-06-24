@@ -77,7 +77,7 @@ class RandomSearch(Search):
             checkpoint_history_to_csv,
             solution_selection,
         )
-        self._problem.space.seed(self._random_state.randint(0, 1 << 31))
+        self._problem.space.seed(self._random_state.randint(0, np.iinfo(np.int32).max))
 
     def _ask(self, n: int = 1) -> List[Dict]:
         """Ask the search for new configurations to evaluate.

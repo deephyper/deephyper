@@ -320,11 +320,11 @@ class CBO(Search):
             Literal["argmax_obs", "argmax_est"] | SolutionSelection
         ] = None,
         surrogate_model="ET",
-        surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
+        surrogate_model_kwargs: Optional[SurrogateModelKwargs | dict] = None,
         acq_func: str = "UCBd",
-        acq_func_kwargs: Optional[AcqFuncKwargs] = None,
+        acq_func_kwargs: Optional[AcqFuncKwargs | dict] = None,
         acq_optimizer: str = "mixedga",
-        acq_optimizer_kwargs: Optional[AcqOptimizerKwargs] = None,
+        acq_optimizer_kwargs: Optional[AcqOptimizerKwargs | dict] = None,
         multi_point_strategy: str = "cl_max",
         n_initial_points: Optional[int] = None,
         initial_point_generator: str = "random",
@@ -369,7 +369,7 @@ class CBO(Search):
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
-                random_state=self._random_state.randint(0, 1 << 31),
+                random_state=self._random_state.randint(0, np.iinfo(np.int32).max),
                 surrogate_model_kwargs=self._surrogate_model_kwargs,
             )
         elif is_regressor(surrogate_model):
@@ -976,7 +976,7 @@ class CBO(Search):
             best_index = non_dominated_set(-np.asarray(res_df[objcol]), return_mask=False)[0]
             best_param = res_df.iloc[best_index]
 
-        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 1 << 31))
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, np.iinfo(np.int32).max))
         hp_names = list(cst.keys())
         for hp_name in hp_names:
             hp = cst[hp_name]
