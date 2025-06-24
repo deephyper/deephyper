@@ -13,13 +13,12 @@ from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 from sklearn.base import is_regressor
 
 import deephyper.skopt
-from deephyper.analysis.hpo import filter_failed_objectives
+from deephyper.analysis.hpo import filter_failed_objectives, get_mask_of_rows_without_failures
 from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
 from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.gmm import GMMSampler
-from deephyper.hpo.utils import get_mask_of_rows_without_failures
 from deephyper.skopt.moo import (
     MoScalarFunction,
     moo_functions,
@@ -312,12 +311,14 @@ class CBO(Search):
         self,
         problem,
         evaluator,
-        random_state: int = None,
+        random_state: Optional[int] = None,
         log_dir: str = ".",
         verbose: int = 0,
         stopper: Optional[Stopper] = None,
         checkpoint_history_to_csv: bool = True,
-        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
         acq_func: str = "UCBd",
@@ -368,7 +369,7 @@ class CBO(Search):
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
-                random_state=self._random_state.randint(0, 2**31),
+                random_state=self._random_state.randint(0, 1 << 31),
                 surrogate_model_kwargs=self._surrogate_model_kwargs,
             )
         elif is_regressor(surrogate_model):
@@ -975,7 +976,7 @@ class CBO(Search):
             best_index = non_dominated_set(-np.asarray(res_df[objcol]), return_mask=False)[0]
             best_param = res_df.iloc[best_index]
 
-        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**31))
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 1 << 31))
         hp_names = list(cst.keys())
         for hp_name in hp_names:
             hp = cst[hp_name]

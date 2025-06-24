@@ -1,4 +1,4 @@
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Optional
 
 import numpy as np
 
@@ -63,7 +63,9 @@ class RandomSearch(Search):
         verbose=0,
         stopper=None,
         checkpoint_history_to_csv: bool = True,
-        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection = "argmax_obs",
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
     ):
         super().__init__(
             problem,
@@ -75,7 +77,7 @@ class RandomSearch(Search):
             checkpoint_history_to_csv,
             solution_selection,
         )
-        self._problem.space.seed(self._random_state.randint(0, 2**31))
+        self._problem.space.seed(self._random_state.randint(0, 1 << 31))
 
     def _ask(self, n: int = 1) -> List[Dict]:
         """Ask the search for new configurations to evaluate.

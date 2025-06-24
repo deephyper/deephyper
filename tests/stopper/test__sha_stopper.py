@@ -3,9 +3,9 @@ import time
 import numpy as np
 import pytest
 
+from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.evaluator import RunningJob
 from deephyper.hpo import CBO, HpProblem
-from deephyper.hpo.utils import get_mask_of_rows_without_failures
 from deephyper.stopper import SuccessiveHalvingStopper
 
 

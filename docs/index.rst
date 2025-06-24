@@ -69,7 +69,12 @@ To try this example, you can copy/paste the script and run it.
             },
         )
 
-        search = CBO(problem, evaluator, random_state=42)
+        search = CBO(
+            problem, 
+            evaluator, 
+            random_state=42, 
+            solution_selection="argmax_obs",
+        )
         results = search.search(max_evals=100)
 
         return results
