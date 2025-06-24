@@ -40,12 +40,12 @@ class ExhaustedSearchSpace(RuntimeError):
 
 
 class ExhaustedFailures(RuntimeError):
-    """Raised when search has seen ``max_failures`` failures without any valid objective value."""
+    """Raised when search has seen ``max_total_failures`` failures for the entire search."""
 
     def __str__(self):  # noqa: D105
         out = (
             "The search has reached its quota of failures!"
-            "Check if the type of failure is expected or the value of ``max_failures`` "
+            "Check if the type of failure is expected or the value of ``max_total_failures`` "
             "in the search algorithm."
         )
         return out
@@ -388,7 +388,7 @@ class Optimizer(object):
 
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
         self.filter_failures = acq_optimizer_kwargs.get("filter_failures", "mean")
-        self.max_failures = acq_optimizer_kwargs.get("max_failures", 100)
+        self.max_total_failures = acq_optimizer_kwargs.get("max_total_failures", 100)
         self.acq_optimizer_freq = acq_optimizer_kwargs.get("acq_optimizer_freq", 1)
         self.acq_optimizer_kwargs = acq_optimizer_kwargs
 
@@ -942,7 +942,7 @@ class Optimizer(object):
         # Check if the quota of failures to achieve valid n_initial_points is reached
         if self._n_initial_points > 0:
             n_failures = sum(1 for v in self.yi if v == OBJECTIVE_VALUE_FAILURE)
-            if n_failures >= self.max_failures:
+            if n_failures >= self.max_total_failures:
                 raise ExhaustedFailures
 
         # optimizer learned something new - discard cache

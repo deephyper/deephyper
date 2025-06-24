@@ -64,7 +64,7 @@ class AcqOptimizerKwargs(BaseModel):
     n_points: Optional[int] = 10_000
     filter_duplicated: Optional[bool] = True
     filter_failures: Optional[Literal["ignore", "max", "mean"]] = "max"
-    max_failures: Optional[int] = 100
+    max_total_failures: Optional[int] = 100
     acq_optimizer_freq: Optional[int] = 1
     n_jobs: Optional[int] = 1
     n_restarts_optimizer: Optional[int] = 1
@@ -248,9 +248,9 @@ class CBO(Search):
                 or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed
                 configurations objectives by the running min of all objectives.
 
-            - ``"max_failures"`` (int)
-                Maximum number of failed configurations allowed before observing a valid objective
-                value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
+            - ``"max_total_failures"`` (int)
+                Maximum number of failed configurations allowed for the entire search when
+                ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
 
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
             strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]``. All

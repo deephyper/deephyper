@@ -646,7 +646,7 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
     assert len(results_c) == 20
 
 
-def test_max_failures():
+def test_max_total_failures():
     from deephyper.hpo import CBO, HpProblem
     from deephyper.skopt.optimizer import ExhaustedFailures
 
@@ -660,7 +660,7 @@ def test_max_failures():
     search = CBO(
         problem,
         run_only_failures,
-        acq_optimizer_kwargs={"max_failures": 20},
+        acq_optimizer_kwargs={"max_total_failures": 20},
         checkpoint_history_to_csv=False,
     )
 
@@ -672,7 +672,7 @@ def test_max_failures():
 
     # Case 2 - failures then ok
     # 5 failures, 5 successes, 5 failures
-    # max_failures allowed is 10 to generate n_initial_points=10
+    # max_total_failures allowed is 10 to generate n_initial_points=10
     # 10 failures are process only 5 successes, the n_initial_points was not reached
     # therefore raising error
     def run_some_success(job):
@@ -684,7 +684,7 @@ def test_max_failures():
     search = CBO(
         problem,
         run_some_success,
-        acq_optimizer_kwargs={"max_failures": 10},
+        acq_optimizer_kwargs={"max_total_failures": 10},
         checkpoint_history_to_csv=False,
         n_initial_points=10,
         initial_points=[{"x": 0} for i in range(5)]
@@ -709,7 +709,7 @@ def test_max_failures():
     search = CBO(
         problem,
         run_multi_only_failures,
-        acq_optimizer_kwargs={"max_failures": 20},
+        acq_optimizer_kwargs={"max_total_failures": 20},
         checkpoint_history_to_csv=False,
     )
 
@@ -732,7 +732,7 @@ def test_max_failures():
     search = CBO(
         problem,
         run_multi_some_success,
-        acq_optimizer_kwargs={"max_failures": 10},
+        acq_optimizer_kwargs={"max_total_failures": 10},
         checkpoint_history_to_csv=False,
         n_initial_points=10,
         initial_points=[{"x": 0, "y": 0} for i in range(5)]
@@ -915,12 +915,12 @@ def test_convert_to_skopt_space():
 
 
 if __name__ == "__main__":
-    # test_sample_types(".")
-    # test_gp(".")
-    # test_cbo_categorical_variable(".")
-    # test_cbo_checkpoint_restart_moo_with_failures(".")
-    # test_cbo_checkpoint_restart_with_failures(".")
-    # test_cbo_checkpoint_restart_moo(".")
-    # test_many_initial_points(".")
-    # test_convert_to_skopt_space()
-    test_max_failures()
+    test_sample_types(".")
+    test_gp(".")
+    test_cbo_categorical_variable(".")
+    test_cbo_checkpoint_restart_moo_with_failures(".")
+    test_cbo_checkpoint_restart_with_failures(".")
+    test_cbo_checkpoint_restart_moo(".")
+    test_many_initial_points(".")
+    test_convert_to_skopt_space()
+    test_max_total_failures()

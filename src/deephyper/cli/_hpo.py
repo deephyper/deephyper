@@ -11,7 +11,7 @@ Use the command line help option to get more information.
                             [--surrogate-model-kwargs SURROGATE_MODEL_KWARGS] [--acq-func ACQ_FUNC] [--acq-optimizer ACQ_OPTIMIZER] [--acq-optimizer-freq ACQ_OPTIMIZER_FREQ] [--kappa KAPPA] [--xi XI]
                             [--n-points N_POINTS] [--filter-duplicated FILTER_DUPLICATED] [--update-prior UPDATE_PRIOR] [--update-prior-quantile UPDATE_PRIOR_QUANTILE]
                             [--multi-point-strategy MULTI_POINT_STRATEGY] [--n-jobs N_JOBS] [--n-initial-points N_INITIAL_POINTS] [--initial-point-generator INITIAL_POINT_GENERATOR]
-                            [--initial-points INITIAL_POINTS] [--filter-failures FILTER_FAILURES] [--max-failures MAX_FAILURES] [--moo-lower-bounds MOO_LOWER_BOUNDS]
+                            [--initial-points INITIAL_POINTS] [--filter-failures FILTER_FAILURES] [--max-total-failures MAX_TOTAL_FAILURES] [--moo-lower-bounds MOO_LOWER_BOUNDS]
                             [--moo-scalarization-strategy MOO_SCALARIZATION_STRATEGY] [--moo-scalarization-weight MOO_SCALARIZATION_WEIGHT] [--scheduler SCHEDULER] [--objective-scaler OBJECTIVE_SCALER]
                             [--max-evals MAX_EVALS] [--timeout TIMEOUT] --run-function RUN_FUNCTION [--num-workers NUM_WORKERS] [--callbacks CALLBACKS] [--run-function-kwargs RUN_FUNCTION_KWARGS]
                             [--storage STORAGE] [--search-id SEARCH_ID] [--mpicomm-comm MPICOMM_COMM] [--mpicomm-root MPICOMM_ROOT] [--ray-address RAY_ADDRESS] [--ray-password RAY_PASSWORD]
@@ -56,7 +56,7 @@ Use the command line help option to get more information.
                             Defaults to 'None'.
     --filter-failures FILTER_FAILURES
                             Type[str]. Defaults to 'min'.
-    --max-failures MAX_FAILURES
+    --max-failures MAX_TOTAL_FAILURES
                             Type[int]. Defaults to '100'.
     --moo-lower-bounds MOO_LOWER_BOUNDS
                             Defaults to 'None'.
