@@ -546,9 +546,12 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
     )
 
+    def get_log_dir(name):
+        return os.path.join(tmp_path, name)
+
     # test pause-continue of the search
     search_a = CBO(
-        log_dir=os.path.join(tmp_path, "search_a"),
+        log_dir=get_log_dir("search_a"),
         surrogate_model="DUMMY",
         **search_kwargs,
     )
@@ -561,7 +564,7 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
 
     # test reloading of a checkpoint directly as dataframe
     search_b = CBO(
-        log_dir=os.path.join(tmp_path, "search_b"),
+        log_dir=get_log_dir("search_b"),
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         **search_kwargs,
@@ -573,7 +576,7 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
 
     # test reloading of a checkpoint from a file
     search_c = CBO(
-        log_dir=os.path.join(tmp_path, "search_c"),
+        log_dir=get_log_dir("search_c"),
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         **search_kwargs,
@@ -582,6 +585,19 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
     results_c = search_c.search(20)
 
     assert len(results_c) == 20
+
+    # test reloading of a checkpoint from a file with failures only
+    results_c["objective"] = "F"
+    search_d = CBO(
+        surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
+        surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
+        log_dir=get_log_dir("search_d"),
+        **search_kwargs,
+    )
+    search_d.fit_surrogate(results_c)
+    results_d = search_d.search(20)
+
+    assert len(results_d) == 20
 
 
 def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
@@ -718,12 +734,14 @@ def test_max_total_failures():
 
     results = search.history.to_dataframe()
     assert len(results) == 20
-    
-    
+
     # Case 4 - multi objective some failures
 
     def run_multi_some_success(job):
-        return "F" if ((job.parameters["x"] == 0) and (job.parameters["y"] == 0)) else job.parameters["x"], job.parameters["y"]
+        if (job.parameters["x"] == 0) and (job.parameters["y"] == 0):
+            return "F", "F"
+        else:
+            return job.parameters["x"], job.parameters["y"]
 
     problem = HpProblem()
     problem.add_hyperparameter((0, 10000), "x")
@@ -745,7 +763,6 @@ def test_max_total_failures():
 
     results = search.history.to_dataframe()
     assert len(results) == 15
-    
 
 
 def test_cbo_categorical_variable(tmp_path):
@@ -915,12 +932,12 @@ def test_convert_to_skopt_space():
 
 
 if __name__ == "__main__":
-    test_sample_types(".")
-    test_gp(".")
-    test_cbo_categorical_variable(".")
-    test_cbo_checkpoint_restart_moo_with_failures(".")
+    # test_sample_types(".")
+    # test_gp(".")
+    # test_cbo_categorical_variable(".")
+    # test_cbo_checkpoint_restart_moo_with_failures(".")
     test_cbo_checkpoint_restart_with_failures(".")
-    test_cbo_checkpoint_restart_moo(".")
-    test_many_initial_points(".")
-    test_convert_to_skopt_space()
-    test_max_total_failures()
+    # test_cbo_checkpoint_restart_moo(".")
+    # test_many_initial_points(".")
+    # test_convert_to_skopt_space()
+    # test_max_total_failures()

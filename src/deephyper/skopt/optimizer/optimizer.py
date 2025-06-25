@@ -64,6 +64,10 @@ def boltzmann_distribution(x, beta=1):
 
 OBJECTIVE_VALUE_FAILURE = "F"
 
+def is_failure(value) -> bool:
+    """Test if the input value is a failure."""
+    return value == OBJECTIVE_VALUE_FAILURE or (isinstance(value, list) and OBJECTIVE_VALUE_FAILURE in value)
+
 # TODO: add check to notify that optimizer="ga" cannot work with categorical or integer values
 
 
@@ -389,6 +393,7 @@ class Optimizer(object):
         self.filter_duplicated = acq_optimizer_kwargs.get("filter_duplicated", True)
         self.filter_failures = acq_optimizer_kwargs.get("filter_failures", "mean")
         self.max_total_failures = acq_optimizer_kwargs.get("max_total_failures", 100)
+        self.n_total_failures = 0
         self.acq_optimizer_freq = acq_optimizer_kwargs.get("acq_optimizer_freq", 1)
         self.acq_optimizer_kwargs = acq_optimizer_kwargs
 
@@ -905,34 +910,41 @@ class Optimizer(object):
         This method exists to give access to the internals of adding points
         by side stepping all input validation and transformation.
         """
+        # TODO: the "ps" case should be tested or removed as it is not used
         if "ps" in self.acq_func:
             if is_2Dlistlike(x):
                 self.Xi.extend(x)
                 self.yi.extend(y)
-                n_new_points = len([v for v in y if v != "F"])
+                n_failures = len([v for v in y if is_failure(v)])
+                n_new_points = len(y) - n_failures
                 self._n_initial_points -= n_new_points
+                self.n_total_failures += n_failures
             elif is_listlike(x):
                 self.Xi.append(x)
                 self.yi.append(y)
-                if y != "F":
+                if is_failure(y):
+                    n_new_points = 0
+                    self.n_total_failures += 1
+                else:
                     n_new_points = 1
                     self._n_initial_points -= n_new_points
-                else:
-                    n_new_points = 0
         # if y isn't a scalar it means we have been handed a batch of points
         elif is_listlike(y) and is_2Dlistlike(x):
             self.Xi.extend(x)
             self.yi.extend(y)
-            n_new_points = len([v for v in y if v != "F"])
+            n_failures = len([v for v in y if is_failure(v)])
+            n_new_points = len(y) - n_failures
             self._n_initial_points -= n_new_points
+            self.n_total_failures += n_failures
         elif is_listlike(x):
             self.Xi.append(x)
             self.yi.append(y)
-            if y != "F":
+            if is_failure(y):
+                n_new_points = 0
+                self.n_total_failures += 1
+            else:
                 n_new_points = 1
                 self._n_initial_points -= n_new_points
-            else:
-                n_new_points = 0
         else:
             raise ValueError(
                 "Type of arguments `x` (%s) and `y` (%s) not compatible."
@@ -940,10 +952,8 @@ class Optimizer(object):
             )
         
         # Check if the quota of failures to achieve valid n_initial_points is reached
-        if self._n_initial_points > 0:
-            n_failures = sum(1 for v in self.yi if v == OBJECTIVE_VALUE_FAILURE)
-            if n_failures >= self.max_total_failures:
-                raise ExhaustedFailures
+        if self.max_total_failures >= 0 and self.n_total_failures >= self.max_total_failures:
+            raise ExhaustedFailures
 
         # optimizer learned something new - discard cache
         self.cache_ = {}

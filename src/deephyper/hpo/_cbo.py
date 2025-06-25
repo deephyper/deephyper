@@ -249,8 +249,10 @@ class CBO(Search):
                 configurations objectives by the running min of all objectives.
 
             - ``"max_total_failures"`` (int)
-                Maximum number of failed configurations allowed for the entire search when
-                ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
+                Maximum number of failed configurations (i.e., returning "F" as objective value)
+                allowed for the entire search when ``filter_failures`` is not equal to ``"ignore"``.
+                If set to ``-1`` it allows for infinite number of failed configurations. Defaults
+                to ``100``.
 
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
             strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]``. All
@@ -467,7 +469,6 @@ class CBO(Search):
         self._multi_point_strategy = MAP_multi_point_strategy.get(
             multi_point_strategy, multi_point_strategy
         )
-        self._fitted = False
 
         # Map the ConfigSpace to Skop Space
         self._opt_space = convert_to_skopt_space(
@@ -564,8 +565,6 @@ class CBO(Search):
         self._num_asked = 0
 
     def _setup_optimizer(self):
-        if self._fitted:
-            self._opt_kwargs["n_initial_points"] = 0
         self._opt = deephyper.skopt.Optimizer(**self._opt_kwargs)
 
     def _apply_scheduler(self, i):
@@ -797,7 +796,7 @@ class CBO(Search):
                 logging.warning("Not supported type" + str(type(cond)))
         return cond_new
 
-    def fit_surrogate(self, df):
+    def fit_surrogate(self, df: str | pd.DataFrame):
         """Fit the surrogate model of the search from a checkpointed Dataframe.
 
         Args:
@@ -814,9 +813,9 @@ class CBO(Search):
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
 
-        df, df_failures = filter_failed_objectives(df)
+        assert isinstance(df, pd.DataFrame)
 
-        self._fitted = True
+        df, df_failures = filter_failed_objectives(df)
 
         if self._opt is None:
             self._setup_optimizer()
