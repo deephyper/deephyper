@@ -90,7 +90,7 @@ class RegularizedEvolution(Search):
             checkpoint_history_to_csv,
             solution_selection,
         )
-        self._problem.space.seed(self._random_state.randint(0, 1 << 31))
+        self._problem.space.seed(self._random_state.randint(0, np.iinfo(np.int32).max))
         assert population_size > sample_size, "population_size must be greater than sample_size"
         self.population_size = population_size
         self.sample_size = sample_size

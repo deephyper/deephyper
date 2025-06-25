@@ -111,9 +111,11 @@ class MPIDistributedBO(CBO):
                 or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed
                 configurations objectives by the running min of all objectives.
 
-            - ``"max_failures"`` (int)
-                Maximum number of failed configurations allowed before observing a valid objective
-                value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
+            - ``"max_total_failures"`` (int)
+                Maximum number of failed configurations (i.e., returning "F" as objective value)
+                allowed for the entire search when ``filter_failures`` is not equal to ``"ignore"``.
+                If set to ``-1`` it allows for infinite number of failed configurations. Defaults
+                to ``100``.
 
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
             strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]``. All
@@ -237,7 +239,7 @@ class MPIDistributedBO(CBO):
 
         # set random state for given rank
         random_state = np.random.RandomState(
-            random_state.randint(low=0, high=1 << 31, size=self.size)[self.rank]
+            random_state.randint(low=0, high=np.iinfo(np.int32).max, size=self.size)[self.rank]
         )
 
         if self.rank == 0:

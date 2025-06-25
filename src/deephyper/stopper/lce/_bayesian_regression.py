@@ -340,7 +340,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
                 progress_bar=self.verbose,
             )
 
-        seed = self.random_state.randint(low=0, high=1 << 31)
+        seed = self.random_state.randint(low=0, high=np.iinfo(np.int32).max)
         rng_key = jax.random.PRNGKey(seed)
         self.mcmc_.run(rng_key, z=self.X_, y=self.y_)
 
