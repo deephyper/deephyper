@@ -153,14 +153,6 @@ class Optimizer(object):
                 - After fitting the surrogate model with `(X_best, y_best)`,
                   the gains are updated such that :math:`g_i -= \mu(X_i)`
 
-            - `"EIps"` for negated expected improvement per second to take into
-              account the function compute time. Then, the objective function is
-              assumed to return two values, the first being the objective value and
-              the second being the time taken in seconds.
-            - `"PIps"` for negated probability of improvement per second. The
-              return type of the objective function is assumed to be similar to
-              that of `"EIps"`
-
         acq_optimizer (string, optional): `"sampling"` or `"lbfgs"`, default is `"auto"`
             Method to minimize the acquisition function. The fit model
             is updated with the optimal value obtained by optimizing `acq_func`
@@ -270,8 +262,6 @@ class Optimizer(object):
             "LCB",
             "PI",
             "MES",
-            "EIps",
-            "PIps",
             # TODO: new acquisition functions
             "gp_hedged",
             "EId",
@@ -331,12 +321,10 @@ class Optimizer(object):
         if not is_regressor(base_estimator) and base_estimator is not None:
             raise ValueError("%s has to be a regressor." % base_estimator)
 
-        # treat per second acqusition function specially
-        is_multi_regressor = isinstance(base_estimator, MultiOutputRegressor)
-        if "ps" in self.acq_func and not is_multi_regressor:
-            self.base_estimator_ = MultiOutputRegressor(base_estimator)
-        else:
-            self.base_estimator_ = base_estimator
+        # TODO: the following can be used to manage multi-output-regressor
+        # is_multi_regressor = isinstance(base_estimator, MultiOutputRegressor)
+        # self.base_estimator_ = MultiOutputRegressor(base_estimator)
+        self.base_estimator_ = base_estimator
 
         self.base_estimator_scheduler = base_estimator_scheduler
         if self.base_estimator_scheduler is not None and not isinstance(
@@ -733,32 +721,21 @@ class Optimizer(object):
             if i == n_points - 1:
                 break
 
-            ti_available = "ps" in self.acq_func and len(opt.yi) > 0
-            ti = [t for (_, t) in opt.yi] if ti_available else None
-
             opt_yi = self._filter_failures(opt.yi)
 
             if strategy == "cl_min":
                 y_lie = np.min(opt_yi, axis=0) if opt_yi else 0.0  # CL-min lie
-                t_lie = np.min(ti) if ti is not None else log(sys.float_info.max)
             elif strategy == "cl_mean":
                 y_lie = np.mean(opt_yi, axis=0) if opt_yi else 0.0  # CL-mean lie
-                t_lie = np.mean(ti) if ti is not None else log(sys.float_info.max)
             else:
                 y_lie = np.max(opt_yi, axis=0) if opt_yi else 0.0  # CL-max lie
-                t_lie = np.max(ti) if ti is not None else log(sys.float_info.max)
 
             # Converts both numpy scalar or arrays, it is necessary to avoid y_lie
             # being an array triggering an issue in _tell
             y_lie = y_lie.tolist()
 
             # Lie to the optimizer.
-            if "ps" in self.acq_func:
-                # Use `_tell()` instead of `tell()` to prevent repeated
-                # log transformations of the computation times.
-                opt._tell(x, (y_lie, t_lie))
-            else:
-                opt._tell(x, y_lie)
+            opt._tell(x, y_lie)
 
         self.cache_ = {(n_points, strategy): X}  # cache_ the result
 
@@ -892,14 +869,6 @@ class Optimizer(object):
 
         self._check_y_is_valid(x, y)
 
-        # take the logarithm of the computation times
-        if "ps" in self.acq_func:
-            if is_2Dlistlike(x):
-                y = [[val, log(t)] for (val, t) in y]
-            elif is_listlike(x):
-                y = list(y)
-                y[1] = log(y[1])
-
         return self._tell(x, y, fit=fit)
 
     def _tell(self, x, y, fit=True):
@@ -910,26 +879,8 @@ class Optimizer(object):
         This method exists to give access to the internals of adding points
         by side stepping all input validation and transformation.
         """
-        # TODO: the "ps" case should be tested or removed as it is not used
-        if "ps" in self.acq_func:
-            if is_2Dlistlike(x):
-                self.Xi.extend(x)
-                self.yi.extend(y)
-                n_failures = len([v for v in y if is_failure(v)])
-                n_new_points = len(y) - n_failures
-                self._n_initial_points -= n_new_points
-                self.n_total_failures += n_failures
-            elif is_listlike(x):
-                self.Xi.append(x)
-                self.yi.append(y)
-                if is_failure(y):
-                    n_new_points = 0
-                    self.n_total_failures += 1
-                else:
-                    n_new_points = 1
-                    self._n_initial_points -= n_new_points
         # if y isn't a scalar it means we have been handed a batch of points
-        elif is_listlike(y) and is_2Dlistlike(x):
+        if is_listlike(y) and is_2Dlistlike(x):
             self.Xi.extend(x)
             self.yi.extend(y)
             n_failures = len([v for v in y if is_failure(v)])
@@ -1200,16 +1151,8 @@ class Optimizer(object):
 
     def _check_y_is_valid(self, x, y):
         """Check if the shape and types of x and y are consistent."""
-        if "ps" in self.acq_func:
-            if is_2Dlistlike(x):
-                if not (np.ndim(y) == 2 and np.shape(y)[1] == 2):
-                    raise TypeError("expected y to be a list of (func_val, t)")
-            elif is_listlike(x):
-                if not (np.ndim(y) == 1 and len(y) == 2):
-                    raise TypeError("expected y to be (func_val, t)")
-
         # if y isn't a scalar it means we have been handed a batch of points
-        elif is_listlike(y) and is_2Dlistlike(x):
+        if is_listlike(y) and is_2Dlistlike(x):
             for y_value in y:
                 if (
                     not isinstance(y_value, numbers.Number)
