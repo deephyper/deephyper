@@ -1,0 +1,39 @@
+name: Bug Report
+description: Create a bug report to help us improve
+labels: ["bug"]
+body:
+  - type: textarea
+    id: describe-bug
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the behavior.
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem.
+  - type: textarea
+    id: system
+    attributes:
+      label: System information
+      description: If applicable, add screenshots to help explain your problem.
+      value: |
+        - OS: [e.g. Ubuntu]
+        - System: [optional, e.g. Theta]
+        - Python version [e.g. 3.8]
+        - DeepHyper Version [e.g. 0.1.11]
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add more context about the problem here.
