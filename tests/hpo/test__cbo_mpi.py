@@ -70,7 +70,7 @@ def _test_mpi_many_initial_points(tmp_path):
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
-    max_evals = 100
+    max_evals = 1000
 
     with Evaluator.create(
         run, method="mpicomm", method_kwargs={"callbacks": [TqdmCallback()]}
