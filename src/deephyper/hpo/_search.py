@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
@@ -392,28 +391,10 @@ class Search(abc.ABC):
     def dump_context(self):
         """Dumps the context in the log folder."""
         context = self.to_json()
+        json_path = os.path.join(self._log_dir, "context.json")
 
-        formatted_context = ""
-
-        for key, val in context.items():
-            formatted_context += f"{key}\n"
-
-            if isinstance(val, dict):
-                for k, v in val.items():
-                    formatted_context += f"  {k:30} -> {v}\n"
-
-            if isinstance(val, list):
-                for x in val:
-                    for k, v in x.items():
-                        formatted_context += f"  {k:30} -> {v}\n"
-
-        path_context = os.path.join(self._log_dir, "context.txt")
-        with open(path_context, "w") as txtfile:
-            print(formatted_context, file=txtfile)
-
-        # path_context = os.path.join(self._log_dir, "context.yaml")
-        # with open(path_context, "w") as file:
-        #     yaml.dump(context, file)
+        with open(json_path, "w") as f:
+            json.dump(context, f, indent=2, sort_keys=True)
 
     def _check_timeout(self, timeout=None):
         """Check the timeout parameter for the evaluator used by the search.
