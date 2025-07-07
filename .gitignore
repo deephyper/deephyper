@@ -185,7 +185,7 @@ old_*/
 !docs/examples/**/images/*.png
 !docs/examples/**/images/thumb/*.png
 !docs/examples/**/*.codeobj.json
-context.yaml
+context.txt
 *.pt
 *.rdb
 prof/*.prof
