@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
@@ -378,23 +377,29 @@ class Search(abc.ABC):
 
         self._evaluator._job_class = HPOJob
 
-    def to_json(self):
-        """Returns a json version of the search object."""
-        json_self = {
+    def save_params(self):
+        """Saves the search parameters to a JSON file in the log folder."""
+        search_params = self.get_params()
+        json_path = os.path.join(self._log_dir, "params.json")
+
+        with open(json_path, "w") as f:
+            json.dump(search_params, f, indent=2, sort_keys=True)
+
+    def get_params(self) -> dict:
+        """Get parameters used for the search object.
+
+        Returns:
+            A dictionary of the search parameters.
+        """
+        dict_self = {
             "search": {
                 "type": type(self).__name__,
                 **get_init_params_as_json(self),
             },
             "calls": self._call_args,
         }
-        return json_self
 
-    def dump_context(self):
-        """Dumps the context in the log folder."""
-        context = self.to_json()
-        path_context = os.path.join(self._log_dir, "context.yaml")
-        with open(path_context, "w") as file:
-            yaml.dump(context, file)
+        return dict_self
 
     def _check_timeout(self, timeout=None):
         """Check the timeout parameter for the evaluator used by the search.
@@ -451,8 +456,7 @@ class Search(abc.ABC):
 
         # save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
-        # save the context in the log folder
-        self.dump_context()
+
         # init tqdm callback
         if max_evals > 1:
             for cb in self._evaluator._callbacks:
@@ -503,6 +507,9 @@ class Search(abc.ABC):
             df_results = self.history.to_csv_complete(os.path.join(self._log_dir, "results.csv"))
         else:
             df_results = self.history.to_dataframe()
+
+        # Log parameters using json.dumps for formatting
+        logging.info(f"Parameters:\n{json.dumps(self.get_params(), indent=2, sort_keys=True)}")
 
         return df_results
 
