@@ -508,10 +508,8 @@ class Search(abc.ABC):
         else:
             df_results = self.history.to_dataframe()
 
-        # Log search parameters
-        params = self.get_params()
-        logging.info(f"Problem: {params['search']['problem']}")
-        logging.info(f"Evaluator: {params['search']['evaluator']}")
+        # Log parameters using json.dumps for formatting
+        logging.info(f"Parameters:\n{json.dumps(self.get_params(), indent=2, sort_keys=True)}")
 
         return df_results
 
