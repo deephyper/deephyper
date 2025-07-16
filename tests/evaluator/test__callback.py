@@ -135,7 +135,7 @@ def test_csv_logger_callback(tmp_path):
     import pandas as pd
     import pytest
 
-    from deephyper.evaluator import Job, SerialEvaluator, ThreadPoolEvaluator
+    from deephyper.evaluator import Job, SerialEvaluator
     from deephyper.evaluator.callback import CSVLoggerCallback
 
     csv_path = os.path.join(tmp_path, "results.csv")
