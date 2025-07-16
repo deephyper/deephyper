@@ -130,6 +130,7 @@ def test_logger_callback(tmp_path):
     search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
     search.search(max_evals=100)
 
+
 def test_csv_logger_callback(tmp_path):
     import os
     import pandas as pd
@@ -140,7 +141,7 @@ def test_csv_logger_callback(tmp_path):
 
     csv_path = os.path.join(tmp_path, "results.csv")
 
-    # single objective 
+    # single objective
     configs = [{"x": i} for i in range(10)]
 
     async def run(job):
@@ -168,7 +169,7 @@ def test_csv_logger_callback(tmp_path):
     assert results["o:"][3] == 7
 
     # multi objective
-    configs = [{"x": i, "y": i+10} for i in range(25)]
+    configs = [{"x": i, "y": i + 10} for i in range(25)]
 
     async def run(job):
         return 17
