@@ -146,13 +146,12 @@ class SearchHistory:
             # Solution
             if isinstance(self.solution_selection, SolutionSelection):
                 if self.num_objective == 1:
-                    result.update(
-                        {
-                            f"sol.p:{k}": v
-                            for k, v in self.solution_history[job.id].parameters.items()
-                        }
-                    )
-                    result.update({"sol.objective": self.solution_history[job.id].objective})
+                    sol = dict(self.solution_history[job.id])
+                    parameters = sol.pop("parameters")
+                    objective = sol.pop("objective")
+                    result.update({f"sol.p:{k}": v for k, v in parameters.items()})
+                    result.update({"sol.objective": objective})
+                    result.update({f"sol.{k}": v for k, v in sol.items() if v is not None})
 
             results.append(result)
 
@@ -511,7 +510,9 @@ class Search(abc.ABC):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
 
-    def _search(self, max_evals: int, timeout: Optional[int], max_evals_strict=False):
+    def _search(
+        self, max_evals: int, timeout: Optional[int | float], max_evals_strict: bool = False
+    ):
         """Search algorithm logic.
 
         Args:
