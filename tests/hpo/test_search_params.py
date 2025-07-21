@@ -1,25 +1,11 @@
 import logging
+import os
 from deephyper.hpo import RandomSearch, HpProblem, CBO
 from deephyper.evaluator import Evaluator
 
 
-def test_search_params(caplog):
-    """Test search parameters output to logger."""
-    caplog.set_level(logging.INFO)
-
-    def run(job):
-        return job.parameters["x"]
-
-    problem = HpProblem()
-    problem.add_hyperparameter((0.0, 1.0), "x")
-
-    search = RandomSearch(problem, run, checkpoint_history_to_csv=False)
-    _ = search.search(max_evals=5)
-
-    assert '"type": "RandomSearch"' in caplog.text
-    assert '"max_evals": 5' in caplog.text
-    assert '"name": "x"' in caplog.text
-    assert '"upper": 1.0' in caplog.text
+def run(job):
+    return job.parameters["x"]
 
 
 def run_func(job):
@@ -33,7 +19,23 @@ def run_func(job):
     return y
 
 
-def test_search_params_cbo(caplog):
+def test_random_search_params(caplog):
+    """Test search parameters output to logger."""
+    caplog.set_level(logging.INFO)
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0.0, 1.0), "x")
+
+    search = RandomSearch(problem, run, checkpoint_history_to_csv=False)
+    _ = search.search(max_evals=5)
+
+    assert '"type": "RandomSearch"' in caplog.text
+    assert '"max_evals": 5' in caplog.text
+    assert '"name": "x"' in caplog.text
+    assert '"upper": 1.0' in caplog.text
+
+
+def test_cbo_search_params(caplog):
     """Test search parameters output to logger for CBO."""
     caplog.set_level(logging.INFO)
 
@@ -58,3 +60,30 @@ def test_search_params_cbo(caplog):
     assert '"name": "b"' in caplog.text
     assert '"upper": 10' in caplog.text
     assert '"default_value": "linear"' in caplog.text
+
+
+def test_save_params():
+    """Test saving the search parameters to a JSON file."""
+    problem = HpProblem()
+    problem.add_hyperparameter((0.0, 1.0), "x")
+
+    search = RandomSearch(problem, run, checkpoint_history_to_csv=False)
+    _ = search.search(max_evals=5)
+
+    search.save_params()
+
+    assert os.path.exists("params.json")
+
+
+def test_get_params():
+    """Test getting the search parameters as a dictionary."""
+    problem = HpProblem()
+    problem.add_hyperparameter((0.0, 1.0), "x")
+
+    search = RandomSearch(problem, run, checkpoint_history_to_csv=False)
+    _ = search.search(max_evals=5)
+
+    d = search.get_params()
+
+    assert d["calls"][0]["max_evals"] == 5
+    assert d["search"]["problem"]["hyperparameters"][0]["upper"] == 1.0

@@ -385,7 +385,7 @@ class Search(abc.ABC):
         with open(json_path, "w") as f:
             json.dump(search_params, f, indent=2, sort_keys=True)
 
-    def get_params(self) -> dict:
+    def get_params(self) -> dict[str, Any]:
         """Get parameters used for the search object.
 
         Returns:
