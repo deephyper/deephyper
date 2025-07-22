@@ -377,10 +377,18 @@ class Search(abc.ABC):
 
         self._evaluator._job_class = HPOJob
 
-    def save_params(self):
-        """Saves the search parameters to a JSON file in the log folder."""
+    def save_params(self, filename: str = "params.json"):
+        """Save the search parameters to a JSON file in the log folder.
+
+        Args:
+            filename: Name of JSON file where search parameters are saved. Default is `params.json`.
+        """
+        if not filename.endswith(".json"):
+            print("Invalid file type. File must be a JSON file.")
+            return
+
         search_params = self.get_params()
-        json_path = os.path.join(self._log_dir, "params.json")
+        json_path = os.path.join(self._log_dir, filename)
 
         with open(json_path, "w") as f:
             json.dump(search_params, f, indent=2, sort_keys=True)
