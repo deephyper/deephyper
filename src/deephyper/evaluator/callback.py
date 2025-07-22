@@ -296,8 +296,8 @@ class CSVLoggerCallback(Callback):
 
     def __init__(self, path: str = "results.csv"):
         self.path = os.path.abspath(path)
-        if not os.path.exists(os.path.dirname(path)):
-            raise ValueError(f"Directory not found {self.path}")
+        if not os.path.exists(os.path.dirname(self.path)):
+            raise ValueError(f"Directory not found {os.path.dirname(self.path)}")
         self.jobs_done = []
         self.num_objective = None
         self._start_dumping = False
@@ -414,7 +414,6 @@ class CSVLoggerCallback(Callback):
 
             # when the returned value of the run-function is a dict we flatten it to add in csv
             result["objective"] = job.objective
-            print(f"{job.objective=}")
 
             # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
             if isinstance(result["objective"], tuple) or isinstance(result["objective"], list):
@@ -460,7 +459,6 @@ class CSVLoggerCallback(Callback):
                         is_multi_obj_and_has_success = (
                             "objective_0" in result and type(result["objective_0"]) is not str
                         )
-                        print(f"{is_single_obj_and_has_success=}, {is_multi_obj_and_has_success=}")
                         if is_single_obj_and_has_success or is_multi_obj_and_has_success or flush:
                             self._columns_dumped = result.keys()
 
