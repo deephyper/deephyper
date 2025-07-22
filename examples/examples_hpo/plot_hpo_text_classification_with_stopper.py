@@ -226,13 +226,12 @@ def get_run(train_ratio=0.95):
     optimizer = torch.optim.SGD(model.parameters(), lr=job["learning_rate"])
     for i in range(1, int(job["num_epochs"]) + 1):
         train(model, criterion, optimizer, train_dataloader)
-        job.record(budget = job["num_epochs"], objective=evaluate(model, train_dataloader)) # what should i set this to?
+        job.record(budget = i + 1, objective=evaluate(model, valid_dataloader))
         if job.stopped():
             print("stopper stopped") # we never reach this
             break
     
     accu_test = evaluate(model, valid_dataloader)
-    print(i)
     return accu_test
   return run
 
