@@ -6,14 +6,12 @@ import json
 import logging
 import os
 import pathlib
-from re import search
 import time
 from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
 
-from deephyper import evaluator
 from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
