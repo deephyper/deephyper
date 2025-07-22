@@ -6,12 +6,14 @@ import json
 import logging
 import os
 import pathlib
+from re import search
 import time
 from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
 
+from deephyper import evaluator
 from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
@@ -456,6 +458,12 @@ class Search(abc.ABC):
                     present like ``m:timestamp_submit`` and ``m:timestamp_gather`` which are the
                     timestamps of the submission and gathering of the job.
         """
+        logging.info(f"Starting search with {type(self).__name__}")
+
+        # Log search parameters using json.dumps for formatting
+        search_params = self.get_params()["search"]
+        logging.info(f"Search parameters:\n{json.dumps(search_params, indent=2, sort_keys=True)}")
+
         self.stopped = False
         self._check_timeout(timeout)
         if max_evals_strict:
@@ -516,8 +524,9 @@ class Search(abc.ABC):
         else:
             df_results = self.history.to_dataframe()
 
-        # Log parameters using json.dumps for formatting
-        logging.info(f"Parameters:\n{json.dumps(self.get_params(), indent=2, sort_keys=True)}")
+        # Log calls using json.dumps for formatting
+        calls_params = self.get_params()["calls"]
+        logging.info(f"Call parameters:\n{json.dumps(calls_params, indent=2, sort_keys=True)}")
 
         return df_results
 
