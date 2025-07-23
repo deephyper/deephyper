@@ -458,9 +458,15 @@ class Search(abc.ABC):
         """
         logging.info(f"Starting search with {type(self).__name__}")
 
-        # Log search parameters using json.dumps for formatting
-        search_params = self.get_params()["search"]
-        logging.info(f"Search parameters:\n{json.dumps(search_params, indent=2, sort_keys=True)}")
+        # Log problem and evaluator parameters
+        logging.info(f"Problem: {self._problem}")
+        logging.info(f"Evaluator type: {type(self._evaluator).__name__}")
+        logging.info(f"Evaluator number of workers: {self._evaluator.num_workers}")
+
+        # Log remaining parameters
+        params_dict = self.get_params()["search"]
+        del params_dict["evaluator"], params_dict["problem"]
+        logging.info(f"Context:\n{json.dumps(params_dict, indent=2, sort_keys=True)}")
 
         self.stopped = False
         self._check_timeout(timeout)
@@ -470,6 +476,8 @@ class Search(abc.ABC):
 
         # save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
+        logging.info(f"Call timeout: {timeout}")
+        logging.info(f"Call max evaluations: {max_evals}")
 
         # init tqdm callback
         if max_evals > 1:
@@ -521,10 +529,6 @@ class Search(abc.ABC):
             df_results = self.history.to_csv_complete(os.path.join(self._log_dir, "results.csv"))
         else:
             df_results = self.history.to_dataframe()
-
-        # Log calls using json.dumps for formatting
-        calls_params = self.get_params()["calls"]
-        logging.info(f"Call parameters:\n{json.dumps(calls_params, indent=2, sort_keys=True)}")
 
         return df_results
 
