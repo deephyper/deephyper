@@ -29,10 +29,9 @@ def test_random_search_params(caplog):
     search = RandomSearch(problem, run, checkpoint_history_to_csv=False)
     _ = search.search(max_evals=5)
 
+    assert "Evaluator type: ThreadPoolEvaluator" in caplog.text
+    assert "Call max evaluations: 5" in caplog.text
     assert '"type": "RandomSearch"' in caplog.text
-    assert '"max_evals": 5' in caplog.text
-    assert '"name": "x"' in caplog.text
-    assert '"upper": 1.0' in caplog.text
 
 
 def test_cbo_search_params(caplog):
@@ -55,11 +54,9 @@ def test_cbo_search_params(caplog):
     search = CBO(problem, evaluator, random_state=42, checkpoint_history_to_csv=False)
     _ = search.search(max_evals=4)
 
+    assert "Evaluator type: ProcessPoolEvaluator" in caplog.text
+    assert "Call max evaluations: 4" in caplog.text
     assert '"type": "CBO"' in caplog.text
-    assert '"max_evals": 4' in caplog.text
-    assert '"name": "b"' in caplog.text
-    assert '"upper": 10' in caplog.text
-    assert '"default_value": "linear"' in caplog.text
 
 
 def test_save_params():
