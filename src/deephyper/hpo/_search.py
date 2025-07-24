@@ -459,14 +459,18 @@ class Search(abc.ABC):
         logging.info(f"Starting search with {type(self).__name__}")
 
         # Log problem and evaluator parameters
-        logging.info(f"Problem: {self._problem}")
-        logging.info(f"Evaluator type: {type(self._evaluator).__name__}")
-        logging.info(f"Evaluator number of workers: {self._evaluator.num_workers}")
+        logging.info(f"Search's problem: {self._problem}")
+        logging.info(
+            f"Search's evaluator: {type(self._evaluator).__name__} with "
+            f"{self._evaluator.num_workers} worker(s)"
+        )
 
         # Log remaining parameters
         params_dict = self.get_params()["search"]
         del params_dict["evaluator"], params_dict["problem"]
-        logging.info(f"Context:\n{json.dumps(params_dict, indent=2, sort_keys=True)}")
+        logging.info(
+            f"Search's other parameters: {json.dumps(params_dict, indent=None, sort_keys=True)}"
+        )  # noqa: E501
 
         self.stopped = False
         self._check_timeout(timeout)
@@ -476,8 +480,10 @@ class Search(abc.ABC):
 
         # save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
-        logging.info(f"Call timeout: {timeout}")
-        logging.info(f"Call max evaluations: {max_evals}")
+        if timeout is not None:
+            logging.info(f"Running the search for {max_evals=} and {timeout=:.2f}")
+        else:
+            logging.info(f"Running the search for {max_evals=} and unlimited time...")
 
         # init tqdm callback
         if max_evals > 1:
@@ -485,6 +491,7 @@ class Search(abc.ABC):
                 if isinstance(cb, TqdmCallback):
                     cb.set_max_evals(max_evals)
 
+        t_start_search = time.time()
         try:
             if isinstance(timeout, (int, float)):
                 if timeout > 0:
@@ -529,6 +536,11 @@ class Search(abc.ABC):
             df_results = self.history.to_csv_complete(os.path.join(self._log_dir, "results.csv"))
         else:
             df_results = self.history.to_dataframe()
+
+        logging.info(
+            f"The search completer after {len(df_results)} evaluation(s) "
+            f"and {time.time() - t_start_search:.2f} sec."
+        )
 
         return df_results
 
