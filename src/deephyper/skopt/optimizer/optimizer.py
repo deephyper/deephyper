@@ -944,6 +944,7 @@ class Optimizer(object):
                                 & np.array([v != "F" and v > threshold for v in yi])
                             )
                             yi[mask] = threshold
+                            logging.info(f"Filtered {len(mask[0])} outliers")
 
                     if "F" in yi:
                         mask_no_failures = np.where(yi != "F")
