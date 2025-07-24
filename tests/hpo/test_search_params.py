@@ -1,5 +1,4 @@
 import logging
-import os
 from deephyper.hpo import RandomSearch, HpProblem, CBO
 from deephyper.evaluator import Evaluator
 
