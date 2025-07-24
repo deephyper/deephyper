@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
@@ -378,23 +377,37 @@ class Search(abc.ABC):
 
         self._evaluator._job_class = HPOJob
 
-    def to_json(self):
-        """Returns a json version of the search object."""
-        json_self = {
+    def save_params(self, filename: str = "params.json"):
+        """Save the search parameters to a JSON file in the log folder.
+
+        Args:
+            filename: Name of JSON file where search parameters are saved. Default is `params.json`.
+        """
+        if not filename.endswith(".json"):
+            print("Invalid file type. File must be a JSON file.")
+            return
+
+        search_params = self.get_params()
+        json_path = os.path.join(self._log_dir, filename)
+
+        with open(json_path, "w") as f:
+            json.dump(search_params, f, indent=2, sort_keys=True)
+
+    def get_params(self) -> dict[str, Any]:
+        """Get parameters used for the search object.
+
+        Returns:
+            A dictionary of the search parameters.
+        """
+        dict_self = {
             "search": {
                 "type": type(self).__name__,
                 **get_init_params_as_json(self),
             },
             "calls": self._call_args,
         }
-        return json_self
 
-    def dump_context(self):
-        """Dumps the context in the log folder."""
-        context = self.to_json()
-        path_context = os.path.join(self._log_dir, "context.yaml")
-        with open(path_context, "w") as file:
-            yaml.dump(context, file)
+        return dict_self
 
     def _check_timeout(self, timeout=None):
         """Check the timeout parameter for the evaluator used by the search.
@@ -443,6 +456,22 @@ class Search(abc.ABC):
                     present like ``m:timestamp_submit`` and ``m:timestamp_gather`` which are the
                     timestamps of the submission and gathering of the job.
         """
+        logging.info(f"Starting search with {type(self).__name__}")
+
+        # Log problem and evaluator parameters
+        logging.info(f"Search's problem: {self._problem}")
+        logging.info(
+            f"Search's evaluator: {type(self._evaluator).__name__} with "
+            f"{self._evaluator.num_workers} worker(s)"
+        )
+
+        # Log remaining parameters
+        params_dict = self.get_params()["search"]
+        del params_dict["evaluator"], params_dict["problem"]
+        logging.info(
+            f"Search's other parameters: {json.dumps(params_dict, indent=None, sort_keys=True)}"
+        )  # noqa: E501
+
         self.stopped = False
         self._check_timeout(timeout)
         if max_evals_strict:
@@ -451,14 +480,18 @@ class Search(abc.ABC):
 
         # save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
-        # save the context in the log folder
-        self.dump_context()
+        if timeout is not None:
+            logging.info(f"Running the search for {max_evals=} and {timeout=:.2f}")
+        else:
+            logging.info(f"Running the search for {max_evals=} and unlimited time...")
+
         # init tqdm callback
         if max_evals > 1:
             for cb in self._evaluator._callbacks:
                 if isinstance(cb, TqdmCallback):
                     cb.set_max_evals(max_evals)
 
+        t_start_search = time.time()
         try:
             if isinstance(timeout, (int, float)):
                 if timeout > 0:
@@ -503,6 +536,11 @@ class Search(abc.ABC):
             df_results = self.history.to_csv_complete(os.path.join(self._log_dir, "results.csv"))
         else:
             df_results = self.history.to_dataframe()
+
+        logging.info(
+            f"The search completer after {len(df_results)} evaluation(s) "
+            f"and {time.time() - t_start_search:.2f} sec."
+        )
 
         return df_results
 
