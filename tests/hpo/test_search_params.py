@@ -61,17 +61,18 @@ def test_cbo_search_params(caplog):
     assert "Running the search for max_evals=4" in caplog.text
 
 
-def test_save_params():
+def test_save_params(tmp_path):
     """Test saving the search parameters to a JSON file."""
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 1.0), "x")
 
-    search = RandomSearch(problem, run, checkpoint_history_to_csv=False)
+    search = RandomSearch(problem, run, log_dir=tmp_path, checkpoint_history_to_csv=False)
     _ = search.search(max_evals=5)
 
     search.save_params()
+    jsonfile = tmp_path / "params.json"
 
-    assert os.path.exists("params.json")
+    assert jsonfile.exists()
 
 
 def test_get_params():
