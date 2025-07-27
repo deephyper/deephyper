@@ -1,14 +1,15 @@
 r"""
-Hyperparameter search for text classification
+Hyperparameter Search for Text Classification with the Stopper Class
 =============================================
 
 **Author(s)**: Romain Egele, Brett Eiffert.
 
- 
-In this tutorial we present how to use hyperparameter optimization on a text classification analysis example from the Pytorch documentation.
+ In this example, we will edit the DeepHyper Hyperparameter Search for Text Classification example to use the deephyper.stopper class. The Stopper class is 
+ used to check if training per job/evaluation can be ended early and save run time if the stopper algorithm determines that
+ no more training is needed. Read more about the Stopper class `here` <https://deephyper.readthedocs.io/en/stable/_autosummary/deephyper.stopper.html>`_
  
 **Reference**:
-This tutorial is based on materials from the Pytorch Documentation: `Text classification with the torchtext library <https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html>`_
+This example is based on materials from the Pytorch Documentation: `Text classification with the torchtext library <https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html>`_
 """
 
 # %%
@@ -208,10 +209,11 @@ def evaluate(model, dataloader):
 # .. dropdown:: Run the Text Classification model
 def get_run(train_ratio=0.95):
   def run(job: RunningJob):
-    print(job)
+    print(type(job))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     embed_dim = 64
+    num_epochs = 10
     
     collate_fn = partial(collate_batch, device=device)
     split_train, split_valid, _ = load_data(train_ratio, fast=True) # set fast=false for longer running, more accurate example
@@ -224,24 +226,24 @@ def get_run(train_ratio=0.95):
       
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=job["learning_rate"])
-    for i in range(1, int(job["num_epochs"]) + 1):
+
+    accu_list = []
+    for i in range(1, num_epochs + 1):
         train(model, criterion, optimizer, train_dataloader)
+        accu_list.append(evaluate(model, valid_dataloader))
         job.record(budget = i + 1, objective=evaluate(model, valid_dataloader))
         if job.stopped():
-            print("stopper stopped") # we never reach this
             break
     
     accu_test = evaluate(model, valid_dataloader)
-    return accu_test
+    return {"objective": accu_test, "metadata": {"index_stopped": i, "accu_list": accu_list}}
   return run
 
 # %%
 # We create two versions of :code:`run`, one quicker to evaluate for the search, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
 
 # %%
-print("quick")
 quick_run = get_run(train_ratio=0.3)
-print("perf")
 perf_run = get_run(train_ratio=0.95)
 
 # %%
@@ -266,9 +268,6 @@ from deephyper.hpo import HpProblem
 
 problem = HpProblem()
 
-# Discrete hyperparameter (sampled with uniform prior)
-problem.add_hyperparameter((5, 20), "num_epochs", default_value=10)
-
 # Discrete and Real hyperparameters (sampled with log-uniform)
 problem.add_hyperparameter((8, 512, "log-uniform"), "batch_size", default_value=64)
 problem.add_hyperparameter((0.1, 10, "log-uniform"), "learning_rate", default_value=5)
@@ -283,7 +282,6 @@ problem
 
 #We launch the Ray run-time and execute the `run` function
 #with the default configuration
-
 if is_gpu_available:
     if not(ray.is_initialized()):
         ray.init(num_cpus=n_gpus, num_gpus=n_gpus, log_to_driver=False)
@@ -297,7 +295,7 @@ else:
     objective_default = run_default(RunningJob(parameters=problem.default_configuration))
     print(problem.default_configuration)
 
-print(f"Accuracy Default Configuration:  {objective_default:.3f}")
+print(f"Accuracy Default Configuration:  {objective_default["objective"]:.3f}")
 
 # %%
 # Define the evaluator object
@@ -371,10 +369,9 @@ from deephyper.hpo import CBO
 from deephyper.stopper import SuccessiveHalvingStopper
 
 # %%
-# Instanciate the search with the problem and a specific evaluator
-stopper = SuccessiveHalvingStopper(min_steps=1, max_steps=7)
+# Instantiate the search with the problem and a specific evaluator
+stopper = SuccessiveHalvingStopper(min_steps=1, max_steps=10)
 search = CBO(problem, evaluator_1, stopper=stopper, log_dir="stopper-log-files")
-#search = CBO(problem, evaluator_1, log_dir="stopper-log-files")
 
 # %%  
 # .. note:: 
@@ -384,7 +381,7 @@ search = CBO(problem, evaluator_1, stopper=stopper, log_dir="stopper-log-files")
 #
 
 # %%
-results = search.search(max_evals=30)
+results = search.search(max_evals=5)
 
 # %%
 # The returned :code:`results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
@@ -396,6 +393,24 @@ results = search.search(max_evals=30)
 
 # %%
 results
+#print(results)
+
+# %%
+# Graph learning curves
+# -------------------------------
+
+# %%
+import matplotlib.pyplot as plt
+
+for row in results.iterrows():
+    #print(row[1]["job_id"])
+    plt.plot(row[1]["m:accu_list"], label=row[1]["job_id"])
+
+plt.xlabel('Epoch')
+plt.ylabel('Validation accuracy')
+plt.title("Validation Accuracies during training")
+
+plt.show()
 
 # %%
 # Evaluate the best configuration
@@ -408,7 +423,7 @@ i_max = results.objective.argmax()
 best_config = results.iloc[i_max][:-3].to_dict()
 best_config = {k[2:]: v for k, v in best_config.items() if k.startswith("p:")}
 
-print(f"The default configuration has an accuracy of {objective_default:.3f}. \n" 
+print(f"The default configuration has an accuracy of {objective_default["objective"]:.3f}. \n" 
       f"The best configuration found by DeepHyper has an accuracy {results['objective'].iloc[i_max]:.3f}, \n" 
       f"finished after {results['m:timestamp_gather'].iloc[i_max]:.2f} secondes of search.\n")
 
@@ -416,4 +431,4 @@ print(json.dumps(best_config, indent=4))
 
 # %%
 objective_best = perf_run(RunningJob(parameters=best_config))
-print(f"Accuracy Best Configuration:  {objective_best:.3f}")
+print(f"Accuracy Best Configuration:  {objective_best["objective"]:.3f}")
