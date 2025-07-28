@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:44.342** total execution time for 13 files **from all galleries**:
+**39:26.877** total execution time for 14 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_parallelism_plot_queued_evaluator_mpi.py` (``../examples/examples_parallelism/plot_queued_evaluator_mpi.py``)
-     - 00:44.342
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification_with_stopper.py` (``../examples/examples_hpo/plot_hpo_text_classification_with_stopper.py``)
+     - 39:26.877
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
@@ -60,6 +60,9 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_profile_worker_utilization.py` (``../examples/examples_parallelism/plot_profile_worker_utilization.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_queued_evaluator_mpi.py` (``../examples/examples_parallelism/plot_queued_evaluator_mpi.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)
