@@ -7,7 +7,6 @@ completion of jobs by the ``Evaluator``. Callbacks can be used with any
 
 import abc
 import csv
-import logging
 import os
 from typing import List
 
@@ -23,8 +22,6 @@ else:
     from tqdm import tqdm
 
 __all__ = ["Callback", "LoggerCallback", "TqdmCallback", "SearchEarlyStopping"]
-
-logger = logging.getLogger(__name__)
 
 
 class Callback(abc.ABC):
