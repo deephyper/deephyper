@@ -554,9 +554,7 @@ class CBO(Search):
                 num_dim=len(self._problem),
                 **scheduler_params,
             )
-            logger.info(
-                f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
-            )
+            logger.info(f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'")
         elif callable(scheduler):
             self.scheduler = functools.partial(
                 scheduler,
