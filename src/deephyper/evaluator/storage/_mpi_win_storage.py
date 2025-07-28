@@ -2,7 +2,6 @@ import copy
 import logging
 from typing import Any, Dict, Hashable, List, Tuple
 
-from deephyper.evaluator.mpi import MPI
 from deephyper.evaluator.storage._mpi_win_mutable_mapping import MPIWinMutableMapping
 from deephyper.evaluator.storage._storage import Storage
 
@@ -14,7 +13,7 @@ class MPIWinStorage(Storage):
         logging.info("Creating MPIWinStorage ...")
         super().__init__()
 
-        self.comm = MPI.COMM_WORLD
+        self.comm = comm
         self.root = root
         self._mapping = MPIWinMutableMapping(
             default_value={"search_id_counter": 0, "data": {}},
@@ -29,13 +28,13 @@ class MPIWinStorage(Storage):
 
     def __getstate__(self):
         state = {
-            "_mapping_cache_id": self._mapping._cache_id,
+            "_mapping_id": hash(self._mapping),
             "connected": False,
         }
         return state
 
     def __setstate__(self, newstate):
-        self._mapping = MPIWinMutableMapping.CACHE[newstate["_mapping_cache_id"]]
+        self._mapping = MPIWinMutableMapping._instances[newstate["_mapping_id"]]
         self.root = self._mapping.root
         self.comm = self._mapping.comm
         self.connect()
@@ -256,5 +255,5 @@ class MPIWinStorage(Storage):
         """
         return self.load_job(job_id)["status"]
 
-    def __del__(self):
-        del self._mapping
+    def close(self):
+        self._mapping.close()
