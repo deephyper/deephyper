@@ -8,6 +8,8 @@ import redis
 
 from deephyper.evaluator.storage._storage import Storage
 
+logger = logging.getLogger(__name__)
+
 
 class RedisStorage(Storage):
     """Storage client for Redis.
@@ -30,7 +32,7 @@ class RedisStorage(Storage):
         self._redis = None
 
     def _connect(self):
-        logging.info(f"Connecting to Redis server {self._host}:{self._port}...")
+        logger.info(f"Connecting to Redis server {self._host}:{self._port}...")
         self._redis = redis.Redis(
             host=self._host,
             port=self._port,
@@ -64,7 +66,7 @@ class RedisStorage(Storage):
         search_id_counter = self._redis.incr("search_id_counter", amount=1) - 1
         search_id = f"{search_id_counter}"  # converting to str
         self._redis.rpush("search_id_list", search_id)
-        logging.info(f"Created new search:{search_id}")
+        logger.info(f"Created new search:{search_id}")
         return search_id
 
     def create_new_job(self, search_id: Hashable) -> Hashable:
@@ -91,7 +93,7 @@ class RedisStorage(Storage):
                 "out": None,
             },
         )
-        logging.info(f"Created new job:{job_id}")
+        logger.info(f"Created new job:{job_id}")
         return job_id
 
     def store_job(self, job_id: Hashable, key: Hashable, value: Any) -> None:
@@ -112,7 +114,7 @@ class RedisStorage(Storage):
             args (Optional[Tuple], optional): The positional arguments. Defaults to None.
             kwargs (Optional[Dict], optional): The keyword arguments. Defaults to None.
         """
-        logging.info(f"Storing input for job:{job_id} with value:{(args, kwargs)}")
+        logger.info(f"Storing input for job:{job_id} with value:{(args, kwargs)}")
         self.store_job(job_id, key="in", value={"args": args, "kwargs": kwargs})
 
     def store_job_out(self, job_id: Hashable, value: Any) -> None:
@@ -124,7 +126,7 @@ class RedisStorage(Storage):
         """
         if isinstance(value, Number) and math.isnan(value):
             value = "NaN"
-        logging.info(f"Storing output for job:{job_id} with value:{value}")
+        logger.info(f"Storing output for job:{job_id} with value:{value}")
         self.store_job(job_id, key="out", value=value)
 
     def store_job_metadata(self, job_id: Hashable, key: Hashable, value: Any) -> None:
@@ -137,7 +139,7 @@ class RedisStorage(Storage):
         """
         if isinstance(value, Number) and math.isnan(value):
             value = "NaN"
-        logging.info(f"Storing metadata for job:{job_id} with key:{key} and value:{value}")
+        logger.info(f"Storing metadata for job:{job_id} with key:{key} and value:{value}")
         self._redis.json().set(f"job:{job_id}", f".metadata.{key}", value)
 
     def load_all_search_ids(self) -> List[Hashable]:
