@@ -100,7 +100,7 @@ class MPIWinMutableMapping(MutableMapping):
             else:
                 self.local_dict = {}
         except Exception as e:
-            logging.error(f"Error reading shared memory: {e}")
+            logger.error(f"Error reading shared memory: {e}")
             self.local_dict = {}
 
     def _lazy_write_dict(self):

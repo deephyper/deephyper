@@ -12,6 +12,8 @@ from deephyper.hpo import HpProblem, RandomSearch
 
 CPUS = min(4, multiprocessing.cpu_count())
 
+logger = logging.getLogger(__name__)
+
 
 async def run_test_timeout_simple_async(job):
     """An example of async function to be used with the 'serial' evaluator."""
@@ -20,7 +22,7 @@ async def run_test_timeout_simple_async(job):
         i += 1
         await asyncio.sleep(0.1)
         # The following log line should display "MainThread"
-        logging.warning(
+        logger.warning(
             f"working in {threading.current_thread()} of PID={os.getpid()} with status {job.status}"
         )
         if job.status is JobStatus.CANCELLING:
@@ -35,7 +37,7 @@ def run_test_timeout_simple_sync(job):
         i += 1
         time.sleep(0.1)
         # The following log line should display "ThreadPool-i"
-        logging.warning(
+        logger.warning(
             f"working in {threading.current_thread()} of PID={os.getpid()} with status {job.status}"
         )
         if job.status is JobStatus.CANCELLING:

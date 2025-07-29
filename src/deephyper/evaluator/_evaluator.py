@@ -252,7 +252,7 @@ class Evaluator(abc.ABC):
                     return_when="ALL_COMPLETED",
                 )
             except asyncio.CancelledError:
-                logging.warning("Cancelled running tasks")
+                logger.warning("Cancelled running tasks")
                 self._tasks_done = []
                 self._tasks_pending = []
             except ValueError:
