@@ -39,6 +39,8 @@ We then present a simple example of how to use DeepHyper to optimize a black-box
 To try this example, you can copy/paste the script and run it.
 
 .. literalinclude:: ../tests/test_quickstart.py
+    :language: python
+    :lines: 1-13, 15-38, 46-48
 
 Running the example will output the results shown below. The best parameters are for the cubic function with ``x = 9.99`` and ``b = 10`` which produces ``y = 1009.87``.
 
