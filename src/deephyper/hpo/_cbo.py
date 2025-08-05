@@ -704,7 +704,7 @@ class CBO(Search):
 
         elif name == "GBRT":
             default_surrogate_model_kwargs = dict(
-                n_estimtaors=10,
+                n_estimators=10,
                 random_state=random_state,
             )
         elif name == "HGBRT":
