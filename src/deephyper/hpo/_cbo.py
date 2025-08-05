@@ -29,6 +29,8 @@ from deephyper.stopper import Stopper
 
 __all__ = ["CBO"]
 
+logger = logging.getLogger(__name__)
+
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {
     "cl_min": "cl_max",
@@ -552,15 +554,13 @@ class CBO(Search):
                 num_dim=len(self._problem),
                 **scheduler_params,
             )
-            logging.info(
-                f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
-            )
+            logger.info(f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'")
         elif callable(scheduler):
             self.scheduler = functools.partial(
                 scheduler,
                 eta_0=np.array([self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]]),
             )
-            logging.info(f"Set up scheduler '{scheduler}'")
+            logger.info(f"Set up scheduler '{scheduler}'")
 
         self._num_asked = 0
 
@@ -572,7 +572,7 @@ class CBO(Search):
         if self.scheduler is not None:
             kappa, xi = self.scheduler(i)
             values = {"kappa": float(kappa), "xi": float(xi)}
-            logging.info(f"Updated exploration-exploitation policy with {values} from scheduler")
+            logger.info(f"Updated exploration-exploitation policy with {values} from scheduler")
             self._opt.acq_func_kwargs.update(values)
 
     def _ask(self, n: int = 1) -> List[Dict]:
@@ -596,7 +596,7 @@ class CBO(Search):
             results (List[HPOJob]): a dictionary containing the results of the evaluations.
         """
         # Transform configurations to list to fit optimizer
-        logging.info("Transforming received configurations to list...")
+        logger.info("Transforming received configurations to list...")
         t1 = time.time()
 
         opt_X = []  # input configuration
@@ -620,16 +620,16 @@ class CBO(Search):
                     opt_X.append(x)
                     opt_y.append("F")
 
-        logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
+        logger.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
         # apply scheduler
         self._apply_scheduler(self._num_asked)
 
         if len(opt_y) > 0:
-            logging.info("Fitting the optimizer...")
+            logger.info("Fitting the optimizer...")
             t1 = time.time()
             self._opt.tell(opt_X, opt_y)
-            logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
+            logger.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
         if self._opt is None:
@@ -780,7 +780,7 @@ class CBO(Search):
             values = cond.values
             cond_new = CS.GreaterThanCondition(child, parent, values)
         else:
-            logging.warning("Not supported type" + str(type(cond)))
+            logger.warning("Not supported type" + str(type(cond)))
         return cond_new
 
     def _return_forbid(self, cond, cst_new):
@@ -793,7 +793,7 @@ class CBO(Search):
                 values = cond.values
                 cond_new = CS.ForbiddenInClause(hp, values)
             else:
-                logging.warning("Not supported type" + str(type(cond)))
+                logger.warning("Not supported type" + str(type(cond)))
         return cond_new
 
     def fit_surrogate(self, df: str | pd.DataFrame):
@@ -964,7 +964,7 @@ class CBO(Search):
 
         cst = self._problem.space
         if type(cst) is not CS.ConfigurationSpace:
-            logging.error(f"{type(cst)}: not supported for trainsfer learning")
+            logger.error(f"{type(cst)}: not supported for trainsfer learning")
 
         res_df = df
         res_df_names = res_df.columns.values
@@ -1024,10 +1024,10 @@ class CBO(Search):
                     )
                     cst_new.add(param_new)
                 else:
-                    logging.warning(f"Not fitting {hp} because it is not supported!")
+                    logger.warning(f"Not fitting {hp} because it is not supported!")
                     cst_new.add(hp)
             else:
-                logging.warning(f"Not fitting {hp} because it was not found in the dataframe!")
+                logger.warning(f"Not fitting {hp} because it was not found in the dataframe!")
                 cst_new.add(hp)
 
         # For conditions
@@ -1041,7 +1041,7 @@ class CBO(Search):
                 elif type(cond) is CS.OrConjunction:
                     cond_new = CS.OrConjunction(*cond_list)
                 else:
-                    logging.warning(f"Condition {type(cond)} is not implemented!")
+                    logger.warning(f"Condition {type(cond)} is not implemented!")
             else:
                 cond_new = self._return_cond(cond, cst_new)
             cst_new.add(cond_new)
@@ -1056,7 +1056,7 @@ class CBO(Search):
             elif type(cond) is CS.ForbiddenEqualsClause or type(cond) is CS.ForbiddenInClause:
                 cond_new = self._return_forbid(cond, cst_new)
             else:
-                logging.warning(f"Forbidden {type(cond)} is not implemented!")
+                logger.warning(f"Forbidden {type(cond)} is not implemented!")
             cst_new.add(cond_new)
 
         self._opt_kwargs["dimensions"] = cst_new

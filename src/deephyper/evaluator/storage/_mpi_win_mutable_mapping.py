@@ -8,6 +8,8 @@ import numpy as np
 
 from deephyper.evaluator.mpi import MPI
 
+logger = logging.getLogger(__name__)
+
 # A good reference about one-sided communication with MPI
 # https://enccs.github.io/intermediate-mpi/one-sided-concepts/
 
@@ -40,7 +42,7 @@ class MPIWinMutableMapping(MutableMapping):
         size: int = 104857600,
         root: int = 0,
     ):
-        logging.info("Creating MPIWinMutableMapping ...")
+        logger.info("Creating MPIWinMutableMapping ...")
         self.comm = comm
         self.root = root
         self.locked = False
@@ -48,21 +50,21 @@ class MPIWinMutableMapping(MutableMapping):
         self._session_is_read_only = False
 
         # Allocate memory (works on multiple nodes)
-        logging.info("Allocating MPI.Win ...")
+        logger.info("Allocating MPI.Win ...")
 
         # If all processes are in the local shared comm then we
         # can use shared memory
         local_comm = self.comm.Split_type(MPI.COMM_TYPE_SHARED)
         if local_comm.Get_size() == self.comm.Get_size():
-            logging.info("Using MPI.Win.Allocate_shared")
+            logger.info("Using MPI.Win.Allocate_shared")
             self.win = MPI.Win.Allocate_shared(size, 1, comm=comm)
             buf, itemsize = self.win.Shared_query(self.root)
             self.shared_memory = np.ndarray(buffer=buf, dtype=np.byte, shape=(size,))
         else:
-            logging.info("Using MPI.Win.Allocate")
+            logger.info("Using MPI.Win.Allocate")
             self.win = MPI.Win.Allocate(size, 1, comm=comm)
             self.shared_memory = np.empty((size,), dtype=np.byte)
-        logging.info("MPI.Win allocated")
+        logger.info("MPI.Win allocated")
 
         if default_value is None:
             self.local_dict = {}
@@ -78,7 +80,7 @@ class MPIWinMutableMapping(MutableMapping):
             self.unlock()
 
         self.comm.Barrier()  # Synchronize processes
-        logging.info("MPIWinMutableMapping created")
+        logger.info("MPIWinMutableMapping created")
 
     def _lazy_read_dict(self):
         """Performs the read if not in a session."""
@@ -98,7 +100,7 @@ class MPIWinMutableMapping(MutableMapping):
             else:
                 self.local_dict = {}
         except Exception as e:
-            logging.error(f"Error reading shared memory: {e}")
+            logger.error(f"Error reading shared memory: {e}")
             self.local_dict = {}
 
     def _lazy_write_dict(self):

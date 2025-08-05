@@ -111,6 +111,9 @@ import sys
 from deephyper.cli.utils import add_arguments_from_signature, load_attr
 from deephyper.evaluator import EVALUATORS, Evaluator
 
+logger = logging.getLogger(__name__)
+
+
 HPS_SEARCHES = {
     "cbo": "deephyper.hpo.CBO",
     "random": "deephyper.hpo.RandomSearch",
@@ -196,19 +199,19 @@ def main(**kwargs):
     search_name = sys.argv[2]
 
     # load search class
-    logging.info(f"Loading the search '{search_name}'...")
+    logger.info(f"Loading the search '{search_name}'...")
     search_cls = load_attr(HPS_SEARCHES[search_name])
 
     # load problem
-    logging.info("Loading the problem...")
+    logger.info("Loading the problem...")
     problem = load_attr(kwargs.pop("problem"))
 
     # load run function
-    logging.info("Loading the run-function...")
+    logger.info("Loading the run-function...")
     run_function = load_attr(kwargs.pop("run_function"))
 
     # filter arguments from evaluator class signature
-    logging.info("Loading the evaluator...")
+    logger.info("Loading the evaluator...")
     evaluator_method = kwargs.pop("evaluator")
     base_arguments = ["num_workers", "callbacks"]
     evaluator_kwargs = {k: kwargs.pop(k) for k in base_arguments}
@@ -222,11 +225,11 @@ def main(**kwargs):
             evaluator_kwargs = {**evaluator_kwargs, **evaluator_method_kwargs}
 
     # create evaluator
-    logging.info(f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}")
+    logger.info(f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}")
     evaluator = Evaluator.create(
         run_function, method=evaluator_method, method_kwargs=evaluator_kwargs
     )
-    logging.info(f"Evaluator has {evaluator.num_workers} workers available.")
+    logger.info(f"Evaluator has {evaluator.num_workers} workers available.")
 
     # filter arguments from search class signature
     # remove keys in evaluator_kwargs
@@ -238,7 +241,7 @@ def main(**kwargs):
 
     # execute the search
     # remaining kwargs are for the search
-    logging.info(f"Evaluator has {evaluator.num_workers} workers available.")
+    logger.info(f"Evaluator has {evaluator.num_workers} workers available.")
     search = search_cls(problem, evaluator, **kwargs)
 
     search.search(max_evals=max_evals, timeout=timeout)

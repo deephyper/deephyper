@@ -1,10 +1,7 @@
 import copy
-import io
-
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
-
 import deephyper.skopt
 
 
@@ -343,8 +340,7 @@ class HpProblem:
                     config[hp_name] = hp.default_value
         return config
 
-    def to_json(self):
-        """Returns a dict version of the space which can be saved as JSON."""
-        buffer = io.StringIO()
-        self._space.to_json(buffer)
-        return buffer.getvalue()
+    def to_json(self) -> dict:
+        """Returns a dictionary of the space which can be saved as JSON."""
+        d = self._space.to_serialized_dict()
+        return d

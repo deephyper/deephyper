@@ -160,7 +160,7 @@ def test_lce_stopper(tmp_path):
         problem,
         run,
         acq_optimizer="ga",
-        acq_optimizer_freq=1,
+        acq_optimizer_kwargs=dict(acq_optimizer_freq=1),
         stopper=stopper,
         random_state=42,
         log_dir=tmp_path,

@@ -6,12 +6,14 @@ from deephyper.evaluator.mpi import MPI
 from deephyper.evaluator.storage._mpi_win_mutable_mapping import MPIWinMutableMapping
 from deephyper.evaluator.storage._storage import Storage
 
+logger = logging.getLogger(__name__)
+
 
 class MPIWinStorage(Storage):
     """Storage based on MPIWinMutableMapping that uses one-sided communication for shared memory."""
 
     def __init__(self, comm, size: int = 104857600, root: int = 0) -> None:
-        logging.info("Creating MPIWinStorage ...")
+        logger.info("Creating MPIWinStorage ...")
         super().__init__()
 
         self.comm = MPI.COMM_WORLD
@@ -22,7 +24,7 @@ class MPIWinStorage(Storage):
             size=size,
             root=root,
         )
-        logging.info("MPIWinStorage created")
+        logger.info("MPIWinStorage created")
 
     def _connect(self):
         self.connected = True

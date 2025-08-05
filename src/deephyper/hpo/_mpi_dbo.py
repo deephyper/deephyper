@@ -15,6 +15,8 @@ from deephyper.stopper import Stopper
 
 __all__ = ["MPIDistributedBO"]
 
+logger = logging.getLogger(__name__)
+
 
 class MPIDistributedBO(CBO):
     """Distributed Bayesian Optimization Search using MPI to launch parallel search instances.
@@ -243,7 +245,7 @@ class MPIDistributedBO(CBO):
         )
 
         if self.rank == 0:
-            logging.info(f"MPIDistributedBO has {self.size} rank(s)")
+            logger.info(f"MPIDistributedBO has {self.size} rank(s)")
             super().__init__(
                 problem=problem,
                 evaluator=evaluator,
@@ -301,7 +303,7 @@ class MPIDistributedBO(CBO):
         # Replace CBO _init_params by DBO _init_params
         self._init_params = _init_params
 
-        logging.info(
+        logger.info(
             f"MPIDistributedBO rank {self.rank} has {self._evaluator.num_workers} local worker(s)"
         )
 

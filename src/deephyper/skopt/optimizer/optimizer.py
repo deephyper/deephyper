@@ -31,6 +31,8 @@ from ..utils import (
     normalize_dimensions,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class ExhaustedSearchSpace(RuntimeError):
     """Raised when the search cannot sample new points from the ConfigSpace."""
@@ -1258,6 +1260,6 @@ class Optimizer(object):
                     param_value = base_estimator_params[param_name]
                     param_type = type(param_value)
                     param_value = param_type(param_value * param_config["factor"])
-                    logging.info(f"{param_name} updated: {param_value}")
+                    logger.info(f"{param_name} updated: {param_value}")
                     base_estimator_params.update({param_name: param_value})
             self.base_estimator_.set_params(**base_estimator_params)

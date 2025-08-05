@@ -16,6 +16,8 @@ from deephyper.evaluator.storage import MemoryStorage, Storage
 from deephyper.evaluator.utils import test_ipython_interpretor
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
 
+logger = logging.getLogger(__name__)
+
 EVALUATORS = {
     "mpicomm": "_mpi_comm.MPICommEvaluator",
     "process": "_process_pool.ProcessPoolEvaluator",
@@ -69,12 +71,12 @@ class Evaluator(abc.ABC):
         search_id: Optional[Hashable] = None,
     ):
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
-            logging.info(
+            logger.info(
                 f"{type(self).__name__} will execute {run_function.__name__}() from module "
                 f"{run_function.__module__}"
             )
         else:
-            logging.info(f"{type(self).__name__} will execute {run_function}")
+            logger.info(f"{type(self).__name__} will execute {run_function}")
 
         self.run_function = run_function  # User-defined run function.
         self.run_function_kwargs = {} if run_function_kwargs is None else run_function_kwargs
@@ -160,7 +162,7 @@ class Evaluator(abc.ABC):
                 val = self.timeout - time_consumed
             else:
                 raise RuntimeError(f"{self._time_timeout_set=} should not be set to a float")
-        logging.info(f"time_left={val}")
+        logger.info(f"time_left={val}")
         return val
 
     def set_maximum_num_jobs_submitted(self, maximum_num_jobs_submitted: int):
@@ -213,7 +215,7 @@ class Evaluator(abc.ABC):
                 f"{val}."
             )
 
-        logging.info(
+        logger.info(
             f"Creating {EVALUATORS[method].split('.')[-1]} of {method=} for "
             f"{run_function=} with {method_kwargs=}"
         )
@@ -224,7 +226,7 @@ class Evaluator(abc.ABC):
         eval_cls = getattr(mod, attr_name)
         evaluator = eval_cls(run_function, **method_kwargs)
 
-        logging.info("Creation done")
+        logger.info("Creation done")
 
         return evaluator
 
@@ -250,7 +252,7 @@ class Evaluator(abc.ABC):
                     return_when="ALL_COMPLETED",
                 )
             except asyncio.CancelledError:
-                logging.warning("Cancelled running tasks")
+                logger.warning("Cancelled running tasks")
                 self._tasks_done = []
                 self._tasks_pending = []
             except ValueError:
@@ -270,7 +272,7 @@ class Evaluator(abc.ABC):
                 self.maximum_num_jobs_submitted > 0
                 and self.num_jobs_submitted >= self.maximum_num_jobs_submitted
             ):
-                logging.info(
+                logger.info(
                     f"Maximum number of jobs to spawn reached ({self.maximum_num_jobs_submitted})"
                 )
                 raise MaximumJobsSpawnReached
@@ -363,11 +365,11 @@ class Evaluator(abc.ABC):
             args_list (List[Dict]):
                 A list of dict which will be passed to the run function to be executed.
         """
-        logging.info(f"submit {len(args_list)} job(s) starts...")
+        logger.info(f"submit {len(args_list)} job(s) starts...")
         self.set_event_loop()
         # self.loop.run_until_complete(self._create_tasks(args_list))
         self._create_tasks(args_list)
-        logging.info("submit done")
+        logger.info("submit done")
 
     def gather(self, type, size=1) -> list[Job] | tuple[list[Job], list[Job]]:
         """Collect the completed tasks from the evaluator in batches of one or more.
@@ -393,7 +395,7 @@ class Evaluator(abc.ABC):
             list[Job] | tuple[list[Job], list[Job]]: A batch of completed jobs that is at minimum
             the given size.
         """
-        logging.info(f"gather({type}, size={size}) starts...")
+        logger.info(f"gather({type}, size={size}) starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
         assert isinstance(self.loop, asyncio.AbstractEventLoop)
 
@@ -413,11 +415,11 @@ class Evaluator(abc.ABC):
             cb.on_gather(local_results, other_results)
 
         if len(other_results) == 0:
-            logging.info(f"gather done - {len(local_results)} job(s)")
+            logger.info(f"gather done - {len(local_results)} job(s)")
 
             return local_results
         else:
-            logging.info(
+            logger.info(
                 f"gather done - {len(local_results)} local(s) and {len(other_results)} "
                 "other(s) job(s)"
             )
@@ -426,7 +428,7 @@ class Evaluator(abc.ABC):
 
     def gather_other_jobs_done(self):
         """Access storage to return results from other processes."""
-        logging.info("gather jobs from other processes")
+        logger.info("gather jobs from other processes")
 
         job_id_all = self._storage.load_all_job_ids(self._search_id)
         job_id_not_gathered = np.setdiff1d(
@@ -485,14 +487,14 @@ class Evaluator(abc.ABC):
         return local_results
 
     def close(self) -> List[Job]:
-        logging.info(f"Closing {type(self).__name__}")
+        logger.info(f"Closing {type(self).__name__}")
         jobs = []
         if self.loop is None:
             # calling callbacks
             for cb in self._callbacks:
                 cb.on_close()
 
-            logging.info(f"{type(self).__name__} closed")
+            logger.info(f"{type(self).__name__} closed")
             return jobs
 
         # Attempt to close tasks in loop
@@ -530,7 +532,7 @@ class Evaluator(abc.ABC):
         for cb in self._callbacks:
             cb.on_close()
 
-        logging.info(f"{type(self).__name__} closed")
+        logger.info(f"{type(self).__name__} closed")
         return jobs
 
     def __del__(self):

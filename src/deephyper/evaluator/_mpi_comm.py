@@ -76,14 +76,14 @@ class MPICommEvaluator(Evaluator):
         self.root = root
 
         if storage is None:
-            logging.info(
+            logger.info(
                 f"No storage was given to create {type(self).__name__} so using MPIWinStorage"
             )
             storage = MPIWinStorage(self.comm, root=self.root)
 
         if isinstance(storage, MPIWinStorage):
             if search_id is None:
-                logging.info(
+                logger.info(
                     "No search_id was given and an MPIWinStorage is used. Creating new search."
                 )
                 if self.comm.Get_rank() == self.root:
@@ -102,7 +102,7 @@ class MPICommEvaluator(Evaluator):
 
         self.num_workers = self.comm.Get_size() - 1  # 1 rank is the master
         self.sem = None
-        logging.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
+        logger.info(f"Creating MPICommExecutor with {self.num_workers} max_workers...")
 
         if self.num_workers == 0 and self.comm.Get_size() <= 1:
             raise RuntimeError(
@@ -112,7 +112,7 @@ class MPICommEvaluator(Evaluator):
 
         self._comm_executor = None
         self._pool_executor = None
-        logging.info("Creation of MPICommExecutor done")
+        logger.info("Creation of MPICommExecutor done")
 
     def set_event_loop(self):
         super().set_event_loop()

@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
-import yaml
 
 from deephyper.analysis.hpo import get_mask_of_rows_without_failures
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
@@ -27,6 +26,8 @@ from deephyper.stopper import Stopper
 from deephyper.skopt.moo import non_dominated_set
 
 __all__ = ["Search", "SearchHistory"]
+
+logger = logging.getLogger(__name__)
 
 
 def get_init_params_as_json(obj):
@@ -213,7 +214,7 @@ class SearchHistory:
         A column ``pareto_efficient`` is added to the dataframe. It is ``True`` if the
         point is Pareto efficient.
         """
-        logging.info("Computing pareto efficient indicator...")
+        logger.info("Computing pareto efficient indicator...")
         df = self.to_dataframe()
 
         # Check if Multi-Objective Optimization was performed to save the pareto front
@@ -292,7 +293,7 @@ class Search(abc.ABC):
         else:
             self._random_state = np.random.RandomState()
 
-        # Create logging directory if does not exist
+        # Create logger directory if does not exist
         self._log_dir = os.path.abspath(log_dir)
         pathlib.Path(log_dir).mkdir(parents=True, exist_ok=True)
 
@@ -315,7 +316,7 @@ class Search(abc.ABC):
             path_results_basename = os.path.basename(self._path_results)
             path_results_basename = path_results_basename.replace(".", f"_{str_current_time}.")
             path_results_renamed = os.path.join(path_results_dirname, path_results_basename)
-            logging.warning(
+            logger.warning(
                 f"Results file already exists, it will be renamed to {path_results_renamed}"
             )
             os.rename(
@@ -377,23 +378,37 @@ class Search(abc.ABC):
 
         self._evaluator._job_class = HPOJob
 
-    def to_json(self):
-        """Returns a json version of the search object."""
-        json_self = {
+    def save_params(self, filename: str = "params.json"):
+        """Save the search parameters to a JSON file in the log folder.
+
+        Args:
+            filename: Name of JSON file where search parameters are saved. Default is `params.json`.
+        """
+        if not filename.endswith(".json"):
+            print("Invalid file type. File must be a JSON file.")
+            return
+
+        search_params = self.get_params()
+        json_path = os.path.join(self._log_dir, filename)
+
+        with open(json_path, "w") as f:
+            json.dump(search_params, f, indent=2, sort_keys=True)
+
+    def get_params(self) -> dict[str, Any]:
+        """Get parameters used for the search object.
+
+        Returns:
+            A dictionary of the search parameters.
+        """
+        dict_self = {
             "search": {
                 "type": type(self).__name__,
                 **get_init_params_as_json(self),
             },
             "calls": self._call_args,
         }
-        return json_self
 
-    def dump_context(self):
-        """Dumps the context in the log folder."""
-        context = self.to_json()
-        path_context = os.path.join(self._log_dir, "context.yaml")
-        with open(path_context, "w") as file:
-            yaml.dump(context, file)
+        return dict_self
 
     def _check_timeout(self, timeout=None):
         """Check the timeout parameter for the evaluator used by the search.
@@ -442,6 +457,22 @@ class Search(abc.ABC):
                     present like ``m:timestamp_submit`` and ``m:timestamp_gather`` which are the
                     timestamps of the submission and gathering of the job.
         """
+        logger.info(f"Starting search with {type(self).__name__}")
+
+        # Log problem and evaluator parameters
+        logger.info(f"Search's problem: {self._problem}")
+        logger.info(
+            f"Search's evaluator: {type(self._evaluator).__name__} with "
+            f"{self._evaluator.num_workers} worker(s)"
+        )
+
+        # Log remaining parameters
+        params_dict = self.get_params()["search"]
+        del params_dict["evaluator"], params_dict["problem"]
+        logger.info(
+            f"Search's other parameters: {json.dumps(params_dict, indent=None, sort_keys=True)}"
+        )  # noqa: E501
+
         self.stopped = False
         self._check_timeout(timeout)
         if max_evals_strict:
@@ -450,14 +481,18 @@ class Search(abc.ABC):
 
         # save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
-        # save the context in the log folder
-        self.dump_context()
+        if timeout is not None:
+            logger.info(f"Running the search for {max_evals=} and {timeout=:.2f}")
+        else:
+            logger.info(f"Running the search for {max_evals=} and unlimited time...")
+
         # init tqdm callback
         if max_evals > 1:
             for cb in self._evaluator._callbacks:
                 if isinstance(cb, TqdmCallback):
                     cb.set_max_evals(max_evals)
 
+        t_start_search = time.time()
         try:
             if isinstance(timeout, (int, float)):
                 if timeout > 0:
@@ -471,13 +506,13 @@ class Search(abc.ABC):
             self._search(max_evals, timeout, max_evals_strict)
         except MaximumJobsSpawnReached:
             self.stopped = True
-            logging.warning(
+            logger.warning(
                 "Search is being stopped because the maximum number of spawned jobs has been "
                 "reached."
             )
 
         # Collect remaining jobs
-        logging.info("Collect remaining jobs...")
+        logger.info("Collect remaining jobs...")
         last_results = []
         while self._evaluator.num_jobs_submitted > self._evaluator.num_jobs_gathered:
             results = self._evaluator.gather("ALL")
@@ -491,7 +526,7 @@ class Search(abc.ABC):
         self.history.extend(last_results)
 
         if len(self.history) == 0:
-            logging.warning("No results found in search history")
+            logger.warning("No results found in search history")
             return None
 
         self.dump_jobs_done_to_csv(flush=True)
@@ -502,6 +537,11 @@ class Search(abc.ABC):
             df_results = self.history.to_csv_complete(os.path.join(self._log_dir, "results.csv"))
         else:
             df_results = self.history.to_dataframe()
+
+        logger.info(
+            f"The search completer after {len(df_results)} evaluation(s) "
+            f"and {time.time() - t_start_search:.2f} sec."
+        )
 
         return df_results
 
@@ -543,12 +583,12 @@ class Search(abc.ABC):
         while not self.stopped and (max_evals < 0 or num_evals() < max_evals):
             new_batch = self.ask(n_ask)
 
-            logging.info(f"Submitting {len(new_batch)} configurations...")
+            logger.info(f"Submitting {len(new_batch)} configurations...")
             t1 = time.time()
             self._evaluator.submit(new_batch)
-            logging.info(f"Submition took {time.time() - t1:.4f} sec.")
+            logger.info(f"Submition took {time.time() - t1:.4f} sec.")
 
-            logging.info("Gathering jobs...")
+            logger.info("Gathering jobs...")
             t1 = time.time()
 
             new_results = self._evaluator.gather(self.gather_type, self.gather_batch_size)
@@ -559,27 +599,27 @@ class Search(abc.ABC):
                 local_results, other_results = new_results
                 n_ask = len(local_results)
                 new_results = local_results + other_results
-                logging.info(
+                logger.info(
                     f"Gathered {len(local_results)} local job(s) and {len(other_results)} other "
                     f"job(s) in {time.time() - t1:.4f} sec."
                 )
             else:
                 n_ask = len(new_results)
-                logging.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
+                logger.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
 
             self.history.extend(new_results)
 
-            logging.info("Dumping evaluations...")
+            logger.info("Dumping evaluations...")
             t1 = time.time()
             self.dump_jobs_done_to_csv()
-            logging.info(f"Dumping took {time.time() - t1:.4f} sec.")
+            logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
             self.tell(new_results)
 
             # Test if search should be stopped due to timeout
             time_left = self._evaluator.time_left
             if time_left is not None and time_left <= 0:
-                logging.info(
+                logger.info(
                     f"Searching time remaining is {time_left:.3f} <= 0 stopping the search..."
                 )
                 self.stopped = True
@@ -600,12 +640,12 @@ class Search(abc.ABC):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
-        logging.info(f"Asking {n} configuration(s)...")
+        logger.info(f"Asking {n} configuration(s)...")
         t1 = time.time()
 
         new_samples = self._ask(n)
 
-        logging.info(f"Asking took {time.time() - t1:.4f} sec.")
+        logger.info(f"Asking took {time.time() - t1:.4f} sec.")
 
         return new_samples
 
@@ -627,10 +667,10 @@ class Search(abc.ABC):
             results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can
             be retrieved.
         """
-        logging.info(f"Telling {len(results)} new result(s)...")
+        logger.info(f"Telling {len(results)} new result(s)...")
         t1 = time.time()
         self._tell(results)
-        logging.info(f"Telling took {time.time() - t1:.4f} sec.")
+        logger.info(f"Telling took {time.time() - t1:.4f} sec.")
 
     @abc.abstractmethod
     def _tell(self, results: List[HPOJob]):
