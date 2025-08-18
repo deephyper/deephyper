@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**03:47.673** total execution time for 14 files **from all galleries**:
+**01:16.558** total execution time for 14 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification.py` (``../examples/examples_hpo/plot_hpo_text_classification.py``)
-     - 03:47.673
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)
+     - 01:16.558
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
@@ -53,6 +53,9 @@ Computation times
    * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_for_rf_and_overfitting.py` (``../examples/examples_hpo/plot_hpo_for_rf_and_overfitting.py``)
      - 00:00.000
      - 0.0
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification.py` (``../examples/examples_hpo/plot_hpo_text_classification.py``)
+     - 00:00.000
+     - 0.0
    * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification_with_stopper.py` (``../examples/examples_hpo/plot_hpo_text_classification_with_stopper.py``)
      - 00:00.000
      - 0.0
@@ -63,9 +66,6 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_queued_evaluator_mpi.py` (``../examples/examples_parallelism/plot_queued_evaluator_mpi.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py` (``../examples/examples_uq/plot_hpo_tree_ensemble_uq_classification_sklearn.py``)

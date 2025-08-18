@@ -96,12 +96,11 @@ def execute_search(timeout, num_workers):
 
     search = CBO(
         problem,
-        evaluator,
         multi_point_strategy="qUCBd",
         random_state=42,
     )
 
-    results = search.search(timeout=timeout)
+    results = search.search(evaluator, timeout=timeout)
 
     return results
 

@@ -1,6 +1,6 @@
 r"""
-Queued Evaluator with MPI
-=========================
+Managing Queued Compute Resources Using Evaluator and MPI Executables
+=====================================================================
 
 **Author(s)**: Romain Egele, Brett Eiffert.
 
@@ -57,9 +57,10 @@ problem.add_hyperparameter((0.0, 10.0), "x")
 # Local machine or single node
 num_nodes = 1
 num_nodes_per_task = 1
-# Multi-node setup
-#num_nodes = 10
-#num_nodes_per_task = 2
+
+# Multi-node setup (uncomment to try)
+# num_nodes = 10
+# num_nodes_per_task = 2
 
 # %%
 # Parallel Processing
@@ -82,9 +83,9 @@ def main():
 
     print(f"Evaluator uses {evaluator.num_workers} workers")
 
-    search = CBO(problem, evaluator, log_dir="log_queued_evaluator")
+    search = CBO(problem, log_dir="log_queued_evaluator")
     
-    search.search(max_evals=50)
+    search.search(evaluator, max_evals=50)
 
 if __name__ == "__main__":
     main()
