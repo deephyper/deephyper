@@ -30,9 +30,7 @@ def _test_mpi_timeout(tmp_path):
 
     with Evaluator.create(run_sync_sleep_forever, method="mpicomm") as evaluator:
         if evaluator.is_master:
-            search = CBO(
-                problem, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
-            )
+            search = CBO(problem, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path)
             t1 = time.time()
             results = search.search(evaluator, timeout=1)
 

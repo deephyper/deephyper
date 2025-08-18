@@ -14,7 +14,6 @@ from sklearn.base import is_regressor
 
 import deephyper.skopt
 from deephyper.analysis.hpo import filter_failed_objectives, get_mask_of_rows_without_failures
-from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
 from deephyper.hpo._solution import SolutionSelection

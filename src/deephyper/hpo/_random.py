@@ -1,8 +1,7 @@
-from typing import Dict, List, Literal, Optional
+from typing import Literal, Optional
 
 import numpy as np
 
-from deephyper.evaluator import HPOJob
 from deephyper.hpo._search import Search
 from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter

@@ -174,7 +174,7 @@ class RegularizedEvolution(Search):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]): 
+            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
                 a dictionary containing the results of the evaluations.
         """
         for config, obj in results:
