@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**01:16.558** total execution time for 14 files **from all galleries**:
+**00:14.693** total execution time for 14 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)
-     - 01:16.558
+   * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``../examples/examples_uq/plot_nas_deep_ensemble_uq_regression_pytorch.py``)
+     - 00:14.693
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
@@ -68,9 +68,9 @@ Computation times
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_queued_evaluator_mpi.py` (``../examples/examples_parallelism/plot_queued_evaluator_mpi.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py` (``../examples/examples_uq/plot_hpo_tree_ensemble_uq_classification_sklearn.py``)
+   * - :ref:`sphx_glr_examples_examples_parallelism_plot_scaling_bo.py` (``../examples/examples_parallelism/plot_scaling_bo.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``../examples/examples_uq/plot_nas_deep_ensemble_uq_regression_pytorch.py``)
+   * - :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py` (``../examples/examples_uq/plot_hpo_tree_ensemble_uq_classification_sklearn.py``)
      - 00:00.000
      - 0.0

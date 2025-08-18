@@ -287,12 +287,17 @@ search_kwargs = {
     },
     "multi_point_strategy": "qUCBd",  # Multi-point strategy for asynchronous batch generations (explained later)
     "acq_optimizer": "sampling",  # Use random sampling for the acquisition function optimizer
-    "filter_duplicated": False,  # Deactivate filtration of duplicated new points
-    "kappa": 10.0,  # Initial value of exploration-exploitation parameter for the acquisition function
-    "scheduler": {  # Scheduler for the exploration-exploitation parameter "kappa"
-        "type": "periodic-exp-decay",  # Periodic exponential decay
-        "period": 50,  # Period over which the decay is applied. It is useful to escape local solutions.
-        "kappa_final": 0.001,  # Value of kappa at the end of each "period"
+    "acq_optimizer_kwargs": {
+        "filter_duplicated": False,  # Deactivate filtration of duplicated new points
+    },
+    "acq_func": "UCBd",
+    "acq_func_kwargs": {
+        "kappa": 10.0,  # Initial value of exploration-exploitation parameter for the acquisition function
+        "scheduler": {  # Scheduler for the exploration-exploitation parameter "kappa"
+            "type": "periodic-exp-decay",  # Periodic exponential decay
+            "period": 50,  # Period over which the decay is applied. It is useful to escape local solutions.
+            "kappa_final": 0.001,  # Value of kappa at the end of each "period"
+        },
     },
     "objective_scaler": "identity",
     "random_state": 42,  # Random seed
@@ -324,12 +329,11 @@ def run_hpo(problem):
     )
     search = CBO(
         problem,
-        evaluator,
         log_dir=hpo_dir,
         **search_kwargs,
     )
 
-    results = search.search(max_evals=1_000)
+    results = search.search(evaluator, max_evals=1_000)
 
     return results
 

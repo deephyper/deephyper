@@ -791,9 +791,9 @@ def run_neural_architecture_search(problem, max_evals):
     # Uncomment the following to speed-up the search
     # stopper = MedianStopper(min_steps=50, max_steps=max_n_epochs, interval_steps=50)
 
-    search = CBO(problem, evaluator, log_dir=hpo_dir, stopper=stopper, **search_kwargs)
+    search = CBO(problem, log_dir=hpo_dir, stopper=stopper, **search_kwargs)
 
-    results = search.search(max_evals=max_evals)
+    results = search.search(evaluator, max_evals=max_evals)
 
     return results
 
