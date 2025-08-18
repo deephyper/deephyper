@@ -161,13 +161,11 @@ class CBO(Search):
 
     Example Usage:
 
-        >>> search = CBO(problem, evaluator)
-        >>> results = search.search(max_evals=100, timeout=120)
+        >>> search = CBO(problem)
+        >>> results = search.search(evaluator, max_evals=100, timeout=120)
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
-
-        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
 
         random_state (int, optional): Random seed. Defaults to ``None``.
 
@@ -314,7 +312,6 @@ class CBO(Search):
     def __init__(
         self,
         problem,
-        evaluator,
         random_state: Optional[int] = None,
         log_dir: str = ".",
         verbose: int = 0,
@@ -340,7 +337,6 @@ class CBO(Search):
     ):
         super().__init__(
             problem,
-            evaluator,
             random_state,
             log_dir,
             verbose,
@@ -589,11 +585,14 @@ class CBO(Search):
         self._num_asked += n
         return new_samples
 
-    def _tell(self, results: List[HPOJob]):
+    def _tell(
+        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+    ):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a dictionary containing the results of the evaluations.
+            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+                a dictionary containing the results of the evaluations.
         """
         # Transform configurations to list to fit optimizer
         logger.info("Transforming received configurations to list...")
@@ -601,8 +600,7 @@ class CBO(Search):
 
         opt_X = []  # input configuration
         opt_y = []  # objective value
-        for job_i in results:
-            cfg, obj = job_i
+        for cfg, obj in results:
             # TODO: check if order of values is maintained
             x = list(cfg.values())
 
@@ -804,8 +802,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
         """
         if type(df) is not str and not isinstance(df, pd.DataFrame):
             raise ValueError("The argument 'df' should be a path to a CSV file or a DataFrame!")
@@ -853,8 +852,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
 
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
@@ -927,8 +927,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
 
         Args:
             df (str|DataFrame): a checkpoint from a previous search.

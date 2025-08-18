@@ -25,10 +25,3 @@ __all__ = [
     "Search",
     "SolutionSelection",
 ]
-
-try:
-    from deephyper.hpo._mpi_dbo import MPIDistributedBO  # noqa: F401
-
-    __all__.append("MPIDistributedBO")
-except ImportError:
-    pass

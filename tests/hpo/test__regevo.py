@@ -42,14 +42,13 @@ def test_centralized_regevo_search(tmp_path):
     # Test serial evaluation
     search = RegularizedEvolution(
         problem,
-        run,
         random_state=42,
         population_size=25,
         sample_size=5,
         log_dir=tmp_path,
         verbose=0,
     )
-    results = search.search(max_evals=100)
+    results = search.search(run, max_evals=100)
 
     assert_results(results)
     assert len(results) == 100
@@ -62,14 +61,13 @@ def test_centralized_regevo_search(tmp_path):
     )
     search = RegularizedEvolution(
         problem,
-        evaluator,
         population_size=25,
         sample_size=5,
         log_dir=tmp_path,
         random_state=42,
     )
 
-    results = search.search(max_evals=100, max_evals_strict=True)
+    results = search.search(evaluator, max_evals=100, max_evals_strict=True)
 
     assert_results(results)
     assert len(results) >= 100

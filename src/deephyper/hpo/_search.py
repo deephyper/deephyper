@@ -240,9 +240,6 @@ class Search(abc.ABC):
         problem:
             object describing the search/optimization problem.
 
-        evaluator:
-            object describing the evaluation process.
-
         random_state (np.random.RandomState, optional):
             Initial random state of the search. Defaults to ``None``.
 
@@ -269,7 +266,6 @@ class Search(abc.ABC):
     def __init__(
         self,
         problem,
-        evaluator,
         random_state=None,
         log_dir: str = ".",
         verbose: int = 0,
@@ -303,12 +299,6 @@ class Search(abc.ABC):
 
         self.is_master = True
 
-        # if a callable is directly passed wrap it around the serial evaluator
-        self.check_evaluator(evaluator)
-
-        # Set the search object in the evaluator to be able to call it within callbacks
-        self._evaluator.search = self
-
         # Check if results already exist
         self._path_results = os.path.join(self._log_dir, "results.csv")
         if os.path.exists(self._path_results) and self.checkpoint_history_to_csv:
@@ -329,7 +319,7 @@ class Search(abc.ABC):
         self.gather_type = "BATCH"
         self.gather_batch_size = 1
 
-        self._evaluator._stopper = stopper
+        self._stopper = stopper
 
         self.stopped = False
 
@@ -428,6 +418,7 @@ class Search(abc.ABC):
 
     def search(
         self,
+        evaluator,
         max_evals: int = -1,
         timeout: Optional[int | float] = None,
         max_evals_strict: bool = False,
@@ -435,6 +426,9 @@ class Search(abc.ABC):
         """Execute the search algorithm.
 
         Args:
+            evaluator:
+                object describing the evaluation process.
+
             max_evals (int, optional): The maximum number of evaluations of the run function to
                 perform before stopping the search. Defaults to ``-1``, will run indefinitely.
 
@@ -460,6 +454,16 @@ class Search(abc.ABC):
         """
         logger.info(f"Starting search with {type(self).__name__}")
 
+        # Configure evaluator
+        # if a callable is directly passed wrap it around the serial evaluator
+        self.check_evaluator(evaluator)
+
+        # Set the search object in the evaluator to be able to call it from Evaluator's callbacks
+        self._evaluator.search = self
+
+        # Set the stopper for the evaluator
+        self._evaluator._stopper = self._stopper
+
         # Log problem and evaluator parameters
         logger.info(f"Search's problem: {self._problem}")
         logger.info(
@@ -469,7 +473,7 @@ class Search(abc.ABC):
 
         # Log remaining parameters
         params_dict = self.get_params()["search"]
-        del params_dict["evaluator"], params_dict["problem"]
+        del params_dict["problem"]
         logger.info(
             f"Search's other parameters: {json.dumps(params_dict, indent=None, sort_keys=True)}"
         )  # noqa: E501
@@ -613,6 +617,7 @@ class Search(abc.ABC):
             self.dump_jobs_done_to_csv()
             logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
+            new_results = [(config, obj) for config, obj in new_results]
             self.tell(new_results)
 
             # Test if search should be stopped due to timeout
@@ -649,7 +654,7 @@ class Search(abc.ABC):
         return new_samples
 
     @abc.abstractmethod
-    def _ask(self, n: int = 1) -> List[Dict]:
+    def _ask(self, n: int = 1) -> list[dict[str, Optional[str | int | float]]]:
         """Ask the search for new configurations to evaluate.
 
         Args:
@@ -659,12 +664,12 @@ class Search(abc.ABC):
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
 
-    def tell(self, results: List[HPOJob]):
+    def tell(self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a list of HPOJobs from which hyperparameters and objectives can
-            be retrieved.
+            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+                a dictionary containing the results of the evaluations.
         """
         logger.info(f"Telling {len(results)} new result(s)...")
         t1 = time.time()
@@ -672,7 +677,9 @@ class Search(abc.ABC):
         logger.info(f"Telling took {time.time() - t1:.4f} sec.")
 
     @abc.abstractmethod
-    def _tell(self, results: List[HPOJob]):
+    def _tell(
+        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+    ):
         """Tell the search the results of the evaluations.
 
         Args:

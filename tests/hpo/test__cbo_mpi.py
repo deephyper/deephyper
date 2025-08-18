@@ -31,10 +31,10 @@ def _test_mpi_timeout(tmp_path):
     with Evaluator.create(run_sync_sleep_forever, method="mpicomm") as evaluator:
         if evaluator.is_master:
             search = CBO(
-                problem, evaluator, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
+                problem, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
             )
             t1 = time.time()
-            results = search.search(timeout=1)
+            results = search.search(evaluator, timeout=1)
 
             assert len(results) == evaluator.num_workers
             assert (results["job_status"] == "CANCELLED").all()
