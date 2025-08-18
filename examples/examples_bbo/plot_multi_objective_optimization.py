@@ -26,7 +26,7 @@ We will look at the DTLZ benchmark suite, a classic in multi-objective optimizat
 #
 #     %%bash
 #     pip install deephyper
-#     pip install -e "git+https://github.com/deephyper/benchmark.git@main#egg=deephyper-benchmark"
+#     pip install "git+https://github.com/deephyper/benchmark.git@main#egg=deephyper-benchmark"
 
 # .. dropdown:: Import statements
 import matplotlib.pyplot as plt
@@ -84,7 +84,6 @@ bench.problem
 
 search = CBO(
     bench.problem,
-    bench.run_function,
     acq_optimizer="sampling",
     moo_scalarization_strategy="AugChebyshev",
     moo_scalarization_weight="random",
@@ -94,7 +93,7 @@ search = CBO(
 # %%
 # Launch the search for a given number of evaluations
 # other stopping criteria can be used (e.g. timeout, early-stopping/convergence)
-results = search.search(max_evals=500)
+results = search.search(bench.run_function, max_evals=500)
 
 # %%
 # A Pandas table of results is returned by the search and also saved at ``./results.csv``. An other location can be specified by using ``CBO(..., log_dir=...)``.

@@ -139,7 +139,7 @@ the :class:`deephyper.hpo.ExperimentalDesignSearch` class. For a grid search, we
 It is good to note that the :class:`deephyper.evaluator.Evaluator` can also be used with this class to parallelize evaluations.
 Also, it is important to set `n_points` and `max_evals` to the same value.
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-72
+.. GENERATED FROM PYTHON SOURCE LINES 61-71
 
 .. code-block:: Python
 
@@ -147,12 +147,11 @@ Also, it is important to set `n_points` and `max_evals` to the same value.
     max_evals = 200
     search = ExperimentalDesignSearch(
         problem, 
-        run, 
         n_points=max_evals, 
         design="grid", 
         log_dir=log_dir,
     )
-    results = search.search(max_evals)
+    results = search.search(run, max_evals)
 
 
 
@@ -161,11 +160,11 @@ Also, it is important to set `n_points` and `max_evals` to the same value.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 73-74
+.. GENERATED FROM PYTHON SOURCE LINES 72-73
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 74-81
+.. GENERATED FROM PYTHON SOURCE LINES 73-80
 
 .. dropdown:: Code (Make plot)
 
@@ -192,7 +191,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.637 seconds)
+   **Total running time of the script:** (0 minutes 1.262 seconds)
 
 
 .. _sphx_glr_download_examples_examples_bbo_plot_experimental_design.py:

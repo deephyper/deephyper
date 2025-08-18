@@ -21,7 +21,6 @@ import functools
 
 import matplotlib.pyplot as plt
 
-from deephyper.analysis import figure_size
 from deephyper.analysis.hpo import plot_search_trajectory_single_objective_hpo
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
@@ -80,10 +79,9 @@ evaluator_small = Evaluator.create(
 
 search_small = CBO(
     problem_small, 
-    evaluator_small, 
     **search_kwargs,
 )
-results_small = search_small.search(max_evals)
+results_small = search_small.search(evaluator_small, max_evals)
 
 # %%
 # We run the search on the large problem without transfer learning:
@@ -94,10 +92,9 @@ evaluator_large = Evaluator.create(
 )
 search_large = CBO(
     problem_large, 
-    evaluator_large,
     **search_kwargs,
 )
-results["Large"] = search_large.search(max_evals)
+results["Large"] = search_large.search(evaluator_large, max_evals)
 
 # %%
 # Finally, we run the search on the large problem with transfer learning from the results
@@ -109,7 +106,6 @@ evaluator_large_tl = Evaluator.create(
 )
 search_large_tl = CBO(
     problem_large, 
-    evaluator_large_tl, 
     n_initial_points=2 * n_large + 1, 
     **search_kwargs,
 )
@@ -117,7 +113,7 @@ search_large_tl = CBO(
 # This is where transfer learning happens
 search_large_tl.fit_generative_model(results_small)
 
-results["Large+TL"] = search_large_tl.search(max_evals)
+results["Large+TL"] = search_large_tl.search(evaluator_large_tl, max_evals)
 
 
 # %%

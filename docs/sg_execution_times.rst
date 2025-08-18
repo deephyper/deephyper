@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**39:26.877** total execution time for 14 files **from all galleries**:
+**01:43.753** total execution time for 14 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification_with_stopper.py` (``../examples/examples_hpo/plot_hpo_text_classification_with_stopper.py``)
-     - 39:26.877
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py` (``../examples/examples_bbo/plot_transfer_learning_for_hpo.py``)
+     - 01:43.753
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
@@ -47,13 +47,13 @@ Computation times
    * - :ref:`sphx_glr_examples_examples_bbo_plot_notify_failures_hpo.py` (``../examples/examples_bbo/plot_notify_failures_hpo.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py` (``../examples/examples_bbo/plot_transfer_learning_for_hpo.py``)
-     - 00:00.000
-     - 0.0
    * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_for_rf_and_overfitting.py` (``../examples/examples_hpo/plot_hpo_for_rf_and_overfitting.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification.py` (``../examples/examples_hpo/plot_hpo_text_classification.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification_with_stopper.py` (``../examples/examples_hpo/plot_hpo_text_classification_with_stopper.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_from_serial_to_parallel_hpo.py` (``../examples/examples_parallelism/plot_from_serial_to_parallel_hpo.py``)
