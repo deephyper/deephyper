@@ -457,8 +457,8 @@ We evaluate the performance of the default set of hyperparameters provided in th
 
  .. code-block:: none
 
-    2025-04-22 17:20:37,925 INFO worker.py:1852 -- Started a local Ray instance.
-    Accuracy Default Configuration:  0.823
+    2025-08-18 14:44:20,921 INFO worker.py:1843 -- Started a local Ray instance. View the dashboard at http://127.0.0.1:8265 
+    Accuracy Default Configuration:  0.863
 
 
 
@@ -530,7 +530,7 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
     
         return evaluator
 
-    evaluator_1 = get_evaluator(quick_run)
+    evaluator = get_evaluator(quick_run)
 
 
 
@@ -540,7 +540,7 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
 
  .. code-block:: none
 
-    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x12fdeaab0>]}
+    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x3a52a0b00>]}
 
 
 
@@ -573,7 +573,7 @@ Instanciate the search with the problem and a specific evaluator
 
 .. code-block:: Python
 
-    search = CBO(problem, evaluator_1)
+    search = CBO(problem)
 
 
 
@@ -583,7 +583,7 @@ Instanciate the search with the problem and a specific evaluator
 
  .. code-block:: none
 
-    WARNING:root:Results file already exists, it will be renamed to /Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/results_20250422-172057.csv
+    Results file already exists, it will be renamed to /Users/rp5/Documents/DeepHyper/deephyper/examples/examples_hpo/results_20250818-144426.csv
 
 
 
@@ -600,7 +600,7 @@ Instanciate the search with the problem and a specific evaluator
 
 .. code-block:: Python
 
-    results = search.search(max_evals=30)
+    results = search.search(evaluator, max_evals=30)
 
 
 
@@ -610,7 +610,7 @@ Instanciate the search with the problem and a specific evaluator
 
  .. code-block:: none
 
-      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 2053.01it/s, failures=0, objective=0.258]      7%|▋         | 2/30 [00:06<01:32,  3.30s/it, failures=0, objective=0.258]        7%|▋         | 2/30 [00:06<01:32,  3.30s/it, failures=0, objective=0.425]     10%|█         | 3/30 [00:21<03:43,  8.29s/it, failures=0, objective=0.425]     10%|█         | 3/30 [00:21<03:43,  8.29s/it, failures=0, objective=0.425]     13%|█▎        | 4/30 [00:31<03:48,  8.79s/it, failures=0, objective=0.425]     13%|█▎        | 4/30 [00:31<03:48,  8.79s/it, failures=0, objective=0.426]     17%|█▋        | 5/30 [00:40<03:44,  8.97s/it, failures=0, objective=0.426]     17%|█▋        | 5/30 [00:40<03:44,  8.97s/it, failures=0, objective=0.79]      20%|██        | 6/30 [01:15<07:02, 17.62s/it, failures=0, objective=0.79]     20%|██        | 6/30 [01:15<07:02, 17.62s/it, failures=0, objective=0.79]     23%|██▎       | 7/30 [01:30<06:24, 16.71s/it, failures=0, objective=0.79]     23%|██▎       | 7/30 [01:30<06:24, 16.71s/it, failures=0, objective=0.807]     27%|██▋       | 8/30 [01:34<04:39, 12.71s/it, failures=0, objective=0.807]     27%|██▋       | 8/30 [01:34<04:39, 12.71s/it, failures=0, objective=0.807]     30%|███       | 9/30 [01:50<04:49, 13.80s/it, failures=0, objective=0.807]     30%|███       | 9/30 [01:50<04:49, 13.80s/it, failures=0, objective=0.807]     33%|███▎      | 10/30 [02:03<04:26, 13.32s/it, failures=0, objective=0.807]     33%|███▎      | 10/30 [02:03<04:26, 13.32s/it, failures=0, objective=0.807]     37%|███▋      | 11/30 [02:21<04:44, 14.97s/it, failures=0, objective=0.807]     37%|███▋      | 11/30 [02:21<04:44, 14.97s/it, failures=0, objective=0.821]     40%|████      | 12/30 [02:54<06:07, 20.42s/it, failures=0, objective=0.821]     40%|████      | 12/30 [02:54<06:07, 20.42s/it, failures=0, objective=0.821]     43%|████▎     | 13/30 [03:03<04:45, 16.80s/it, failures=0, objective=0.821]     43%|████▎     | 13/30 [03:03<04:45, 16.80s/it, failures=0, objective=0.821]     47%|████▋     | 14/30 [03:41<06:13, 23.34s/it, failures=0, objective=0.821]     47%|████▋     | 14/30 [03:41<06:13, 23.34s/it, failures=0, objective=0.821]     50%|█████     | 15/30 [03:52<04:51, 19.43s/it, failures=0, objective=0.821]     50%|█████     | 15/30 [03:52<04:51, 19.43s/it, failures=0, objective=0.821]     53%|█████▎    | 16/30 [04:16<04:51, 20.84s/it, failures=0, objective=0.821]     53%|█████▎    | 16/30 [04:16<04:51, 20.84s/it, failures=0, objective=0.821]     57%|█████▋    | 17/30 [04:45<05:04, 23.40s/it, failures=0, objective=0.821]     57%|█████▋    | 17/30 [04:45<05:04, 23.40s/it, failures=0, objective=0.821]     60%|██████    | 18/30 [05:11<04:50, 24.21s/it, failures=0, objective=0.821]     60%|██████    | 18/30 [05:11<04:50, 24.21s/it, failures=0, objective=0.821]     63%|██████▎   | 19/30 [05:20<03:36, 19.66s/it, failures=0, objective=0.821]     63%|██████▎   | 19/30 [05:20<03:36, 19.66s/it, failures=0, objective=0.821]     67%|██████▋   | 20/30 [05:26<02:35, 15.58s/it, failures=0, objective=0.821]     67%|██████▋   | 20/30 [05:26<02:35, 15.58s/it, failures=0, objective=0.821]     70%|███████   | 21/30 [05:34<01:59, 13.26s/it, failures=0, objective=0.821]     70%|███████   | 21/30 [05:34<01:59, 13.26s/it, failures=0, objective=0.821]     73%|███████▎  | 22/30 [05:40<01:29, 11.14s/it, failures=0, objective=0.821]     73%|███████▎  | 22/30 [05:40<01:29, 11.14s/it, failures=0, objective=0.821]     77%|███████▋  | 23/30 [06:00<01:35, 13.58s/it, failures=0, objective=0.821]     77%|███████▋  | 23/30 [06:00<01:35, 13.58s/it, failures=0, objective=0.821]     80%|████████  | 24/30 [06:14<01:22, 13.69s/it, failures=0, objective=0.821]     80%|████████  | 24/30 [06:14<01:22, 13.69s/it, failures=0, objective=0.821]     83%|████████▎ | 25/30 [06:26<01:07, 13.44s/it, failures=0, objective=0.821]     83%|████████▎ | 25/30 [06:26<01:07, 13.44s/it, failures=0, objective=0.821]     87%|████████▋ | 26/30 [06:41<00:55, 13.93s/it, failures=0, objective=0.821]     87%|████████▋ | 26/30 [06:41<00:55, 13.93s/it, failures=0, objective=0.821]     90%|█████████ | 27/30 [07:09<00:53, 17.89s/it, failures=0, objective=0.821]     90%|█████████ | 27/30 [07:09<00:53, 17.89s/it, failures=0, objective=0.821]     93%|█████████▎| 28/30 [07:27<00:36, 18.18s/it, failures=0, objective=0.821]     93%|█████████▎| 28/30 [07:27<00:36, 18.18s/it, failures=0, objective=0.821]     97%|█████████▋| 29/30 [07:33<00:14, 14.30s/it, failures=0, objective=0.821]     97%|█████████▋| 29/30 [07:33<00:14, 14.30s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 17.71s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 17.71s/it, failures=0, objective=0.821]    100%|██████████| 30/30 [07:58<00:00, 15.96s/it, failures=0, objective=0.821]
+      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 5398.07it/s, failures=0, objective=0.385]      7%|▋         | 2/30 [00:02<00:32,  1.16s/it, failures=0, objective=0.385]        7%|▋         | 2/30 [00:02<00:32,  1.16s/it, failures=0, objective=0.602]     10%|█         | 3/30 [00:06<01:07,  2.49s/it, failures=0, objective=0.602]     10%|█         | 3/30 [00:06<01:07,  2.49s/it, failures=0, objective=0.602]     13%|█▎        | 4/30 [00:08<00:57,  2.21s/it, failures=0, objective=0.602]     13%|█▎        | 4/30 [00:08<00:57,  2.21s/it, failures=0, objective=0.69]      17%|█▋        | 5/30 [00:09<00:48,  1.93s/it, failures=0, objective=0.69]     17%|█▋        | 5/30 [00:09<00:48,  1.93s/it, failures=0, objective=0.69]     20%|██        | 6/30 [00:12<00:51,  2.15s/it, failures=0, objective=0.69]     20%|██        | 6/30 [00:12<00:51,  2.15s/it, failures=0, objective=0.74]     23%|██▎       | 7/30 [00:14<00:51,  2.25s/it, failures=0, objective=0.74]     23%|██▎       | 7/30 [00:14<00:51,  2.25s/it, failures=0, objective=0.74]     27%|██▋       | 8/30 [00:16<00:45,  2.08s/it, failures=0, objective=0.74]     27%|██▋       | 8/30 [00:16<00:45,  2.08s/it, failures=0, objective=0.74]     30%|███       | 9/30 [00:22<01:11,  3.38s/it, failures=0, objective=0.74]     30%|███       | 9/30 [00:22<01:11,  3.38s/it, failures=0, objective=0.816]     33%|███▎      | 10/30 [00:31<01:41,  5.09s/it, failures=0, objective=0.816]     33%|███▎      | 10/30 [00:31<01:41,  5.09s/it, failures=0, objective=0.816]     37%|███▋      | 11/30 [00:42<02:07,  6.73s/it, failures=0, objective=0.816]     37%|███▋      | 11/30 [00:42<02:07,  6.73s/it, failures=0, objective=0.82]      40%|████      | 12/30 [00:48<02:00,  6.69s/it, failures=0, objective=0.82]     40%|████      | 12/30 [00:48<02:00,  6.69s/it, failures=0, objective=0.82]     43%|████▎     | 13/30 [00:59<02:14,  7.90s/it, failures=0, objective=0.82]     43%|████▎     | 13/30 [00:59<02:14,  7.90s/it, failures=0, objective=0.82]     47%|████▋     | 14/30 [01:08<02:11,  8.20s/it, failures=0, objective=0.82]     47%|████▋     | 14/30 [01:08<02:11,  8.20s/it, failures=0, objective=0.82]     50%|█████     | 15/30 [01:15<01:56,  7.76s/it, failures=0, objective=0.82]     50%|█████     | 15/30 [01:15<01:56,  7.76s/it, failures=0, objective=0.82]     53%|█████▎    | 16/30 [01:22<01:45,  7.53s/it, failures=0, objective=0.82]     53%|█████▎    | 16/30 [01:22<01:45,  7.53s/it, failures=0, objective=0.82]     57%|█████▋    | 17/30 [01:32<01:49,  8.41s/it, failures=0, objective=0.82]     57%|█████▋    | 17/30 [01:32<01:49,  8.41s/it, failures=0, objective=0.82]     60%|██████    | 18/30 [01:41<01:42,  8.56s/it, failures=0, objective=0.82]     60%|██████    | 18/30 [01:41<01:42,  8.56s/it, failures=0, objective=0.82]     63%|██████▎   | 19/30 [01:45<01:18,  7.11s/it, failures=0, objective=0.82]     63%|██████▎   | 19/30 [01:45<01:18,  7.11s/it, failures=0, objective=0.82]     67%|██████▋   | 20/30 [01:54<01:18,  7.86s/it, failures=0, objective=0.82]     67%|██████▋   | 20/30 [01:54<01:18,  7.86s/it, failures=0, objective=0.82]     70%|███████   | 21/30 [02:00<01:03,  7.08s/it, failures=0, objective=0.82]     70%|███████   | 21/30 [02:00<01:03,  7.08s/it, failures=0, objective=0.82]     73%|███████▎  | 22/30 [02:05<00:52,  6.62s/it, failures=0, objective=0.82]     73%|███████▎  | 22/30 [02:05<00:52,  6.62s/it, failures=0, objective=0.82]     77%|███████▋  | 23/30 [02:11<00:44,  6.39s/it, failures=0, objective=0.82]     77%|███████▋  | 23/30 [02:11<00:44,  6.39s/it, failures=0, objective=0.82]     80%|████████  | 24/30 [02:17<00:38,  6.35s/it, failures=0, objective=0.82]     80%|████████  | 24/30 [02:17<00:38,  6.35s/it, failures=0, objective=0.82]     83%|████████▎ | 25/30 [02:25<00:33,  6.65s/it, failures=0, objective=0.82]     83%|████████▎ | 25/30 [02:25<00:33,  6.65s/it, failures=0, objective=0.82]     87%|████████▋ | 26/30 [02:35<00:31,  7.81s/it, failures=0, objective=0.82]     87%|████████▋ | 26/30 [02:35<00:31,  7.81s/it, failures=0, objective=0.82]     90%|█████████ | 27/30 [02:41<00:21,  7.21s/it, failures=0, objective=0.82]     90%|█████████ | 27/30 [02:41<00:21,  7.21s/it, failures=0, objective=0.82]     93%|█████████▎| 28/30 [02:46<00:13,  6.69s/it, failures=0, objective=0.82]     93%|█████████▎| 28/30 [02:46<00:13,  6.69s/it, failures=0, objective=0.82]     97%|█████████▋| 29/30 [02:52<00:06,  6.25s/it, failures=0, objective=0.82]     97%|█████████▋| 29/30 [02:52<00:06,  6.25s/it, failures=0, objective=0.82]    100%|██████████| 30/30 [02:56<00:00,  5.62s/it, failures=0, objective=0.82]    100%|██████████| 30/30 [02:56<00:00,  5.62s/it, failures=0, objective=0.82]    100%|██████████| 30/30 [02:56<00:00,  5.88s/it, failures=0, objective=0.82]
 
 
 
@@ -669,333 +669,333 @@ The returned :code:`results` is a Pandas Dataframe where columns are hyperparame
       <tbody>
         <tr>
           <th>0</th>
-          <td>263</td>
-          <td>0.307330</td>
+          <td>245</td>
+          <td>1.631048</td>
           <td>9</td>
-          <td>0.258095</td>
+          <td>0.385000</td>
           <td>0</td>
           <td>DONE</td>
-          <td>3.127765</td>
-          <td>14.453226</td>
+          <td>0.806100</td>
+          <td>3.504088</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>184</td>
-          <td>0.619315</td>
-          <td>18</td>
-          <td>0.424762</td>
+          <td>56</td>
+          <td>1.112981</td>
+          <td>16</td>
+          <td>0.601667</td>
           <td>1</td>
           <td>DONE</td>
-          <td>14.539550</td>
-          <td>21.074172</td>
+          <td>3.526653</td>
+          <td>5.828167</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>11</td>
-          <td>0.267404</td>
-          <td>7</td>
-          <td>0.414048</td>
+          <td>23</td>
+          <td>0.143010</td>
+          <td>16</td>
+          <td>0.394524</td>
           <td>2</td>
           <td>DONE</td>
-          <td>21.106992</td>
-          <td>36.337234</td>
+          <td>5.839790</td>
+          <td>10.173068</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>16</td>
-          <td>0.327795</td>
-          <td>6</td>
-          <td>0.426429</td>
+          <td>264</td>
+          <td>5.976338</td>
+          <td>17</td>
+          <td>0.690000</td>
           <td>3</td>
           <td>DONE</td>
-          <td>36.368617</td>
-          <td>45.965276</td>
+          <td>10.184379</td>
+          <td>11.913512</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>23</td>
-          <td>5.655336</td>
+          <td>136</td>
+          <td>1.760105</td>
           <td>8</td>
-          <td>0.790000</td>
+          <td>0.425714</td>
           <td>4</td>
           <td>DONE</td>
-          <td>45.995517</td>
-          <td>55.273026</td>
+          <td>11.925383</td>
+          <td>13.314167</td>
         </tr>
         <tr>
           <th>5</th>
-          <td>9</td>
-          <td>0.879577</td>
-          <td>13</td>
-          <td>0.699762</td>
+          <td>82</td>
+          <td>2.249590</td>
+          <td>20</td>
+          <td>0.739524</td>
           <td>5</td>
           <td>DONE</td>
-          <td>55.305938</td>
-          <td>90.301269</td>
+          <td>13.325365</td>
+          <td>15.923063</td>
         </tr>
         <tr>
           <th>6</th>
-          <td>32</td>
-          <td>8.432492</td>
-          <td>18</td>
-          <td>0.806905</td>
+          <td>53</td>
+          <td>0.913211</td>
+          <td>14</td>
+          <td>0.563095</td>
           <td>6</td>
           <td>DONE</td>
-          <td>90.331885</td>
-          <td>105.113069</td>
+          <td>15.934397</td>
+          <td>18.385043</td>
         </tr>
         <tr>
           <th>7</th>
-          <td>353</td>
-          <td>5.803402</td>
-          <td>13</td>
-          <td>0.586667</td>
+          <td>283</td>
+          <td>3.305364</td>
+          <td>19</td>
+          <td>0.590714</td>
           <td>7</td>
           <td>DONE</td>
-          <td>105.901583</td>
-          <td>109.096179</td>
+          <td>18.615469</td>
+          <td>20.076355</td>
         </tr>
         <tr>
           <th>8</th>
-          <td>32</td>
-          <td>4.693885</td>
-          <td>19</td>
-          <td>0.794524</td>
+          <td>17</td>
+          <td>2.536505</td>
+          <td>20</td>
+          <td>0.816429</td>
           <td>8</td>
           <td>DONE</td>
-          <td>109.777105</td>
-          <td>125.332508</td>
+          <td>20.309002</td>
+          <td>26.365440</td>
         </tr>
         <tr>
           <th>9</th>
-          <td>17</td>
-          <td>2.967434</td>
-          <td>8</td>
-          <td>0.762857</td>
+          <td>11</td>
+          <td>2.086957</td>
+          <td>20</td>
+          <td>0.815714</td>
           <td>9</td>
           <td>DONE</td>
-          <td>125.989688</td>
-          <td>137.581629</td>
+          <td>26.609885</td>
+          <td>35.309791</td>
         </tr>
         <tr>
           <th>10</th>
-          <td>29</td>
-          <td>3.046464</td>
+          <td>9</td>
+          <td>8.421344</td>
           <td>20</td>
-          <td>0.821190</td>
+          <td>0.820238</td>
           <td>10</td>
           <td>DONE</td>
-          <td>138.640750</td>
-          <td>156.303423</td>
+          <td>35.544787</td>
+          <td>45.785644</td>
         </tr>
         <tr>
           <th>11</th>
-          <td>12</td>
-          <td>3.004998</td>
-          <td>17</td>
-          <td>0.804048</td>
+          <td>16</td>
+          <td>0.911853</td>
+          <td>20</td>
+          <td>0.746905</td>
           <td>11</td>
           <td>DONE</td>
-          <td>156.985886</td>
-          <td>189.248511</td>
+          <td>46.023974</td>
+          <td>52.367163</td>
         </tr>
         <tr>
           <th>12</th>
-          <td>66</td>
-          <td>4.342034</td>
-          <td>16</td>
-          <td>0.783810</td>
+          <td>9</td>
+          <td>4.070022</td>
+          <td>20</td>
+          <td>0.803571</td>
           <td>12</td>
           <td>DONE</td>
-          <td>189.890529</td>
-          <td>197.676170</td>
+          <td>52.705372</td>
+          <td>63.077662</td>
         </tr>
         <tr>
           <th>13</th>
-          <td>12</td>
-          <td>4.922773</td>
+          <td>11</td>
+          <td>2.122347</td>
           <td>20</td>
-          <td>0.803571</td>
+          <td>0.809286</td>
           <td>13</td>
           <td>DONE</td>
-          <td>198.329679</td>
-          <td>236.173472</td>
+          <td>63.321248</td>
+          <td>71.979538</td>
         </tr>
         <tr>
           <th>14</th>
-          <td>52</td>
-          <td>3.529654</td>
-          <td>17</td>
-          <td>0.788095</td>
+          <td>16</td>
+          <td>6.979859</td>
+          <td>20</td>
+          <td>0.807143</td>
           <td>14</td>
           <td>DONE</td>
-          <td>236.840004</td>
-          <td>246.533402</td>
+          <td>72.221648</td>
+          <td>78.707475</td>
         </tr>
         <tr>
           <th>15</th>
-          <td>16</td>
-          <td>7.520990</td>
-          <td>16</td>
-          <td>0.787857</td>
+          <td>15</td>
+          <td>1.276222</td>
+          <td>20</td>
+          <td>0.770476</td>
           <td>15</td>
           <td>DONE</td>
-          <td>247.194122</td>
-          <td>270.638290</td>
+          <td>78.946452</td>
+          <td>85.686414</td>
         </tr>
         <tr>
           <th>16</th>
-          <td>13</td>
-          <td>9.459284</td>
-          <td>16</td>
-          <td>0.820476</td>
+          <td>9</td>
+          <td>1.361241</td>
+          <td>20</td>
+          <td>0.800476</td>
           <td>16</td>
           <td>DONE</td>
-          <td>271.455738</td>
-          <td>300.009493</td>
+          <td>85.925403</td>
+          <td>96.158468</td>
         </tr>
         <tr>
           <th>17</th>
-          <td>14</td>
-          <td>6.333043</td>
-          <td>15</td>
-          <td>0.812857</td>
+          <td>11</td>
+          <td>2.886584</td>
+          <td>20</td>
+          <td>0.807619</td>
           <td>17</td>
           <td>DONE</td>
-          <td>300.733284</td>
-          <td>326.092465</td>
+          <td>96.397284</td>
+          <td>105.057524</td>
         </tr>
         <tr>
           <th>18</th>
-          <td>76</td>
-          <td>2.864959</td>
-          <td>19</td>
-          <td>0.771905</td>
+          <td>36</td>
+          <td>0.523676</td>
+          <td>20</td>
+          <td>0.582857</td>
           <td>18</td>
           <td>DONE</td>
-          <td>326.893129</td>
-          <td>335.169225</td>
+          <td>105.291716</td>
+          <td>108.786150</td>
         </tr>
         <tr>
           <th>19</th>
-          <td>34</td>
-          <td>3.699183</td>
-          <td>6</td>
-          <td>0.687619</td>
+          <td>10</td>
+          <td>0.765039</td>
+          <td>20</td>
+          <td>0.746905</td>
           <td>19</td>
           <td>DONE</td>
-          <td>335.842253</td>
-          <td>341.226246</td>
+          <td>109.025325</td>
+          <td>118.416570</td>
         </tr>
         <tr>
           <th>20</th>
-          <td>101</td>
-          <td>9.631699</td>
+          <td>22</td>
+          <td>7.267154</td>
           <td>20</td>
-          <td>0.806905</td>
+          <td>0.818095</td>
           <td>20</td>
           <td>DONE</td>
-          <td>341.890406</td>
-          <td>349.094039</td>
+          <td>118.738970</td>
+          <td>123.678590</td>
         </tr>
         <tr>
           <th>21</th>
-          <td>129</td>
-          <td>7.667238</td>
-          <td>17</td>
-          <td>0.777857</td>
+          <td>20</td>
+          <td>9.786512</td>
+          <td>20</td>
+          <td>0.806190</td>
           <td>21</td>
           <td>DONE</td>
-          <td>349.768611</td>
-          <td>355.277805</td>
+          <td>123.911904</td>
+          <td>129.223925</td>
         </tr>
         <tr>
           <th>22</th>
-          <td>23</td>
-          <td>6.802672</td>
-          <td>17</td>
-          <td>0.803333</td>
+          <td>19</td>
+          <td>8.426698</td>
+          <td>20</td>
+          <td>0.805714</td>
           <td>22</td>
           <td>DONE</td>
-          <td>356.129515</td>
-          <td>374.547178</td>
+          <td>129.460490</td>
+          <td>135.063884</td>
         </tr>
         <tr>
           <th>23</th>
-          <td>36</td>
-          <td>8.862987</td>
-          <td>18</td>
-          <td>0.806905</td>
+          <td>17</td>
+          <td>6.601954</td>
+          <td>20</td>
+          <td>0.816190</td>
           <td>23</td>
           <td>DONE</td>
-          <td>375.217385</td>
-          <td>388.509987</td>
+          <td>135.300321</td>
+          <td>141.337653</td>
         </tr>
         <tr>
           <th>24</th>
-          <td>43</td>
-          <td>5.716999</td>
-          <td>19</td>
-          <td>0.809048</td>
+          <td>14</td>
+          <td>8.959608</td>
+          <td>20</td>
+          <td>0.798571</td>
           <td>24</td>
           <td>DONE</td>
-          <td>389.156084</td>
-          <td>401.360895</td>
+          <td>141.570983</td>
+          <td>148.691888</td>
         </tr>
         <tr>
           <th>25</th>
-          <td>33</td>
-          <td>3.940563</td>
-          <td>18</td>
-          <td>0.785952</td>
+          <td>9</td>
+          <td>8.727873</td>
+          <td>20</td>
+          <td>0.815952</td>
           <td>25</td>
           <td>DONE</td>
-          <td>402.023900</td>
-          <td>416.426354</td>
+          <td>148.930730</td>
+          <td>159.216285</td>
         </tr>
         <tr>
           <th>26</th>
-          <td>15</td>
-          <td>4.065718</td>
-          <td>17</td>
-          <td>0.814524</td>
+          <td>19</td>
+          <td>6.263893</td>
+          <td>20</td>
+          <td>0.799762</td>
           <td>26</td>
           <td>DONE</td>
-          <td>417.259908</td>
-          <td>443.559158</td>
+          <td>159.453678</td>
+          <td>165.011176</td>
         </tr>
         <tr>
           <th>27</th>
-          <td>28</td>
-          <td>3.023265</td>
+          <td>21</td>
+          <td>8.539551</td>
           <td>20</td>
-          <td>0.786190</td>
+          <td>0.814524</td>
           <td>27</td>
           <td>DONE</td>
-          <td>444.360056</td>
-          <td>462.428190</td>
+          <td>165.337578</td>
+          <td>170.484569</td>
         </tr>
         <tr>
           <th>28</th>
-          <td>152</td>
-          <td>9.811295</td>
-          <td>15</td>
-          <td>0.770000</td>
+          <td>22</td>
+          <td>1.172272</td>
+          <td>20</td>
+          <td>0.751429</td>
           <td>28</td>
           <td>DONE</td>
-          <td>463.098771</td>
-          <td>467.679759</td>
+          <td>170.722989</td>
+          <td>175.696918</td>
         </tr>
         <tr>
           <th>29</th>
-          <td>13</td>
-          <td>8.953454</td>
-          <td>14</td>
-          <td>0.803571</td>
+          <td>30</td>
+          <td>5.805169</td>
+          <td>20</td>
+          <td>0.796190</td>
           <td>29</td>
           <td>DONE</td>
-          <td>468.413173</td>
-          <td>493.326741</td>
+          <td>175.931295</td>
+          <td>179.869023</td>
         </tr>
       </tbody>
     </table>
@@ -1033,13 +1033,13 @@ Now that the search is over, let us print the best configuration found during th
 
  .. code-block:: none
 
-    The default configuration has an accuracy of 0.823. 
-    The best configuration found by DeepHyper has an accuracy 0.821, 
-    finished after 156.30 secondes of search.
+    The default configuration has an accuracy of 0.863. 
+    The best configuration found by DeepHyper has an accuracy 0.820, 
+    finished after 45.79 secondes of search.
 
     {
-        "batch_size": 29,
-        "learning_rate": 3.0464644512097143,
+        "batch_size": 9,
+        "learning_rate": 8.421343891942513,
         "num_epochs": 20
     }
 
@@ -1060,7 +1060,7 @@ Now that the search is over, let us print the best configuration found during th
 
  .. code-block:: none
 
-    Accuracy Best Configuration:  0.837
+    Accuracy Best Configuration:  0.807
 
 
 
@@ -1068,7 +1068,7 @@ Now that the search is over, let us print the best configuration found during th
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (9 minutes 36.821 seconds)
+   **Total running time of the script:** (3 minutes 47.673 seconds)
 
 
 .. _sphx_glr_download_examples_examples_hpo_plot_hpo_text_classification.py:

@@ -1,6 +1,6 @@
 r"""
 Hyperparameter Search for Text Classification with the Stopper Class
-=============================================
+====================================================================
 
 **Author(s)**: Romain Egele, Brett Eiffert.
 
@@ -213,7 +213,6 @@ def evaluate(model, dataloader):
 
 def get_run(train_ratio=0.95):
   def run(job: RunningJob):
-    print(type(job))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     embed_dim = 64
@@ -337,6 +336,7 @@ print(f"Accuracy Default Configuration:  {objective_default["objective"]:.3f}")
 from deephyper.evaluator import Evaluator
 from deephyper.evaluator.callback import TqdmCallback
 
+
 def get_evaluator(run_function):
     # Default arguments for Ray: 1 worker and 1 worker per evaluation
     method_kwargs = {
@@ -362,7 +362,7 @@ def get_evaluator(run_function):
     
     return evaluator
 
-evaluator_1 = get_evaluator(quick_run)
+evaluator = get_evaluator(quick_run)
 
 # %%
 # Define and run the Centralized Bayesian Optimization search (CBO)
@@ -379,7 +379,7 @@ from deephyper.stopper import SuccessiveHalvingStopper
 # %%
 # Instantiate the search with the problem and a specific evaluator
 stopper = SuccessiveHalvingStopper(min_steps=1, max_steps=100)
-search = CBO(problem, evaluator_1, stopper=stopper, log_dir="stopper-log-files")
+search = CBO(problem, stopper=stopper, log_dir="stopper-log-files")
 
 # %%  
 # .. note:: 
@@ -389,7 +389,7 @@ search = CBO(problem, evaluator_1, stopper=stopper, log_dir="stopper-log-files")
 #
 
 # %%
-results = search.search(max_evals=30)
+results = search.search(evaluator, max_evals=30)
 
 # %%
 # The returned :code:`results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:
@@ -404,7 +404,7 @@ results = search.search(max_evals=30)
 # The power of a Stopper is shown as it can reduce runtime significantly as the Stopper and jobs become "smart" and decide to end early
 # because the Stopper algorithm determined it was unnecessary to move forward in the search for that job.
 results
-#print(results)
+
 
 # %%
 # Visualizing the Stopper
@@ -415,10 +415,15 @@ results
 # need to run the full time to converge on a solution.
 
 # %%
+import numpy as np
 import matplotlib.pyplot as plt
 
+i = 0
 for row in results.iterrows():
-    plt.plot(row[1]["m:accu_list"], label=row[1]["job_id"])
+    y = row[1]["m:accu_list"]
+    x = np.arange(i+1, i+1+len(y))
+    plt.plot(x, y, label=row[1]["job_id"])
+    i += len(y)
 
 plt.xlabel('Epoch')
 plt.ylabel('Validation accuracy')

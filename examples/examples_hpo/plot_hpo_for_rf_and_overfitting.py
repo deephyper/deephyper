@@ -356,10 +356,9 @@ max_evals = 100
 
 search = CBO(
     problem,
-    evaluator,
     random_state=42,
 )
-results = search.search(max_evals=max_evals)
+results = search.search(evaluator, max_evals=max_evals)
 
 # %%
 # Once the search is over, a file named ``results.csv`` is saved in the current directory.
