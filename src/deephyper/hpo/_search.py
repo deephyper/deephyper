@@ -346,6 +346,10 @@ class Search(abc.ABC):
         self.history = SearchHistory(self._problem, solution_selection=solution_selection)
 
     def check_evaluator(self, evaluator):
+        """Check if the input is a callable, an evaluator or else.
+
+        :meta: private
+        """
         if not (isinstance(evaluator, Evaluator)):
             if callable(evaluator):
                 # Pick the adapted evaluator depending if the passed function is a coroutine
