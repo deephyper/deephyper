@@ -33,14 +33,13 @@ def test_median_stopper_with_cbo(tmp_path):
     stopper = MedianStopper(max_steps=50, min_steps=1)
     search = CBO(
         problem,
-        run,
         surrogate_model="DUMMY",
         stopper=stopper,
         random_state=42,
         log_dir=tmp_path,
     )
 
-    results = search.search(max_evals=30)
+    results = search.search(run, max_evals=30)
 
     assert "m:budget" in results.columns
     assert "m:stopped" in results.columns
@@ -61,13 +60,12 @@ def test_median_stopper_with_random_search(tmp_path):
     stopper = MedianStopper(max_steps=50, min_steps=1)
     search = RandomSearch(
         problem,
-        run,
         random_state=42,
         log_dir=tmp_path,
         stopper=stopper,
     )
 
-    results = search.search(max_evals=30)
+    results = search.search(run, max_evals=30)
 
     assert "m:budget" in results.columns
     assert "m:stopped" in results.columns

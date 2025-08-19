@@ -30,11 +30,9 @@ def _test_mpi_timeout(tmp_path):
 
     with Evaluator.create(run_sync_sleep_forever, method="mpicomm") as evaluator:
         if evaluator.is_master:
-            search = CBO(
-                problem, evaluator, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path
-            )
+            search = CBO(problem, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path)
             t1 = time.time()
-            results = search.search(timeout=1)
+            results = search.search(evaluator, timeout=1)
 
             assert len(results) == evaluator.num_workers
             assert (results["job_status"] == "CANCELLED").all()
@@ -79,13 +77,12 @@ def _test_mpi_many_initial_points(tmp_path):
             print(f"{evaluator.num_workers=}")
             search = CBO(
                 problem,
-                evaluator,
                 random_state=42,
                 surrogate_model="DUMMY",
                 log_dir=tmp_path,
                 initial_points=[{"x": v} for v in np.linspace(0.0, 10.0, max_evals)],
             )
-            results = search.search(max_evals, max_evals_strict=True)
+            results = search.search(evaluator, max_evals, max_evals_strict=True)
 
             assert len(results) == max_evals
     if evaluator.is_master:

@@ -98,7 +98,6 @@ from deephyper.hpo import CBO
 # define your search
 search = CBO(
     problem,
-    evaluator,
     acq_optimizer="ga",
 )
 
@@ -106,7 +105,7 @@ search = CBO(
 # Then, we can execute the search for a given number of iterations by using the ``search.search(max_evals=...)``. It is also possible to use the ``timeout`` parameter if one needs a specific time budget (e.g., restricted computational time in machine learning competitions, allocation time in HPC).
 
 # %%
-results = search.search(max_evals=100)
+results = search.search(evaluator, max_evals=100)
 
 # %%
 # Finally, let us visualize the results. The ``search(...)`` returns a DataFrame also saved locally under ``results.csv`` (in case of crash we don't want to lose the possibly expensive evaluations already performed).

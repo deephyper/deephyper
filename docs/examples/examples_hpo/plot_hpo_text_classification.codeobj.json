@@ -310,7 +310,7 @@
    "name": "function"
   }
  ],
- "evaluator_1": [
+ "evaluator": [
   {
    "is_class": false,
    "is_explicit": false,
@@ -331,6 +331,15 @@
    "module": "deephyper",
    "module_short": "deephyper",
    "name": "RayEvaluator"
+  }
+ ],
+ "evaluator.num_workers": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
   }
  ],
  "get_evaluator": [

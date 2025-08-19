@@ -218,7 +218,7 @@ Parallelism
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Queued Evaluator with MPI</div>
+      <div class="sphx-glr-thumbnail-title">Managing Queued Compute Resources Using Evaluator and MPI Executables</div>
     </div>
 
 

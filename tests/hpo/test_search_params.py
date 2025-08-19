@@ -25,8 +25,8 @@ def test_random_search_params(caplog):
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 1.0), "x")
 
-    search = RandomSearch(problem, run, checkpoint_history_to_csv=False)
-    _ = search.search(max_evals=5)
+    search = RandomSearch(problem, checkpoint_history_to_csv=False)
+    _ = search.search(run, max_evals=5)
 
     assert "Starting search with RandomSearch" in caplog.text
     assert "Search's problem: " in caplog.text
@@ -51,8 +51,8 @@ def test_cbo_search_params(caplog):
         },
     )
 
-    search = CBO(problem, evaluator, random_state=42, checkpoint_history_to_csv=False)
-    _ = search.search(max_evals=4)
+    search = CBO(problem, random_state=42, checkpoint_history_to_csv=False)
+    _ = search.search(evaluator, max_evals=4)
 
     assert "Starting search with CBO" in caplog.text
     assert "Search's problem: " in caplog.text
@@ -65,8 +65,8 @@ def test_save_params(tmp_path):
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 1.0), "x")
 
-    search = RandomSearch(problem, run, log_dir=tmp_path, checkpoint_history_to_csv=False)
-    _ = search.search(max_evals=5)
+    search = RandomSearch(problem, log_dir=tmp_path, checkpoint_history_to_csv=False)
+    _ = search.search(run, max_evals=5)
 
     search.save_params()
     jsonfile = tmp_path / "params.json"
@@ -79,8 +79,8 @@ def test_get_params():
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 1.0), "x")
 
-    search = RandomSearch(problem, run, checkpoint_history_to_csv=False)
-    _ = search.search(max_evals=5)
+    search = RandomSearch(problem, checkpoint_history_to_csv=False)
+    _ = search.search(run, max_evals=5)
 
     d = search.get_params()
 

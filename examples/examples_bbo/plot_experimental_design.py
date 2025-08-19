@@ -62,12 +62,11 @@ if os.path.exists(log_dir):
 max_evals = 200
 search = ExperimentalDesignSearch(
     problem, 
-    run, 
     n_points=max_evals, 
     design="grid", 
     log_dir=log_dir,
 )
-results = search.search(max_evals)
+results = search.search(run, max_evals)
 
 # %%
 # Finally, we plot the results from the collected DataFrame.

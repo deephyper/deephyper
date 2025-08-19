@@ -62,13 +62,12 @@ def test_timeout_simple(tmp_path):
         # Test Timeout without max_evals
         search = RandomSearch(
             problem,
-            evaluator,
             random_state=42,
             log_dir=tmp_path,
         )
 
         t1 = time.time()
-        result = search.search(timeout=timeout)
+        result = search.search(evaluator, timeout=timeout)
         print(f"{result=}")
         duration = time.time() - t1
         assert duration < timeout + 1
@@ -106,14 +105,13 @@ def test_timeout_stop_then_continue(tmp_path):
         # Test Timeout without max_evals
         search = RandomSearch(
             problem,
-            evaluator,
             random_state=42,
             log_dir=tmp_path,
         )
 
         # First call
         t1 = time.time()
-        result = search.search(timeout=timeout)
+        result = search.search(evaluator, timeout=timeout)
         print(f"{result=}")
         duration = time.time() - t1
         assert duration < timeout + 1
@@ -123,7 +121,7 @@ def test_timeout_stop_then_continue(tmp_path):
 
         # Second call
         t1 = time.time()
-        result = search.search(timeout=timeout)
+        result = search.search(evaluator, timeout=timeout)
         print(f"{result=}")
         duration = time.time() - t1
 

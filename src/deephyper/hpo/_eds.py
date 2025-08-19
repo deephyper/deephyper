@@ -32,9 +32,6 @@ class ExperimentalDesignSearch(CBO):
         problem (HpProblem):
             Hyperparameter problem describing the search space to explore.
 
-        evaluator (Evaluator):
-            An ``Evaluator`` instance responsible of distributing the tasks.
-
         random_state (int, optional):
             Random seed. Defaults to ``None``.
 
@@ -77,7 +74,6 @@ class ExperimentalDesignSearch(CBO):
     def __init__(
         self,
         problem,
-        evaluator,
         random_state: int = None,
         log_dir: str = ".",
         verbose: int = 0,
@@ -94,7 +90,6 @@ class ExperimentalDesignSearch(CBO):
             raise ValueError("n_points must be specified for the ExperimentalDesignSearch.")
         super().__init__(
             problem,
-            evaluator,
             random_state,
             log_dir,
             verbose,
