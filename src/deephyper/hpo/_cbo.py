@@ -579,6 +579,9 @@ class CBO(Search):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
+        if self._opt is None:
+            self._setup_optimizer()
+
         new_X = self._opt.ask(n_points=n, strategy=self._multi_point_strategy)
         new_samples = [self._to_dict(x) for x in new_X]
         self._num_asked += n
@@ -629,9 +632,6 @@ class CBO(Search):
             logger.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
-        if self._opt is None:
-            self._setup_optimizer()
-
         super()._search(max_evals, timeout, max_evals_strict)
 
     def _get_surrogate_model(
