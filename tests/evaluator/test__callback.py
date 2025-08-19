@@ -18,8 +18,8 @@ def test_search_early_stopping_callback(tmp_path):
         ),
     )
 
-    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
-    results = search.search(max_evals=1000)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path)
+    results = search.search(evaluator, max_evals=1000)
 
     assert len(results) < 1000
 
@@ -39,8 +39,8 @@ def test_search_early_stopping_callback(tmp_path):
         ),
     )
 
-    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
-    results = search.search(max_evals=1000)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path)
+    results = search.search(evaluator, max_evals=1000)
 
     assert len(results) < 100
 
@@ -65,8 +65,8 @@ def test_tqdm_callback(tmp_path):
         ),
     )
 
-    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
-    search.search(max_evals=100)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path)
+    search.search(evaluator, max_evals=100)
 
     # Multi-Objective
     problem = HpProblem()
@@ -84,8 +84,8 @@ def test_tqdm_callback(tmp_path):
         ),
     )
 
-    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
-    search.search(max_evals=100)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path)
+    search.search(evaluator, max_evals=100)
 
 
 def test_logger_callback(tmp_path):
@@ -108,8 +108,8 @@ def test_logger_callback(tmp_path):
         ),
     )
 
-    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
-    search.search(max_evals=100)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path)
+    search.search(evaluator, max_evals=100)
 
     # Multi-Objective
     problem = HpProblem()
@@ -127,8 +127,8 @@ def test_logger_callback(tmp_path):
         ),
     )
 
-    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
-    search.search(max_evals=100)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path)
+    search.search(evaluator, max_evals=100)
 
 
 def test_csv_logger_callback(tmp_path):
