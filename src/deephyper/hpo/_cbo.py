@@ -596,6 +596,9 @@ class CBO(Search):
             results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
                 a dictionary containing the results of the evaluations.
         """
+        if self._opt is None:
+            self._setup_optimizer()
+
         # Transform configurations to list to fit optimizer
         logger.info("Transforming received configurations to list...")
         t1 = time.time()
