@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**01:43.753** total execution time for 5 files **from examples/examples_bbo**:
+**00:37.458** total execution time for 5 files **from examples/examples_bbo**:
 
 .. container::
 
@@ -32,11 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py` (``plot_transfer_learning_for_hpo.py``)
-     - 01:43.753
-     - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``plot_black_box_optimization.py``)
-     - 00:00.000
+     - 00:37.458
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_experimental_design.py` (``plot_experimental_design.py``)
      - 00:00.000
@@ -45,5 +42,8 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_notify_failures_hpo.py` (``plot_notify_failures_hpo.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_transfer_learning_for_hpo.py` (``plot_transfer_learning_for_hpo.py``)
      - 00:00.000
      - 0.0

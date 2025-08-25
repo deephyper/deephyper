@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:14.693** total execution time for 14 files **from all galleries**:
+**00:37.458** total execution time for 14 files **from all galleries**:
 
 .. container::
 
@@ -32,11 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``../examples/examples_uq/plot_nas_deep_ensemble_uq_regression_pytorch.py``)
-     - 00:14.693
-     - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
-     - 00:00.000
+     - 00:37.458
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_experimental_design.py` (``../examples/examples_bbo/plot_experimental_design.py``)
      - 00:00.000
@@ -72,5 +69,8 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_uq_plot_hpo_tree_ensemble_uq_classification_sklearn.py` (``../examples/examples_uq/plot_hpo_tree_ensemble_uq_classification_sklearn.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_examples_uq_plot_nas_deep_ensemble_uq_regression_pytorch.py` (``../examples/examples_uq/plot_nas_deep_ensemble_uq_regression_pytorch.py``)
      - 00:00.000
      - 0.0
