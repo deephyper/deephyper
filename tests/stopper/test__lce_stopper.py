@@ -158,15 +158,14 @@ def test_lce_stopper(tmp_path):
 
     search = CBO(
         problem,
-        run,
         acq_optimizer="ga",
-        acq_optimizer_freq=1,
+        acq_optimizer_kwargs=dict(acq_optimizer_freq=1),
         stopper=stopper,
         random_state=42,
         log_dir=tmp_path,
     )
 
-    results = search.search(max_evals=30)
+    results = search.search(run, max_evals=30)
 
     assert "m:budget" in results.columns
     assert "m:stopped" in results.columns

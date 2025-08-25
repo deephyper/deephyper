@@ -1083,6 +1083,10 @@ class Space:
         """
         rng = check_random_state(random_state)
         if self.config_space:
+
+            if random_state is not None:
+                self.config_space.seed(rng.randint(0, np.iinfo(np.int32).max))
+
             req_points = []
 
             hps_names = list(self.config_space.keys())
@@ -1136,7 +1140,7 @@ class Space:
 
                 columns = np.zeros((n_samples, len(self.dimensions)), dtype="O")
                 random_states = rng.randint(
-                    low=0, high=2**31, size=len(self.dimensions)
+                    low=0, high=np.iinfo(np.int32).max, size=len(self.dimensions)
                 )
                 Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
                     delayed(_sample_dimension)(

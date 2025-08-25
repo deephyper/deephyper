@@ -1,13 +1,10 @@
 import asyncio
 import functools
-import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Hashable
 
 from deephyper.evaluator import Evaluator, Job, JobStatus
 from deephyper.evaluator.storage import Storage
-
-logger = logging.getLogger(__name__)
 
 
 class ThreadPoolEvaluator(Evaluator):

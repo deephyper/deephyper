@@ -34,9 +34,9 @@ def _test_parallel_cbo_manual(tmp_path):
 
     search_id = None
     if rank == 0:
-        evaluator = ThreadPoolEvaluator(run, storage=storage)
-        search = CBO(problem, evaluator, random_state=42, log_dir=tmp_path)
-        search_id = search.search_id
+        search_id = storage.create_new_search()
+        evaluator = ThreadPoolEvaluator(run, storage=storage, search_id=search_id)
+        search = CBO(problem, random_state=42, log_dir=tmp_path)
         print(f"{search_id}")
 
     search_id = comm.bcast(search_id)
@@ -44,14 +44,14 @@ def _test_parallel_cbo_manual(tmp_path):
 
     if rank > 0:
         evaluator = ThreadPoolEvaluator(run, storage=storage, search_id=search_id)
-        search = CBO(problem, evaluator, surrogate_model="DUMMY", random_state=42)
+        search = CBO(problem, surrogate_model="DUMMY", random_state=42)
         search.is_master = False
     comm.Barrier()
 
     if rank == 0:
-        results = search.search(max_evals=20)
+        results = search.search(evaluator, max_evals=20)
     else:
-        search.search(max_evals=20)
+        search.search(evaluator, max_evals=20)
     comm.Barrier()
 
     if rank == 0:

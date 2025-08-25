@@ -17,6 +17,23 @@ Parallelism
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
+
+.. only:: html
+
+  .. image:: /examples/examples_parallelism/images/thumb/sphx_glr_plot_queued_evaluator_mpi_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_parallelism_plot_queued_evaluator_mpi.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Managing Queued Compute Resources Using Evaluator and MPI Executables</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
 
 .. only:: html
@@ -76,6 +93,7 @@ Parallelism
 .. toctree::
    :hidden:
 
+   /examples/examples_parallelism/plot_queued_evaluator_mpi
    /examples/examples_parallelism/plot_profile_worker_utilization
    /examples/examples_parallelism/plot_from_serial_to_parallel_hpo
    /examples/examples_parallelism/plot_scaling_bo

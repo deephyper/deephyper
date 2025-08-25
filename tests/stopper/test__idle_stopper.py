@@ -33,14 +33,13 @@ def test_idle_stopper(tmp_path):
     stopper = IdleStopper(max_steps=50)
     search = CBO(
         problem,
-        run,
         surrogate_model="DUMMY",
         stopper=stopper,
         random_state=42,
         log_dir=tmp_path,
     )
 
-    results = search.search(max_evals=30)
+    results = search.search(run, max_evals=30)
 
     assert "m:budget" in results.columns
     assert "m:stopped" in results.columns

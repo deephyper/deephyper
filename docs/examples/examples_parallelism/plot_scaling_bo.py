@@ -138,11 +138,10 @@ def execute_centralized_bo(
     )
     search = CBO(
         problem,
-        evaluator,
         log_dir=log_dir,
         **search_kwargs,
     )
-    results = search.search(timeout=timeout)
+    results = search.search(evaluator, timeout=timeout)
 
     results = preprocess_results(results)
 
@@ -219,20 +218,20 @@ def execute_centralized_bo_with_share_memory(
 
     search_kwargs["acq_func_kwargs"]["kappa"] = kappa
     search_kwargs["random_state"] = search_random_state
-    search = CBO(problem, evaluator, log_dir=log_dir, **search_kwargs)
+    search = CBO(problem, log_dir=log_dir, **search_kwargs)
 
     def dummy(*args, **kwargs):
         pass
 
     results = None
     if is_master:
-        results = search.search(timeout=timeout)
+        results = search.search(evaluator, timeout=timeout)
     else:
         # for concurrency reasons this is important to override these functions
         evaluator.dump_jobs_done_to_csv = dummy
         search.extend_results_with_pareto_efficient = dummy
 
-        search.search(timeout=timeout)
+        search.search(evaluator, timeout=timeout)
 
     return results
 

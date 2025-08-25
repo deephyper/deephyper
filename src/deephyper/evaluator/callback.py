@@ -6,10 +6,14 @@ completion of jobs by the ``Evaluator``. Callbacks can be used with any
 """
 
 import abc
+import csv
+import logging
+import os
+from typing import List
 
 import numpy as np
 
-from deephyper.evaluator import HPOJob
+from deephyper.evaluator import HPOJob, Job
 from deephyper.evaluator.utils import test_ipython_interpretor
 from deephyper.skopt.moo import hypervolume
 
@@ -20,30 +24,46 @@ else:
 
 __all__ = ["Callback", "LoggerCallback", "TqdmCallback", "SearchEarlyStopping"]
 
+logger = logging.getLogger(__name__)
+
 
 class Callback(abc.ABC):
     """Callback interface."""
 
-    def on_launch(self, job):
+    def on_launch(self, job: Job):
         """Called each time a ``Job`` is created by the ``Evaluator``.
 
         Args:
             job (Job): The created job.
         """
 
-    def on_done(self, job):
+    def on_done(self, job: Job):
         """Called each time a local ``Job`` has been gathered by the Evaluator.
 
         Args:
             job (Job): The completed job.
         """
 
-    def on_done_other(self, job):
+    def on_done_other(self, job: Job):
         """Called after local ``Job`` have been gathered for each remote ``Job`` that is done.
 
         Args:
             job (Job): The completed Job.
         """
+
+    def on_gather(self, local_jobs: List[Job], other_jobs: List[Job]):
+        """Called after gathering jobs.
+
+        Args:
+            local_jobs (List[Job]):
+                gathered jobs from local evaluator instance.
+
+            other_jobs (List[Job]):
+                gathered jobs from other evaluators using the same storage.
+        """
+
+    def on_close(self):
+        """Called when the evaluator is being closed."""
 
 
 class ObjectiveRecorder:
@@ -262,3 +282,196 @@ class SearchEarlyStopping(Callback):
                             f"{self._patience} evaluations!"
                         )
                     self.search_stopped = True
+
+
+# TODO: Add unit tests
+# This class is made to be used by people who wants to log results from the
+# evaluator without using it within the Search.
+class CSVLoggerCallback(Callback):
+    """Dump jobs done to a CSV file.
+
+    Args:
+        path (str): The path where the CSV is being dumped.
+    """
+
+    def __init__(self, path: str = "results.csv"):
+        self.path = os.path.abspath(path)
+        if not os.path.exists(os.path.dirname(path)):
+            raise ValueError(f"Directory not found {self.path}")
+        self.jobs_done = []
+        self.num_objective = None
+        self._start_dumping = False
+        self._columns_dumped = None
+        self._job_class = None
+
+    def on_gather(self, local_jobs: List[Job], other_jobs: List[Job]):
+        """Called after gathering jobs.
+
+        Args:
+            local_jobs (List[Job]):
+                gathered jobs from local evaluator instance.
+
+            other_jobs (List[Job]):
+                gathered jobs from other evaluators using the same storage.
+        """
+        self.jobs_done.extend(local_jobs)
+        self.jobs_done.extend(other_jobs)
+        self.dump_jobs_done_to_csv(self.path)
+
+    def on_close(self):
+        self.dump_jobs_done_to_csv(self.path, flush=True)
+
+    def dump_jobs_done_to_csv(self, path: str, flush: bool = False):
+        """Dump completed jobs to a CSV file.
+
+        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
+
+        Args:
+            path (str):
+                The path of the file where the CSV is being dumped.
+
+            flush (bool):
+                A boolean indicating if the results should be flushed (i.e., forcing the dumping).
+        """
+        if len(self.jobs_done) > 0:
+            if self._job_class is None:
+                self._job_class = type(self.jobs_done[0])
+        else:
+            return
+        logger.info("Dumping completed jobs to CSV...")
+        if self._job_class is HPOJob:
+            self._dump_jobs_done_to_csv_as_hpo_format(path, flush)
+        else:
+            self._dump_jobs_done_to_csv_as_regular_format(path)
+        logger.info("Dumping done")
+
+    def _dump_jobs_done_to_csv_as_regular_format(self, path: str):
+        """Dump completed jobs to a CSV file for regular job format.
+
+        Args:
+            path (str):
+                The path of the file where the CSV is being dumped.
+        """
+        records_list = []
+
+        for job in self.jobs_done:
+            # Start with job.id
+            result = {"job_id": int(job.id.split(".")[1])}
+
+            # Add job.status
+            result["job_status"] = job.status.name
+
+            # input arguments: add prefix for all keys found in "args"
+            result.update({f"p:{k}": v for k, v in job.args.items()})
+
+            # output
+            if isinstance(job.output, dict):
+                output = {f"o:{k}": v for k, v in job.output.items()}
+            else:
+                output = {"o:": job.output}
+            result.update(output)
+
+            # metadata
+            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
+            result.update(metadata)
+
+            records_list.append(result)
+
+        if len(records_list) != 0:
+            mode = "a" if self._start_dumping else "w"
+
+            with open(path, mode) as fp:
+                if not (self._start_dumping):
+                    self._columns_dumped = records_list[0].keys()
+
+                if self._columns_dumped is not None:
+                    writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
+
+                    if not (self._start_dumping):
+                        writer.writeheader()
+                        self._start_dumping = True
+
+                    writer.writerows(records_list)
+                    self.jobs_done = []
+
+    def _dump_jobs_done_to_csv_as_hpo_format(self, path: str, flush: bool = False):
+        """Dump completed jobs to a CSV file for the hyperparameter optimization format.
+
+        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
+
+        Args:
+            path (str):
+                The path of the file where the CSV is being dumped.
+
+            flush (bool):
+                A boolean indicating if the results should be flushed (i.e., forcing the dumping).
+        """
+        resultsList = []
+
+        for job in self.jobs_done:
+            # add prefix for all keys found in "args"
+            result = {f"p:{k}": v for k, v in job.args.items()}
+
+            # when the returned value of the run-function is a dict we flatten it to add in csv
+            result["objective"] = job.objective
+            print(f"{job.objective=}")
+
+            # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
+            if isinstance(result["objective"], tuple) or isinstance(result["objective"], list):
+                obj = result.pop("objective")
+
+                if self.num_objective is None:
+                    self.num_objective = len(obj)
+
+                for i, objval in enumerate(obj):
+                    result[f"objective_{i}"] = objval
+            else:
+                if self.num_objective is None:
+                    self.num_objective = 1
+
+                if self.num_objective > 1:
+                    obj = result.pop("objective")
+                    for i in range(self.num_objective):
+                        result[f"objective_{i}"] = obj
+
+            # Add job.id
+            result["job_id"] = int(job.id.split(".")[1])
+
+            # Add job.status
+            result["job_status"] = job.status.name
+
+            # Profiling and other
+            # methdata keys starting with "_" are not saved (considered as internal)
+            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
+            result.update(metadata)
+
+            resultsList.append(result)
+
+        if len(resultsList) != 0:
+            mode = "a" if self._start_dumping else "w"
+
+            with open(path, mode) as fp:
+                if not (self._start_dumping):
+                    for result in resultsList:
+                        # Waiting to start receiving non-failed jobs before dumping results
+                        is_single_obj_and_has_success = (
+                            "objective" in result and type(result["objective"]) is not str
+                        )
+                        is_multi_obj_and_has_success = (
+                            "objective_0" in result and type(result["objective_0"]) is not str
+                        )
+                        print(f"{is_single_obj_and_has_success=}, {is_multi_obj_and_has_success=}")
+                        if is_single_obj_and_has_success or is_multi_obj_and_has_success or flush:
+                            self._columns_dumped = result.keys()
+
+                            break
+
+                if self._columns_dumped is not None:
+                    writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
+
+                    if not (self._start_dumping):
+                        writer.writeheader()
+                        self._start_dumping = True
+
+                    writer.writerows(resultsList)
+                    self.jobs_done = []

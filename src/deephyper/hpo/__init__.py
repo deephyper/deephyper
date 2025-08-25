@@ -10,21 +10,18 @@ from deephyper.hpo._cbo import CBO
 from deephyper.hpo._eds import ExperimentalDesignSearch
 from deephyper.hpo._problem import HpProblem
 from deephyper.hpo._random import RandomSearch
-from deephyper.hpo._search import Search
 from deephyper.hpo._regevo import RegularizedEvolution
+from deephyper.hpo._search import Search
+from deephyper.hpo._solution import ArgMaxEstSelection, ArgMaxObsSelection, SolutionSelection
 
 __all__ = [
+    "ArgMaxEstSelection",
+    "ArgMaxObsSelection",
     "CBO",
     "ExperimentalDesignSearch",
     "HpProblem",
     "RandomSearch",
     "RegularizedEvolution",
     "Search",
+    "SolutionSelection",
 ]
-
-try:
-    from deephyper.hpo._mpi_dbo import MPIDistributedBO  # noqa: F401
-
-    __all__.append("MPIDistributedBO")
-except ImportError:
-    pass

@@ -96,17 +96,42 @@ print(f"Evaluator has {evaluator.num_workers} available worker{'' if evaluator.n
 from deephyper.hpo import CBO
 
 # define your search
-search = CBO(
-    problem,
-    evaluator,
-    acq_optimizer="ga",
-)
+def create_search():
+    search = CBO(
+        problem,
+        acq_optimizer="ga",
+    )
+    return search
 
 # %%
-# Then, we can execute the search for a given number of iterations by using the ``search.search(max_evals=...)``. It is also possible to use the ``timeout`` parameter if one needs a specific time budget (e.g., restricted computational time in machine learning competitions, allocation time in HPC).
+# Then, to execute the search we provide two interfaces. 
+#
+# Ask and Tell Interface
+# ~~~~~~~~~~~~~~~~~~~~~~
+#
+# The first interface is the classic ``configurations = search.ask(...)`` and ``search.tell(configurations_with_objective)``. 
+# In this case, you need to manage the computation of objectives yourself. This interface is more flexible.
+# However, asynchronous parallel evaluations are not managed for you.
+#
+# Here is an example:
 
-# %%
-results = search.search(max_evals=100)
+search = create_search()
+max_evals = 100
+for i in range(max_evals):
+    config = search.ask(1)[0]
+    y = -config["x"] ** 2
+    print(f"[{i=:03d}] >>> f(x={config['x']:.3f}) = {y:.3f}")
+    search.tell([(config, y)])
+
+# %% 
+# Search Interface
+# ~~~~~~~~~~~~~~~~
+#
+# The second interface is ``results = search.search(evaluator, ...)`` that is binded to the ``evaluator`` and manages the loop for asynchronous parallel evaluations for you.
+# We can execute the search for a given number of iterations by using the ``search.search(evaluator, max_evals=...)``. It is also possible to use the ``timeout`` parameter if one needs a specific time budget (e.g., restricted computational time in machine learning competitions, allocation time in HPC).
+
+search = create_search()
+results = search.search(evaluator, max_evals)
 
 # %%
 # Finally, let us visualize the results. The ``search(...)`` returns a DataFrame also saved locally under ``results.csv`` (in case of crash we don't want to lose the possibly expensive evaluations already performed).

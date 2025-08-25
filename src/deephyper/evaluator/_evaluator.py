@@ -1,7 +1,5 @@
 import abc
 import asyncio
-import copy
-import csv
 import importlib
 import json
 import logging
@@ -9,7 +7,7 @@ import os
 import sys
 import time
 import warnings
-from typing import Dict, Hashable, List
+from typing import Dict, Hashable, List, Optional
 
 import numpy as np
 
@@ -17,6 +15,8 @@ from deephyper.evaluator._job import HPOJob, Job, JobStatus
 from deephyper.evaluator.storage import MemoryStorage, Storage
 from deephyper.evaluator.utils import test_ipython_interpretor
 from deephyper.skopt.optimizer import OBJECTIVE_VALUE_FAILURE
+
+logger = logging.getLogger(__name__)
 
 EVALUATORS = {
     "mpicomm": "_mpi_comm.MPICommEvaluator",
@@ -64,19 +64,19 @@ class Evaluator(abc.ABC):
     def __init__(
         self,
         run_function,
-        num_workers: int = 1,
-        callbacks: list = None,
-        run_function_kwargs: dict = None,
-        storage: Storage = None,
-        search_id: Hashable = None,
+        num_workers: Optional[int] = 1,
+        callbacks: Optional[list] = None,
+        run_function_kwargs: Optional[dict] = None,
+        storage: Optional[Storage] = None,
+        search_id: Optional[Hashable] = None,
     ):
         if hasattr(run_function, "__name__") and hasattr(run_function, "__module__"):
-            logging.info(
+            logger.info(
                 f"{type(self).__name__} will execute {run_function.__name__}() from module "
                 f"{run_function.__module__}"
             )
         else:
-            logging.info(f"{type(self).__name__} will execute {run_function}")
+            logger.info(f"{type(self).__name__} will execute {run_function}")
 
         self.run_function = run_function  # User-defined run function.
         self.run_function_kwargs = {} if run_function_kwargs is None else run_function_kwargs
@@ -87,15 +87,12 @@ class Evaluator(abc.ABC):
         self._tasks_running = []  # List of AsyncIO Task objects currently running.
         self._tasks_done = []  # Temp list to hold completed tasks from asyncio.
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
-        self.jobs_done = []  # List used to store all jobs completed by the evaluator.
         self.job_id_submitted = []  # List of jobs'id submitted by the evaluator.
         self.job_id_gathered = []  # List of jobs'id gathered by the evaluator.
         self.timestamp = time.time()  # Recorded time of when this evaluator interface was created.
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
-        self.loop = None  # Event loop for asyncio.
-        self._start_dumping = False
-        self._columns_dumped = None  # columns names dumped in csv file
+        self.loop: Optional[asyncio.AbstractEventLoop] = None  # Event loop for asyncio.
         self.num_objective = None  # record if multi-objective are recorded
         self._stopper = None  # stopper object
         self.search = None  # search instance
@@ -138,7 +135,7 @@ class Evaluator(abc.ABC):
 
     def __exit__(self, type, value, traceback):
         if hasattr(self, "executor"):
-            self.executor.__exit__(type, value, traceback)
+            self.executor.__exit__(type, value, traceback)  # type: ignore
 
     @property
     def timeout(self):
@@ -156,12 +153,16 @@ class Evaluator(abc.ABC):
 
     @property
     def time_left(self):
+        """Returns the time remaining according to a previously set timeout."""
         if self.timeout is None:
             val = None
         else:
-            time_consumed = time.time() - self._time_timeout_set
-            val = self._timeout - time_consumed
-        logging.info(f"time_left={val}")
+            if self._time_timeout_set is not None:
+                time_consumed = time.time() - self._time_timeout_set
+                val = self.timeout - time_consumed
+            else:
+                raise RuntimeError(f"{self._time_timeout_set=} should not be set to a float")
+        logger.info(f"time_left={val}")
         return val
 
     def set_maximum_num_jobs_submitted(self, maximum_num_jobs_submitted: int):
@@ -214,7 +215,7 @@ class Evaluator(abc.ABC):
                 f"{val}."
             )
 
-        logging.info(
+        logger.info(
             f"Creating {EVALUATORS[method].split('.')[-1]} of {method=} for "
             f"{run_function=} with {method_kwargs=}"
         )
@@ -225,7 +226,7 @@ class Evaluator(abc.ABC):
         eval_cls = getattr(mod, attr_name)
         evaluator = eval_cls(run_function, **method_kwargs)
 
-        logging.info("Creation done")
+        logger.info("Creation done")
 
         return evaluator
 
@@ -251,7 +252,7 @@ class Evaluator(abc.ABC):
                     return_when="ALL_COMPLETED",
                 )
             except asyncio.CancelledError:
-                logging.warning("Cancelled running tasks")
+                logger.warning("Cancelled running tasks")
                 self._tasks_done = []
                 self._tasks_pending = []
             except ValueError:
@@ -263,13 +264,15 @@ class Evaluator(abc.ABC):
                     return_when="FIRST_COMPLETED",
                 )
 
-    def _create_tasks(self, args_list: list) -> int:
+    def _create_tasks(self, args_list: list):
+        assert isinstance(self.loop, asyncio.AbstractEventLoop)
+
         for args in args_list:
             if (
                 self.maximum_num_jobs_submitted > 0
                 and self.num_jobs_submitted >= self.maximum_num_jobs_submitted
             ):
-                logging.info(
+                logger.info(
                     f"Maximum number of jobs to spawn reached ({self.maximum_num_jobs_submitted})"
                 )
                 raise MaximumJobsSpawnReached
@@ -362,13 +365,13 @@ class Evaluator(abc.ABC):
             args_list (List[Dict]):
                 A list of dict which will be passed to the run function to be executed.
         """
-        logging.info(f"submit {len(args_list)} job(s) starts...")
+        logger.info(f"submit {len(args_list)} job(s) starts...")
         self.set_event_loop()
         # self.loop.run_until_complete(self._create_tasks(args_list))
         self._create_tasks(args_list)
-        logging.info("submit done")
+        logger.info("submit done")
 
-    def gather(self, type, size=1):
+    def gather(self, type, size=1) -> list[Job] | tuple[list[Job], list[Job]]:
         """Collect the completed tasks from the evaluator in batches of one or more.
 
         Args:
@@ -389,10 +392,12 @@ class Evaluator(abc.ABC):
             Exception: Raised when a gather operation other than "ALL" or "BATCH" is provided.
 
         Returns:
-            List[Job]: A batch of completed jobs that is at minimum the given size.
+            list[Job] | tuple[list[Job], list[Job]]: A batch of completed jobs that is at minimum
+            the given size.
         """
-        logging.info(f"gather({type}, size={size}) starts...")
+        logger.info(f"gather({type}, size={size}) starts...")
         assert type in ["ALL", "BATCH"], f"Unsupported gather operation: {type}."
+        assert isinstance(self.loop, asyncio.AbstractEventLoop)
 
         if type == "ALL":
             size = len(self._tasks_running)  # Get all tasks.
@@ -405,12 +410,16 @@ class Evaluator(abc.ABC):
         # Access storage to return results from other processes
         other_results = self.gather_other_jobs_done()
 
+        # call callbacks
+        for cb in self._callbacks:
+            cb.on_gather(local_results, other_results)
+
         if len(other_results) == 0:
-            logging.info(f"gather done - {len(local_results)} job(s)")
+            logger.info(f"gather done - {len(local_results)} job(s)")
 
             return local_results
         else:
-            logging.info(
+            logger.info(
                 f"gather done - {len(local_results)} local(s) and {len(other_results)} "
                 "other(s) job(s)"
             )
@@ -419,7 +428,7 @@ class Evaluator(abc.ABC):
 
     def gather_other_jobs_done(self):
         """Access storage to return results from other processes."""
-        logging.info("gather jobs from other processes")
+        logger.info("gather jobs from other processes")
 
         job_id_all = self._storage.load_all_job_ids(self._search_id)
         job_id_not_gathered = np.setdiff1d(
@@ -445,7 +454,6 @@ class Evaluator(abc.ABC):
                     job.metadata.update(job_data["metadata"])
                     job.set_output(job_data["out"])
                     self.job_id_gathered.append(job_id)
-                    self.jobs_done.append(job)
                     other_results.append(job)
 
                     for cb in self._callbacks:
@@ -460,22 +468,6 @@ class Evaluator(abc.ABC):
             raise ValueError(f"Expected dict, but got {type(x)}")
         return x
 
-    def convert_for_csv(self, val):
-        """Convert an input value to an accepted format.
-
-        This is to be saved as a value of a CSV file (e.g., a list becomes it's str representation).
-
-        Args:
-            val (Any): The input value to convert.
-
-        Returns:
-            Any: The converted value.
-        """
-        if type(val) is list:
-            return str(val)
-        else:
-            return val
-
     def process_local_tasks_done(self, tasks):
         local_results = []
         for task in tasks:
@@ -485,7 +477,6 @@ class Evaluator(abc.ABC):
             job = task.result()
             self._on_done(job)
             local_results.append(job)
-            self.jobs_done.append(job)
             self._tasks_running.remove(task)
             self.job_id_gathered.append(job.id)
             self.job_id_submitted.remove(job.id)
@@ -495,18 +486,16 @@ class Evaluator(abc.ABC):
 
         return local_results
 
-    async def _await_cancelling_of_running_tasks(self):
-        self._tasks_done, self._tasks_pending = await asyncio.wait(
-            self._tasks_running,
-            return_when="ALL_COMPLETED",
-        )
-        # self._tasks_running = []
-
-    def close(self):
-        logging.info(f"Closing {type(self).__name__}")
-
+    def close(self) -> List[Job]:
+        logger.info(f"Closing {type(self).__name__}")
+        jobs = []
         if self.loop is None:
-            return
+            # calling callbacks
+            for cb in self._callbacks:
+                cb.on_close()
+
+            logger.info(f"{type(self).__name__} closed")
+            return jobs
 
         # Attempt to close tasks in loop
         if not self.loop.is_closed():
@@ -515,8 +504,7 @@ class Evaluator(abc.ABC):
 
             # Wait for tasks to be canceled
             if len(self._tasks_running) > 0:
-                self.loop.run_until_complete(self._await_cancelling_of_running_tasks())
-                self.process_local_tasks_done(self._tasks_done)
+                self.gather("ALL")
 
                 for job in self.jobs:
                     if job.status in [JobStatus.READY, JobStatus.RUNNING]:
@@ -526,8 +514,11 @@ class Evaluator(abc.ABC):
                             job.set_output("F_CANCELLED")
 
                         self._on_done(job)
-                        self.jobs_done.append(job)
                         self.job_id_gathered.append(job.id)
+                        jobs.append(job)
+
+                for cb in self._callbacks:
+                    cb.on_gather(jobs, [])
 
         self._tasks_done = []
         self._tasks_pending = []
@@ -536,6 +527,13 @@ class Evaluator(abc.ABC):
         if not self.loop.is_running():
             self.loop.close()
             self.loop = None
+
+        # calling callbacks
+        for cb in self._callbacks:
+            cb.on_close()
+
+        logger.info(f"{type(self).__name__} closed")
+        return jobs
 
     def __del__(self):
         if hasattr(self, "loop"):
@@ -550,165 +548,6 @@ class Evaluator(abc.ABC):
         else:
             job.set_output(output)
         return job
-
-    def dump_jobs_done_to_csv(
-        self,
-        log_dir: str = ".",
-        filename="results.csv",
-        flush: bool = False,
-    ):
-        """Dump completed jobs to a CSV file.
-
-        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
-
-        Args:
-            log_dir (str):
-                Directory where to dump the CSV file.
-            filename (str):
-                Name of the file where to write the data.
-            flush (bool):
-                A boolean indicating if the results should be flushed (i.e., forcing the dumping).
-        """
-        logging.info("Dumping completed jobs to CSV...")
-
-        if not os.path.exists(log_dir):
-            raise FileNotFoundError(f"No such directory: {log_dir}")
-
-        if self._job_class is HPOJob:
-            self._dump_jobs_done_to_csv_as_hpo_format(log_dir, filename, flush)
-        else:
-            self._dump_jobs_done_to_csv_as_regular_format(log_dir, filename, flush)
-        logging.info("Dumping done")
-
-    def _dump_jobs_done_to_csv_as_regular_format(
-        self, log_dir: str = ".", filename="results.csv", flush: bool = False
-    ):
-        records_list = []
-
-        for job in self.jobs_done:
-            # Start with job.id
-            result = {"job_id": int(job.id.split(".")[1])}
-
-            # Add job.status
-            result["job_status"] = job.status.name
-
-            # input arguments: add prefix for all keys found in "args"
-            result.update({f"p:{k}": v for k, v in job.args.items()})
-
-            # output
-            if isinstance(job.output, dict):
-                output = {f"o:{k}": v for k, v in job.output.items()}
-            else:
-                output = {"o:": job.output}
-            result.update(output)
-
-            # metadata
-            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
-            result.update(metadata)
-
-            records_list.append(result)
-
-        if len(records_list) != 0:
-            mode = "a" if self._start_dumping else "w"
-
-            with open(os.path.join(log_dir, filename), mode) as fp:
-                if not (self._start_dumping):
-                    self._columns_dumped = records_list[0].keys()
-
-                if self._columns_dumped is not None:
-                    writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
-
-                    if not (self._start_dumping):
-                        writer.writeheader()
-                        self._start_dumping = True
-
-                    writer.writerows(records_list)
-                    self.jobs_done = []
-
-    def _dump_jobs_done_to_csv_as_hpo_format(
-        self, log_dir: str = ".", filename="results.csv", flush: bool = False
-    ):
-        """Dump completed jobs to a CSV file.
-
-        This will reset the ``Evaluator.jobs_done`` attribute to an empty list.
-
-        Args:
-            log_dir (str):
-                Directory where to dump the CSV file.
-            filename (str):
-                Name of the file where to write the data.
-            flush (bool):
-                A boolean indicating if the results should be flushed (i.e., forcing the dumping).
-        """
-        resultsList = []
-
-        for job in self.jobs_done:
-            result = copy.deepcopy(job.args)
-
-            # add prefix for all keys found in "args"
-            result = {f"p:{k}": v for k, v in result.items()}
-
-            # when the returned value of the run-function is a dict we flatten it to add in csv
-            result["objective"] = job.objective
-
-            # when the objective is a tuple (multi-objective) we create 1 column per tuple-element
-            if isinstance(result["objective"], tuple) or isinstance(result["objective"], list):
-                obj = result.pop("objective")
-
-                if self.num_objective is None:
-                    self.num_objective = len(obj)
-
-                for i, objval in enumerate(obj):
-                    result[f"objective_{i}"] = objval
-            else:
-                if self.num_objective is None:
-                    self.num_objective = 1
-
-                if self.num_objective > 1:
-                    obj = result.pop("objective")
-                    for i in range(self.num_objective):
-                        result[f"objective_{i}"] = obj
-
-            # Add job.id
-            result["job_id"] = int(job.id.split(".")[1])
-
-            # Add job.status
-            result["job_status"] = job.status.name
-
-            # Profiling and other
-            # methdata keys starting with "_" are not saved (considered as internal)
-            metadata = {f"m:{k}": v for k, v in job.metadata.items() if k[0] != "_"}
-            result.update(metadata)
-
-            resultsList.append(result)
-
-        if len(resultsList) != 0:
-            mode = "a" if self._start_dumping else "w"
-
-            with open(os.path.join(log_dir, filename), mode) as fp:
-                if not (self._start_dumping):
-                    for result in resultsList:
-                        # Waiting to start receiving non-failed jobs before dumping results
-                        is_single_obj_and_has_success = (
-                            "objective" in result and type(result["objective"]) is not str
-                        )
-                        is_multi_obj_and_has_success = (
-                            "objective_0" in result and type(result["objective_0"]) is not str
-                        )
-                        if is_single_obj_and_has_success or is_multi_obj_and_has_success or flush:
-                            self._columns_dumped = result.keys()
-
-                            break
-
-                if self._columns_dumped is not None:
-                    writer = csv.DictWriter(fp, self._columns_dumped, extrasaction="ignore")
-
-                    if not (self._start_dumping):
-                        writer.writeheader()
-                        self._start_dumping = True
-
-                    writer.writerows(resultsList)
-                    self.jobs_done = []
 
     @property
     def is_master(self):

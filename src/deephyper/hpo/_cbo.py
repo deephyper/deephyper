@@ -9,14 +9,14 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, ValidationInfo, field_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 from sklearn.base import is_regressor
 
 import deephyper.skopt
-from deephyper.analysis.hpo import filter_failed_objectives
-from deephyper.evaluator import HPOJob
+from deephyper.analysis.hpo import filter_failed_objectives, get_mask_of_rows_without_failures
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
+from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.gmm import GMMSampler
 from deephyper.skopt.moo import (
     MoScalarFunction,
@@ -27,6 +27,8 @@ from deephyper.skopt.moo import (
 from deephyper.stopper import Stopper
 
 __all__ = ["CBO"]
+
+logger = logging.getLogger(__name__)
 
 # Adapt minimization -> maximization with DeepHyper
 MAP_multi_point_strategy = {
@@ -42,7 +44,7 @@ MAP_filter_failures = {"min": "max"}
 
 
 class AcqFuncKwargsScheduler(BaseModel):
-    type: Optional[Literal["bandit", "periodic-exp-decay"]] = "periodic-exp-decay"
+    type: Optional[Literal["constant", "bandit", "periodic-exp-decay"]] = "periodic-exp-decay"
     delay: Optional[Union[int, Literal["n-initial-points"]]] = "n-initial-points"
     # "periodic-exp-decay" parameters
     kappa_final: Optional[float] = 0.01
@@ -63,7 +65,7 @@ class AcqOptimizerKwargs(BaseModel):
     n_points: Optional[int] = 10_000
     filter_duplicated: Optional[bool] = True
     filter_failures: Optional[Literal["ignore", "max", "mean"]] = "max"
-    max_failures: Optional[int] = 100
+    max_total_failures: Optional[int] = 100
     acq_optimizer_freq: Optional[int] = 1
     n_jobs: Optional[int] = 1
     n_restarts_optimizer: Optional[int] = 1
@@ -135,6 +137,10 @@ def scheduler_bandit(i, eta_0, num_dim, delta=0.05, lamb=0.2, delay=0):
     return eta_i
 
 
+def scheduler_constant(i, eta_0, num_dim):
+    return eta_0
+
+
 class CBO(Search):
     """Centralized Bayesian Optimisation Search.
 
@@ -154,13 +160,11 @@ class CBO(Search):
 
     Example Usage:
 
-        >>> search = CBO(problem, evaluator)
-        >>> results = search.search(max_evals=100, timeout=120)
+        >>> search = CBO(problem)
+        >>> results = search.search(evaluator, max_evals=100, timeout=120)
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
-
-        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
 
         random_state (int, optional): Random seed. Defaults to ``None``.
 
@@ -171,6 +175,15 @@ class CBO(Search):
 
         stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
             function. Defaults to ``None`` which does not use any stopper.
+
+        checkpoint_history_to_csv (bool, optional):
+            wether the results from progressively collected evaluations should be checkpointed
+            regularly to disc as a csv. Defaults to ``True``.
+
+        solution_selection (Literal["argmax_obs", "argmax_est"] | SolutionSelection, optional):
+            the solution selection strategy. It can be a string where ``"argmax_obs"`` would
+            select the argmax of observed objective values, and ``"argmax_est"`` would select the
+            argmax of estimated objective values (through a predictive model).
 
         surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
             the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
@@ -234,9 +247,11 @@ class CBO(Search):
                 or ``"mean"`` of past configurations. Defaults to ``"min"`` to replace failed
                 configurations objectives by the running min of all objectives.
 
-            - ``"max_failures"`` (int)
-                Maximum number of failed configurations allowed before observing a valid objective
-                value when ``filter_failures`` is not equal to ``"ignore"``. Defaults to ``100``.
+            - ``"max_total_failures"`` (int)
+                Maximum number of failed configurations (i.e., returning "F" as objective value)
+                allowed for the entire search when ``filter_failures`` is not equal to ``"ignore"``.
+                If set to ``-1`` it allows for infinite number of failed configurations. Defaults
+                to ``100``.
 
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
             strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]``. All
@@ -296,17 +311,20 @@ class CBO(Search):
     def __init__(
         self,
         problem,
-        evaluator,
-        random_state: int = None,
+        random_state: Optional[int] = None,
         log_dir: str = ".",
         verbose: int = 0,
         stopper: Optional[Stopper] = None,
+        checkpoint_history_to_csv: bool = True,
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
         surrogate_model="ET",
-        surrogate_model_kwargs: Optional[SurrogateModelKwargs] = None,
+        surrogate_model_kwargs: Optional[SurrogateModelKwargs | dict] = None,
         acq_func: str = "UCBd",
-        acq_func_kwargs: Optional[AcqFuncKwargs] = None,
+        acq_func_kwargs: Optional[AcqFuncKwargs | dict] = None,
         acq_optimizer: str = "mixedga",
-        acq_optimizer_kwargs: Optional[AcqOptimizerKwargs] = None,
+        acq_optimizer_kwargs: Optional[AcqOptimizerKwargs | dict] = None,
         multi_point_strategy: str = "cl_max",
         n_initial_points: Optional[int] = None,
         initial_point_generator: str = "random",
@@ -315,9 +333,16 @@ class CBO(Search):
         moo_scalarization_strategy: str = "Chebyshev",
         moo_scalarization_weight=None,
         objective_scaler="minmax",
-        **kwargs,
     ):
-        super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
+        super().__init__(
+            problem,
+            random_state,
+            log_dir,
+            verbose,
+            stopper,
+            checkpoint_history_to_csv,
+            solution_selection,
+        )
         # get the __init__ parameters
         self._init_params = locals()
 
@@ -343,7 +368,7 @@ class CBO(Search):
         if surrogate_model in surrogate_model_allowed:
             base_estimator = self._get_surrogate_model(
                 surrogate_model,
-                random_state=self._random_state.randint(0, 2**31),
+                random_state=self._random_state.randint(0, np.iinfo(np.int32).max),
                 surrogate_model_kwargs=self._surrogate_model_kwargs,
             )
         elif is_regressor(surrogate_model):
@@ -441,7 +466,6 @@ class CBO(Search):
         self._multi_point_strategy = MAP_multi_point_strategy.get(
             multi_point_strategy, multi_point_strategy
         )
-        self._fitted = False
 
         # Map the ConfigSpace to Skop Space
         self._opt_space = convert_to_skopt_space(
@@ -480,7 +504,6 @@ class CBO(Search):
         if isinstance(scheduler, dict):
             scheduler = scheduler.copy()
             scheduler_type = scheduler.pop("type", None)
-            assert scheduler_type in ["periodic-exp-decay", "bandit"]
 
             if scheduler_type == "periodic-exp-decay":
                 rate = scheduler.get("rate", None)
@@ -515,6 +538,10 @@ class CBO(Search):
                 }
                 scheduler_func = scheduler_bandit
 
+            elif scheduler_type == "constant":
+                scheduler_params = {}
+                scheduler_func = scheduler_constant
+
             eta_0 = np.array([self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]])
             self.scheduler = functools.partial(
                 scheduler_func,
@@ -522,21 +549,17 @@ class CBO(Search):
                 num_dim=len(self._problem),
                 **scheduler_params,
             )
-            logging.info(
-                f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'"
-            )
+            logger.info(f"Set up scheduler '{scheduler_type}' with parameters '{scheduler_params}'")
         elif callable(scheduler):
             self.scheduler = functools.partial(
                 scheduler,
                 eta_0=np.array([self._acq_func_kwargs["kappa"], self._acq_func_kwargs["xi"]]),
             )
-            logging.info(f"Set up scheduler '{scheduler}'")
+            logger.info(f"Set up scheduler '{scheduler}'")
 
         self._num_asked = 0
 
     def _setup_optimizer(self):
-        if self._fitted:
-            self._opt_kwargs["n_initial_points"] = 0
         self._opt = deephyper.skopt.Optimizer(**self._opt_kwargs)
 
     def _apply_scheduler(self, i):
@@ -544,7 +567,7 @@ class CBO(Search):
         if self.scheduler is not None:
             kappa, xi = self.scheduler(i)
             values = {"kappa": float(kappa), "xi": float(xi)}
-            logging.info(f"Updated exploration-exploitation policy with {values} from scheduler")
+            logger.info(f"Updated exploration-exploitation policy with {values} from scheduler")
             self._opt.acq_func_kwargs.update(values)
 
     def _ask(self, n: int = 1) -> List[Dict]:
@@ -556,26 +579,34 @@ class CBO(Search):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
+        if self._opt is None:
+            self._setup_optimizer()
+
         new_X = self._opt.ask(n_points=n, strategy=self._multi_point_strategy)
         new_samples = [self._to_dict(x) for x in new_X]
         self._num_asked += n
         return new_samples
 
-    def _tell(self, results: List[HPOJob]):
+    def _tell(
+        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+    ):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a dictionary containing the results of the evaluations.
+            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+                a dictionary containing the results of the evaluations.
         """
+        if self._opt is None:
+            self._setup_optimizer()
+
         # Transform configurations to list to fit optimizer
-        logging.info("Transforming received configurations to list...")
+        logger.info("Transforming received configurations to list...")
         t1 = time.time()
 
         opt_X = []  # input configuration
         opt_y = []  # objective value
-        # for cfg, obj in new_results:
-        for job_i in results:
-            cfg, obj = job_i
+        for cfg, obj in results:
+            # TODO: check if order of values is maintained
             x = list(cfg.values())
 
             if isinstance(obj, numbers.Number) or all(
@@ -592,21 +623,18 @@ class CBO(Search):
                     opt_X.append(x)
                     opt_y.append("F")
 
-        logging.info(f"Transformation took {time.time() - t1:.4f} sec.")
+        logger.info(f"Transformation took {time.time() - t1:.4f} sec.")
 
         # apply scheduler
         self._apply_scheduler(self._num_asked)
 
         if len(opt_y) > 0:
-            logging.info("Fitting the optimizer...")
+            logger.info("Fitting the optimizer...")
             t1 = time.time()
             self._opt.tell(opt_X, opt_y)
-            logging.info(f"Fitting took {time.time() - t1:.4f} sec.")
+            logger.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
-        if self._opt is None:
-            self._setup_optimizer()
-
         super()._search(max_evals, timeout, max_evals_strict)
 
     def _get_surrogate_model(
@@ -676,7 +704,7 @@ class CBO(Search):
 
         elif name == "GBRT":
             default_surrogate_model_kwargs = dict(
-                n_estimtaors=10,
+                n_estimators=10,
                 random_state=random_state,
             )
         elif name == "HGBRT":
@@ -752,7 +780,7 @@ class CBO(Search):
             values = cond.values
             cond_new = CS.GreaterThanCondition(child, parent, values)
         else:
-            logging.warning("Not supported type" + str(type(cond)))
+            logger.warning("Not supported type" + str(type(cond)))
         return cond_new
 
     def _return_forbid(self, cond, cst_new):
@@ -765,10 +793,10 @@ class CBO(Search):
                 values = cond.values
                 cond_new = CS.ForbiddenInClause(hp, values)
             else:
-                logging.warning("Not supported type" + str(type(cond)))
+                logger.warning("Not supported type" + str(type(cond)))
         return cond_new
 
-    def fit_surrogate(self, df):
+    def fit_surrogate(self, df: str | pd.DataFrame):
         """Fit the surrogate model of the search from a checkpointed Dataframe.
 
         Args:
@@ -776,8 +804,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
         """
         if type(df) is not str and not isinstance(df, pd.DataFrame):
             raise ValueError("The argument 'df' should be a path to a CSV file or a DataFrame!")
@@ -785,9 +814,9 @@ class CBO(Search):
         if type(df) is str and df[-4:] == ".csv":
             df = pd.read_csv(df)
 
-        df, df_failures = filter_failed_objectives(df)
+        assert isinstance(df, pd.DataFrame)
 
-        self._fitted = True
+        df, df_failures = filter_failed_objectives(df)
 
         if self._opt is None:
             self._setup_optimizer()
@@ -825,8 +854,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
 
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
@@ -865,8 +895,9 @@ class CBO(Search):
         hp_cols = [k for k in df.columns if "p:" == k[:2]]
         if "objective" in df.columns:
             # filter failures
-            if pd.api.types.is_string_dtype(df.objective):
-                df = df[~df.objective.str.startswith("F")]
+            has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, "objective")
+            if has_any_failure:
+                df = df[mask_no_failures]
                 df.objective = df.objective.astype(float)
 
             q_val = np.quantile(df.objective.values, q)
@@ -875,8 +906,9 @@ class CBO(Search):
             # filter failures
             objcol = list(df.filter(regex=r"^objective_\d+$").columns)
             for col in objcol:
-                if pd.api.types.is_string_dtype(df[col]):
-                    df = df[~df[col].str.startswith("F")]
+                has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, col)
+                if has_any_failure:
+                    df = df[mask_no_failures]
                     df[col] = df[col].astype(float)
 
             top = non_dominated_set_ranked(-np.asarray(df[objcol]), 1.0 - q)
@@ -897,8 +929,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
 
         Args:
             df (str|DataFrame): a checkpoint from a previous search.
@@ -919,20 +952,22 @@ class CBO(Search):
         # check single or multiple objectives
         if "objective" in df.columns:
             # filter failures
-            if pd.api.types.is_string_dtype(df.objective):
-                df = df[~df.objective.str.startswith("F")]
+            has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, "objective")
+            if has_any_failure:
+                df = df[mask_no_failures]
                 df.objective = df.objective.astype(float)
         else:
             # filter failures
             objcol = df.filter(regex=r"^objective_\d+$").columns
             for col in objcol:
-                if pd.api.types.is_string_dtype(df[col]):
-                    df = df[~df[col].str.startswith("F")]
+                has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, col)
+                if has_any_failure:
+                    df = df[mask_no_failures]
                     df[col] = df[col].astype(float)
 
         cst = self._problem.space
         if type(cst) is not CS.ConfigurationSpace:
-            logging.error(f"{type(cst)}: not supported for trainsfer learning")
+            logger.error(f"{type(cst)}: not supported for trainsfer learning")
 
         res_df = df
         res_df_names = res_df.columns.values
@@ -943,7 +978,7 @@ class CBO(Search):
             best_index = non_dominated_set(-np.asarray(res_df[objcol]), return_mask=False)[0]
             best_param = res_df.iloc[best_index]
 
-        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, 2**31))
+        cst_new = CS.ConfigurationSpace(seed=self._random_state.randint(0, np.iinfo(np.int32).max))
         hp_names = list(cst.keys())
         for hp_name in hp_names:
             hp = cst[hp_name]
@@ -992,10 +1027,10 @@ class CBO(Search):
                     )
                     cst_new.add(param_new)
                 else:
-                    logging.warning(f"Not fitting {hp} because it is not supported!")
+                    logger.warning(f"Not fitting {hp} because it is not supported!")
                     cst_new.add(hp)
             else:
-                logging.warning(f"Not fitting {hp} because it was not found in the dataframe!")
+                logger.warning(f"Not fitting {hp} because it was not found in the dataframe!")
                 cst_new.add(hp)
 
         # For conditions
@@ -1009,7 +1044,7 @@ class CBO(Search):
                 elif type(cond) is CS.OrConjunction:
                     cond_new = CS.OrConjunction(*cond_list)
                 else:
-                    logging.warning(f"Condition {type(cond)} is not implemented!")
+                    logger.warning(f"Condition {type(cond)} is not implemented!")
             else:
                 cond_new = self._return_cond(cond, cst_new)
             cst_new.add(cond_new)
@@ -1024,7 +1059,7 @@ class CBO(Search):
             elif type(cond) is CS.ForbiddenEqualsClause or type(cond) is CS.ForbiddenInClause:
                 cond_new = self._return_forbid(cond, cst_new)
             else:
-                logging.warning(f"Forbidden {type(cond)} is not implemented!")
+                logger.warning(f"Forbidden {type(cond)} is not implemented!")
             cst_new.add(cond_new)
 
         self._opt_kwargs["dimensions"] = cst_new

@@ -52,23 +52,6 @@ Black-box optimization
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
-
-.. only:: html
-
-  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_black_box_optimization_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Black-Box Optimization</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="In this tutorial, we will explore how to run black-box multi-objective optimization (MOO). In this setting, the goal is to resolve the following problem:">
 
 .. only:: html
@@ -81,6 +64,23 @@ Black-box optimization
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Mutli-Objective Black-Box Optimization</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
+
+.. only:: html
+
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_black_box_optimization_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Black-Box Optimization</div>
     </div>
 
 
@@ -155,6 +155,23 @@ Hyperparameter optimization
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
+
+.. only:: html
+
+  .. image:: /examples/examples_hpo/images/thumb/sphx_glr_plot_hpo_text_classification_with_stopper_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification_with_stopper.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Hyperparameter Search for Text Classification with the Stopper Class</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="In this example, you will learn how to treat the choice of a learning method as just another hyperparameter. We consider the Random Forest (RF) and Gradient Boosting (GB) classifiers from Scikit-Learn on the Airlines dataset.">
 
 .. only:: html
@@ -187,6 +204,23 @@ Parallelism
     <div class="sphx-glr-thumbnails">
 
 .. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
+
+.. only:: html
+
+  .. image:: /examples/examples_parallelism/images/thumb/sphx_glr_plot_queued_evaluator_mpi_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_parallelism_plot_queued_evaluator_mpi.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Managing Queued Compute Resources Using Evaluator and MPI Executables</div>
+    </div>
+
 
 .. raw:: html
 

@@ -47,8 +47,8 @@ def test_centralized_random_search(tmp_path):
     problem = create_problem()
 
     # Test serial evaluation
-    search = RandomSearch(problem, run, random_state=42, log_dir=tmp_path, verbose=0)
-    results = search.search(max_evals=100)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path, verbose=0)
+    results = search.search(run, max_evals=100)
 
     assert_results(results)
 
@@ -58,13 +58,41 @@ def test_centralized_random_search(tmp_path):
         method="thread",
         method_kwargs={"num_workers": 10},
     )
-    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path)
 
-    results = search.search(max_evals=100)
+    results = search.search(evaluator, max_evals=100)
 
     assert_results(
         results,
     )
+
+
+def run_two_objective(job):
+    y0 = (
+        job.parameters["x_int"]
+        + job.parameters["x_float"]
+        + ord(job.parameters["x_cat"])
+        + job.parameters["x_ord"]
+        + job.parameters["x_const"]
+    )
+    y1 = -y0
+    return y0, y1
+
+
+def test_centralized_random_search_multi_objective():
+    problem = create_problem()
+
+    # Test serial evaluation
+    search = RandomSearch(
+        problem,
+        random_state=42,
+        checkpoint_history_to_csv=False,
+        verbose=0,
+    )
+    results = search.search(run_two_objective, max_evals=100)
+    assert "objective_0" in results.columns
+    assert "objective_1" in results.columns
+    assert "pareto_efficient" in results.columns
 
 
 @pytest.mark.redis
@@ -81,9 +109,9 @@ def test_centralized_random_search_redis_storage(tmp_path):
         method_kwargs={"storage": storage, "num_workers": 10},
     )
 
-    search = RandomSearch(problem, evaluator, random_state=42, log_dir=tmp_path)
+    search = RandomSearch(problem, random_state=42, log_dir=tmp_path)
 
-    results = search.search(max_evals=100)
+    results = search.search(evaluator, max_evals=100)
 
     assert_results(results)
 
@@ -101,16 +129,16 @@ def launch_thread_search_with_redis_storage(search_id, search_seed, is_master=Fa
         method_kwargs={"storage": storage, "num_workers": 1, "search_id": search_id},
     )
 
-    search = RandomSearch(problem, evaluator, random_state=search_seed, log_dir=log_dir)
+    search = RandomSearch(problem, random_state=search_seed, log_dir=log_dir)
     search.is_master = is_master
 
     max_evals = 100
     results = None
     max_evals_strict = True
     if search.is_master:
-        results = search.search(max_evals=max_evals, max_evals_strict=max_evals_strict)
+        results = search.search(evaluator, max_evals=max_evals, max_evals_strict=max_evals_strict)
     else:
-        search.search(max_evals=max_evals, max_evals_strict=max_evals_strict)
+        search.search(evaluator, max_evals=max_evals, max_evals_strict=max_evals_strict)
 
     return results
 
@@ -147,7 +175,7 @@ def launch_thread_search_with_shared_memory_storage(
         method_kwargs={"storage": storage, "num_workers": 1, "search_id": search_id},
     )
 
-    search = RandomSearch(problem, evaluator, random_state=search_seed, log_dir=log_dir)
+    search = RandomSearch(problem, random_state=search_seed, log_dir=log_dir)
     search.is_master = is_master
 
     max_evals = 100
@@ -155,9 +183,9 @@ def launch_thread_search_with_shared_memory_storage(
     max_evals_strict = True
     time.sleep(0.1)
     if search.is_master:
-        results = search.search(max_evals, max_evals_strict=max_evals_strict)
+        results = search.search(evaluator, max_evals, max_evals_strict=max_evals_strict)
     else:
-        search.search(max_evals, max_evals_strict=max_evals_strict)
+        search.search(evaluator, max_evals, max_evals_strict=max_evals_strict)
 
     return results
 
@@ -180,6 +208,7 @@ def test_decentralized_random_search_shared_memory_storage(tmp_path):
 
 if __name__ == "__main__":
     # test_centralized_random_search()
+    test_centralized_random_search_multi_objective()
     # test_centralized_random_search_redis_storage()
     # test_decentralized_random_search_redis_storage()
-    test_decentralized_random_search_shared_memory_storage("search_random")
+    # test_decentralized_random_search_shared_memory_storage("search_random")

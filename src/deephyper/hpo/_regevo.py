@@ -1,12 +1,12 @@
 from collections import deque
-from typing import Dict, List
+from typing import Dict, List, Literal, Optional
 
 import numpy as np
 
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 
-from deephyper.evaluator import HPOJob
 from deephyper.hpo._search import Search
+from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
 
 __all__ = ["RegularizedEvolution"]
@@ -29,33 +29,62 @@ class RegularizedEvolution(Search):
           - ✅
 
     Args:
-        problem: object describing the search/optimization problem.
-        evaluator: object describing the evaluation process.
-        random_state (np.random.RandomState, optional): Initial random state of the search.
-            Defaults to ``None``.
-        log_dir (str, optional): Path to the directoy where results of the search are stored.
-            Defaults to ``"."``.
-        verbose (int, optional): Use verbose mode. Defaults to ``0``.
-        stopper (Stopper, optional): a stopper to leverage multi-fidelity when evaluating the
-            function. Defaults to ``None`` which does not use any stopper.
-        population_size (int, optional): The size of the population. Defaults to ``100``.
-        sample_size (int, optional): The number of samples to draw from the population. Defaults
-            to ``10``.
+        problem:
+            object describing the search/optimization problem.
+
+        random_state (np.random.RandomState, optional):
+            Initial random state of the search. Defaults to ``None``.
+
+        log_dir (str, optional):
+            Path to the directoy where results of the search are stored. Defaults to ``"."``.
+
+        verbose (int, optional):
+            Use verbose mode. Defaults to ``0``.
+
+        stopper (Stopper, optional):
+            a stopper to leverage multi-fidelity when evaluating the function. Defaults to
+            ``None`` which does not use any stopper.
+
+        checkpoint_history_to_csv (bool, optional):
+            wether the results from progressively collected evaluations should be checkpointed
+            regularly to disc as a csv. Defaults to ``True``.
+
+        solution_selection (Literal["argmax_obs", "argmax_est"] | SolutionSelection, optional):
+            the solution selection strategy. It can be a string where ``"argmax_obs"`` would
+            select the argmax of observed objective values, and ``"argmax_est"`` would select the
+            argmax of estimated objective values (through a predictive model).
+
+        population_size (int, optional):
+            The size of the population. Defaults to ``100``.
+
+        sample_size (int, optional):
+            The number of samples to draw from the population. Defaults to ``10``.
     """
 
     def __init__(
         self,
         problem,
-        evaluator,
         random_state=None,
         log_dir=".",
         verbose=0,
         stopper=None,
-        population_size=100,
-        sample_size=10,
+        checkpoint_history_to_csv: bool = True,
+        solution_selection: Optional[
+            Literal["argmax_obs", "argmax_est"] | SolutionSelection
+        ] = None,
+        population_size: int = 100,
+        sample_size: int = 10,
     ):
-        super().__init__(problem, evaluator, random_state, log_dir, verbose, stopper)
-        self._problem.space.seed(self._random_state.randint(0, 2**31))
+        super().__init__(
+            problem,
+            random_state,
+            log_dir,
+            verbose,
+            stopper,
+            checkpoint_history_to_csv,
+            solution_selection,
+        )
+        self._problem.space.seed(self._random_state.randint(0, np.iinfo(np.int32).max))
         assert population_size > sample_size, "population_size must be greater than sample_size"
         self.population_size = population_size
         self.sample_size = sample_size
@@ -139,11 +168,14 @@ class RegularizedEvolution(Search):
 
         return new_samples
 
-    def _tell(self, results: List[HPOJob]):
+    def _tell(
+        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+    ):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a dictionary containing the results of the evaluations.
+            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+                a dictionary containing the results of the evaluations.
         """
         for config, obj in results:
             # Do not add failures to population

@@ -2,6 +2,7 @@
 
 from deephyper.analysis.hpo._hpo import (
     filter_failed_objectives,
+    get_mask_of_rows_without_failures,
     parameters_at_max,
     parameters_at_topk,
     parameters_from_row,
@@ -12,6 +13,7 @@ from deephyper.analysis.hpo._hpo import (
 
 __all__ = [
     "filter_failed_objectives",
+    "get_mask_of_rows_without_failures",
     "parameters_at_max",
     "parameters_at_topk",
     "parameters_from_row",

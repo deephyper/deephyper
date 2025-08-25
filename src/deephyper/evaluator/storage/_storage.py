@@ -3,6 +3,8 @@ import importlib
 import logging
 from typing import Any, Dict, Hashable, List, Tuple, TypeVar
 
+logger = logging.getLogger(__name__)
+
 StorageType = TypeVar("StorageType", bound="Storage")
 
 STORAGES = {
@@ -45,7 +47,7 @@ class Storage(abc.ABC):
         """
         method_kwargs = method_kwargs if method_kwargs else {}
 
-        logging.info(f"Creating Storage(method={method}, method_kwargs={method_kwargs}...")
+        logger.info(f"Creating Storage(method={method}, method_kwargs={method_kwargs}...")
 
         if method not in STORAGES.keys():
             val = ", ".join(STORAGES)
@@ -61,7 +63,7 @@ class Storage(abc.ABC):
         storage_cls = getattr(mod, attr_name)
         storage = storage_cls(**method_kwargs)
 
-        logging.info("Creation done")
+        logger.info("Creation done")
 
         return storage
 

@@ -12,6 +12,20 @@ from deephyper.analysis import rank
 from deephyper.analysis.hpo._paxplot import pax_parallel
 
 
+def get_mask_of_rows_without_failures(df: pd.DataFrame, column: str) -> Tuple[bool, np.ndarray]:
+    """Return a boolean mask where true values are non-failures.
+
+    Returns:
+        bool, Array[bool]: a boolean that indicates if there is any failure, the mask array.
+    """
+    if pd.api.types.is_string_dtype(df[column]):
+        mask_no_failures = ~df[column].str.startswith("F").to_numpy()
+    else:
+        mask_no_failures = df[column].map(lambda x: isinstance(x, float)).to_numpy()
+    has_any_failure = not np.all(mask_no_failures)
+    return has_any_failure, mask_no_failures
+
+
 def read_results_from_csv(file_path: str) -> pd.DataFrame:
     """Read the results of a Hyperparameter Search from a CSV file.
 
@@ -39,12 +53,10 @@ def filter_failed_objectives(
     """
     # Single-Objective
     if "objective" in df.columns:
-        if pd.api.types.is_string_dtype(df["objective"]):
-            mask = df["objective"].str.startswith("F")
-
-            df_with_failures = df[mask]
-
-            df_without_failures = df[~mask]
+        has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, "objective")
+        if has_any_failure:
+            df_with_failures = df[~mask_no_failures]
+            df_without_failures = df[mask_no_failures]
             df_without_failures = df_without_failures.astype({"objective": float})
         else:
             df_without_failures = df
@@ -56,8 +68,8 @@ def filter_failed_objectives(
 
         mask = np.zeros(len(df), dtype=bool)
         for col in objcol:
-            if pd.api.types.is_string_dtype(df[col]):
-                mask = mask | df[col].str.startswith("F")
+            has_any_failure, mask_no_failures = get_mask_of_rows_without_failures(df, col)
+            mask = mask | ~mask_no_failures
 
         df_with_failures = df[mask]
         df_without_failures = df[~mask]
@@ -71,24 +83,29 @@ def filter_failed_objectives(
     return df_without_failures, df_with_failures
 
 
-def parameters_from_row(row: pd.Series) -> dict:
+def parameters_from_row(row: pd.Series, prefix: str = "p:") -> dict:
     """Extract the parameters from a row of a DataFrame.
 
     Args:
         row (pd.Series): a row of a DataFrame.
+        prefix (str): the prefix of columns of parameters.
 
     Returns:
         dict: the parameters of the row.
     """
-    return {k[2:]: v for k, v in row.to_dict().items() if k.startswith("p:")}
+    lp = len(prefix)
+    return {k[lp:]: v for k, v in row.to_dict().items() if k.startswith(prefix)}
 
 
-def parameters_at_max(df: pd.DataFrame, column: str = "objective") -> Tuple[dict, float]:
+def parameters_at_max(
+    df: pd.DataFrame, column: str = "objective", prefix: str = "p:"
+) -> Tuple[dict, float]:
     """Return the parameters at the maximum of the given ``column`` function.
 
     Args:
         df (pd.DataFrame): the results of a Hyperparameter Search.
-        column (str, optional): the column to use for the maximization. Defaults to ``"objective"``.
+        column (str): the column to use for the maximization. Defaults to ``"objective"``.
+        prefix (str): the prefix of columns of parameters.
 
     Returns:
         Tuple[dict, float]: the parameters at the maximum of the ``column`` and its corresponding
@@ -97,12 +114,15 @@ def parameters_at_max(df: pd.DataFrame, column: str = "objective") -> Tuple[dict
     df, _ = filter_failed_objectives(df)
     idx = df[column].argmax()
     value = df.iloc[idx][column]
-    config = parameters_from_row(df.iloc[idx])
+    config = parameters_from_row(df.iloc[idx], prefix)
     return config, value
 
 
 def parameters_at_topk(
-    df: pd.DataFrame, column: str = "objective", k: int = 1
+    df: pd.DataFrame,
+    column: str = "objective",
+    k: int = 1,
+    prefix: str = "p:",
 ) -> List[Tuple[dict, float]]:
     """Return the parameters at the top-k of the given ``column``.
 
@@ -110,6 +130,7 @@ def parameters_at_topk(
         df (pd.DataFrame): the results of a Hyperparameter Search.
         column (str, optional): the column to use for the maximization. Defaults to ``"objective"``.
         k (int, optional): the number of top-k to return. Defaults to ``1``.
+        prefix (str): the prefix of columns of parameters.
 
     Returns:
         List[Tuple[dict, float]]: the parameters at the maximum of the ``column`` and its
@@ -117,7 +138,7 @@ def parameters_at_topk(
     """
     df, _ = filter_failed_objectives(df)
     df = df.nlargest(k, columns=column)
-    return [(parameters_from_row(row), row[column]) for _, row in df.iterrows()]
+    return [(parameters_from_row(row, prefix), row[column]) for _, row in df.iterrows()]
 
 
 def plot_search_trajectory_single_objective_hpo(

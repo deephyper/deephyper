@@ -11,7 +11,7 @@ Use the command line help option to get more information.
                             [--surrogate-model-kwargs SURROGATE_MODEL_KWARGS] [--acq-func ACQ_FUNC] [--acq-optimizer ACQ_OPTIMIZER] [--acq-optimizer-freq ACQ_OPTIMIZER_FREQ] [--kappa KAPPA] [--xi XI]
                             [--n-points N_POINTS] [--filter-duplicated FILTER_DUPLICATED] [--update-prior UPDATE_PRIOR] [--update-prior-quantile UPDATE_PRIOR_QUANTILE]
                             [--multi-point-strategy MULTI_POINT_STRATEGY] [--n-jobs N_JOBS] [--n-initial-points N_INITIAL_POINTS] [--initial-point-generator INITIAL_POINT_GENERATOR]
-                            [--initial-points INITIAL_POINTS] [--filter-failures FILTER_FAILURES] [--max-failures MAX_FAILURES] [--moo-lower-bounds MOO_LOWER_BOUNDS]
+                            [--initial-points INITIAL_POINTS] [--filter-failures FILTER_FAILURES] [--max-total-failures MAX_TOTAL_FAILURES] [--moo-lower-bounds MOO_LOWER_BOUNDS]
                             [--moo-scalarization-strategy MOO_SCALARIZATION_STRATEGY] [--moo-scalarization-weight MOO_SCALARIZATION_WEIGHT] [--scheduler SCHEDULER] [--objective-scaler OBJECTIVE_SCALER]
                             [--max-evals MAX_EVALS] [--timeout TIMEOUT] --run-function RUN_FUNCTION [--num-workers NUM_WORKERS] [--callbacks CALLBACKS] [--run-function-kwargs RUN_FUNCTION_KWARGS]
                             [--storage STORAGE] [--search-id SEARCH_ID] [--mpicomm-comm MPICOMM_COMM] [--mpicomm-root MPICOMM_ROOT] [--ray-address RAY_ADDRESS] [--ray-password RAY_PASSWORD]
@@ -56,7 +56,7 @@ Use the command line help option to get more information.
                             Defaults to 'None'.
     --filter-failures FILTER_FAILURES
                             Type[str]. Defaults to 'min'.
-    --max-failures MAX_FAILURES
+    --max-failures MAX_TOTAL_FAILURES
                             Type[int]. Defaults to '100'.
     --moo-lower-bounds MOO_LOWER_BOUNDS
                             Defaults to 'None'.
@@ -110,6 +110,9 @@ import sys
 
 from deephyper.cli.utils import add_arguments_from_signature, load_attr
 from deephyper.evaluator import EVALUATORS, Evaluator
+
+logger = logging.getLogger(__name__)
+
 
 HPS_SEARCHES = {
     "cbo": "deephyper.hpo.CBO",
@@ -196,19 +199,19 @@ def main(**kwargs):
     search_name = sys.argv[2]
 
     # load search class
-    logging.info(f"Loading the search '{search_name}'...")
+    logger.info(f"Loading the search '{search_name}'...")
     search_cls = load_attr(HPS_SEARCHES[search_name])
 
     # load problem
-    logging.info("Loading the problem...")
+    logger.info("Loading the problem...")
     problem = load_attr(kwargs.pop("problem"))
 
     # load run function
-    logging.info("Loading the run-function...")
+    logger.info("Loading the run-function...")
     run_function = load_attr(kwargs.pop("run_function"))
 
     # filter arguments from evaluator class signature
-    logging.info("Loading the evaluator...")
+    logger.info("Loading the evaluator...")
     evaluator_method = kwargs.pop("evaluator")
     base_arguments = ["num_workers", "callbacks"]
     evaluator_kwargs = {k: kwargs.pop(k) for k in base_arguments}
@@ -222,11 +225,11 @@ def main(**kwargs):
             evaluator_kwargs = {**evaluator_kwargs, **evaluator_method_kwargs}
 
     # create evaluator
-    logging.info(f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}")
+    logger.info(f"Evaluator(method={evaluator_method}, method_kwargs={evaluator_kwargs}")
     evaluator = Evaluator.create(
         run_function, method=evaluator_method, method_kwargs=evaluator_kwargs
     )
-    logging.info(f"Evaluator has {evaluator.num_workers} workers available.")
+    logger.info(f"Evaluator has {evaluator.num_workers} workers available.")
 
     # filter arguments from search class signature
     # remove keys in evaluator_kwargs
@@ -238,7 +241,7 @@ def main(**kwargs):
 
     # execute the search
     # remaining kwargs are for the search
-    logging.info(f"Evaluator has {evaluator.num_workers} workers available.")
+    logger.info(f"Evaluator has {evaluator.num_workers} workers available.")
     search = search_cls(problem, evaluator, **kwargs)
 
     search.search(max_evals=max_evals, timeout=timeout)

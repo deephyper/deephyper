@@ -1,17 +1,22 @@
 import sys
 from functools import partial
 
+# Temporary workaround: https://github.com/pyro-ppl/numpyro/issues/2051#issuecomment-3110627625
 import jax
-import jax.numpy as jnp
-import numpy as np
-import numpyro
-import numpyro.distributions as dist
-from numpyro.infer import MCMC, NUTS, BarkerMH
-from scipy.optimize import least_squares
-from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils import check_random_state
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
+import jax.experimental.pjit
+from jax.extend.core.primitives import jit_p
 
+jax.experimental.pjit.pjit_p = jit_p
+
+import jax.numpy as jnp  # noqa: E402
+import numpy as np  # noqa: E402
+import numpyro  # noqa: E402
+import numpyro.distributions as dist  # noqa: E402
+from numpyro.infer import MCMC, NUTS, BarkerMH  # noqa: E402
+from scipy.optimize import least_squares  # noqa: E402
+from sklearn.base import BaseEstimator, RegressorMixin  # noqa: E402
+from sklearn.utils import check_random_state  # noqa: E402
+from sklearn.utils.validation import check_array, check_is_fitted, check_X_y  # noqa: E402
 
 LC_MODELS = [
     "lin2",
@@ -340,7 +345,7 @@ class BayesianLearningCurveRegressor(BaseEstimator, RegressorMixin):
                 progress_bar=self.verbose,
             )
 
-        seed = self.random_state.randint(low=0, high=2**31)
+        seed = self.random_state.randint(low=0, high=np.iinfo(np.int32).max)
         rng_key = jax.random.PRNGKey(seed)
         self.mcmc_.run(rng_key, z=self.X_, y=self.y_)
 

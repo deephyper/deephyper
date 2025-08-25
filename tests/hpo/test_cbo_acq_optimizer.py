@@ -26,19 +26,21 @@ def test_pymoo_ga(tmp_path):
 
     search = CBO(
         problem,
-        run,
-        n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
+        verbose=0,
+        log_dir=tmp_path,
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
-        log_dir=tmp_path,
         acq_optimizer="ga",
-        acq_optimizer_freq=1,
-        kappa=5.0,
-        scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
-        verbose=0,
+        acq_optimizer_kwargs=dict(
+            acq_optimizer_freq=1,
+            n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
+        ),
+        acq_func_kwargs=dict(
+            kappa=5.0, scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001}
+        ),
     )
-    results = search.search(max_evals=25)
+    results = search.search(run, max_evals=25)
 
     assert len(results) == 25
     assert len(results["objective"] > 19) > 8
@@ -55,19 +57,21 @@ def test_pymoo_mixedga(tmp_path):
 
     search = CBO(
         problem,
-        run,
-        n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
+        log_dir=tmp_path,
+        verbose=0,
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
-        log_dir=tmp_path,
         acq_optimizer="mixedga",
-        acq_optimizer_freq=1,
-        kappa=5.0,
-        scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
-        verbose=0,
+        acq_optimizer_kwargs=dict(
+            acq_optimizer_freq=1,
+            n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
+        ),
+        acq_func_kwargs=dict(
+            kappa=5.0, scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001}
+        ),
     )
-    results = search.search(max_evals=25)
+    results = search.search(run, max_evals=25)
 
     assert len(results) == 25
     assert len(results["objective"] > 40) > 8
@@ -98,19 +102,22 @@ def test_cbo_with_acq_optimizer_mixedga_and_conditions_in_problem(tmp_path):
 
     search = CBO(
         problem,
-        run,
-        n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         log_dir=tmp_path,
         acq_optimizer="mixedga",
-        acq_optimizer_freq=1,
-        kappa=5.0,
-        scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
+        acq_optimizer_kwargs=dict(
+            n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
+            acq_optimizer_freq=1,
+        ),
+        acq_func_kwargs=dict(
+            kappa=5.0,
+            scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
+        ),
         verbose=0,
     )
-    results = search.search(max_evals=25)
+    results = search.search(run, max_evals=25)
 
     assert (results[(results["p:num_layers"] == 1)]["p:layer_1_units"] == 1).all()
     assert (results[(results["p:num_layers"] == 1)]["p:layer_2_units"] == 1).all()
@@ -144,19 +151,22 @@ def test_cbo_with_acq_optimizer_mixedga_and_forbiddens_in_problem(tmp_path):
 
     search = CBO(
         problem,
-        run,
-        n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model=SEARCH_KWARGS_DEFAULTS["surrogate_model"],
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         log_dir=tmp_path,
         acq_optimizer="mixedga",
-        acq_optimizer_freq=1,
-        kappa=5.0,
-        scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
+        acq_optimizer_kwargs=dict(
+            n_points=SEARCH_KWARGS_DEFAULTS["n_points"],
+            acq_optimizer_freq=1,
+        ),
+        acq_func_kwargs=dict(
+            kappa=5.0,
+            scheduler={"type": "periodic-exp-decay", "period": 25, "kappa_final": 0.0001},
+        ),
         verbose=0,
     )
-    results = search.search(max_evals=25)
+    results = search.search(run, max_evals=25)
 
     cond = np.ones(len(results), dtype=bool)
     for i in range(1, max_num_layers):

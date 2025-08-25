@@ -1,6 +1,6 @@
-******************************************************************************
-DeepHyper: Massively Parallel Hyperparameter Optimization for Machine Learning
-******************************************************************************
+**************************************************************************************************
+DeepHyper: A Python Package for Massively Parallel Hyperparameter Optimization in Machine Learning
+**************************************************************************************************
 
 DeepHyper is first and foremost a hyperparameter optimization (HPO) library.
 By leveraging this core HPO functionnality, DeepHyper also provides neural architecture search, multi-fidelity and ensemble capabilities. 
@@ -38,76 +38,34 @@ We then present a simple example of how to use DeepHyper to optimize a black-box
 
 To try this example, you can copy/paste the script and run it.
 
-.. code-block:: python
-
-    from deephyper.hpo import HpProblem, CBO
-    from deephyper.analysis.hpo import parameters_at_max
-    from deephyper.evaluator import Evaluator
-
-
-    def run(job):
-        x = job.parameters["x"]
-        b = job.parameters["b"]
-        function = job.parameters["function"]
-
-        if function == "linear":
-            y = x + b
-        elif function == "cubic":
-            y = x**3 + b
-
-        return y
-
-
-    def optimize():
-        problem = HpProblem()
-        problem.add_hyperparameter((-10.0, 10.0), "x")
-        problem.add_hyperparameter((0, 10), "b")
-        problem.add_hyperparameter(["linear", "cubic"], "function")
-
-        evaluator = Evaluator.create(run, method="process",
-            method_kwargs={
-                "num_workers": 2,
-            },
-        )
-
-        search = CBO(problem, evaluator, random_state=42)
-        results = search.search(max_evals=100)
-
-        return results
-
-    if __name__ == "__main__":
-        results = optimize()
-        print(results)
-
-        res = parameters_at_max(results)
-        print("\nOptimum values")
-        print("function:", res[0]["function"])
-        print("x:", res[0]["x"])
-        print("b:", res[0]["b"])
-        print("y:", res[1])
+.. literalinclude:: ../tests/test_quickstart.py
+    :language: python
+    :lines: 1-13, 15-38, 46-48
 
 Running the example will output the results shown below. The best parameters are for the cubic function with ``x = 9.99`` and ``b = 10`` which produces ``y = 1009.87``.
 
 .. code-block:: console
 
-        p:b p:function       p:x    objective  job_id job_status  m:timestamp_submit  m:timestamp_gather
-    0      3      cubic  8.374450   590.312101       1       DONE            0.013266            1.697188
-    1      7      cubic -1.103350     5.656803       0       DONE            0.013165            1.697418
-    2      6      cubic  4.680560   108.540056       2       DONE            1.709580            1.710863
-    3      9     linear  8.787395    17.787395       3       DONE            1.709704            1.711059
-    4      2      cubic  4.012429    66.598442       5       DONE            1.721194            1.722261
-    ..   ...        ...       ...          ...     ...        ...                 ...                 ...
-    96    10      cubic  9.982052  1004.625215      96       DONE           10.093236           10.192950
-    97    10      cubic  9.999315  1009.794458      97       DONE           10.192616           10.293964
-    98     4      cubic  9.887916   970.750164      98       DONE           10.293530           10.395159
-    99    10      cubic  9.986875  1006.067558      99       DONE           10.394701           10.495718
-    100    9      cubic  9.999787  1008.936159     100       DONE           10.495265           10.595172
+        p:b p:function       p:x    objective  job_id job_status  m:timestamp_submit  m:timestamp_gather  sol.p:b sol.p:function   sol.p:x  sol.objective
+    0      7      cubic -1.103350     5.656803       0       DONE            0.011795            0.905777        3          cubic  8.374450     590.312101
+    1      3      cubic  8.374450   590.312101       1       DONE            0.011875            0.906027        3          cubic  8.374450     590.312101
+    2      6      cubic  4.680560   108.540056       2       DONE            0.917542            0.918856        3          cubic  8.374450     590.312101
+    3      9     linear  8.787395    17.787395       3       DONE            0.917645            0.929052        3          cubic  8.374450     590.312101
+    4      6      cubic  9.109560   761.948419       4       DONE            0.928757            0.938856        6          cubic  9.109560     761.948419
+    ..   ...        ...       ...          ...     ...        ...                 ...                 ...      ...            ...       ...            ...
+    96     9      cubic  9.998937  1008.681250      96       DONE           33.905465           34.311504       10          cubic  9.999978    1009.993395
+    97    10      cubic  9.999485  1009.845416      97       DONE           34.311124           34.777270       10          cubic  9.999978    1009.993395
+    98    10      cubic  9.996385  1008.915774      98       DONE           34.776732           35.236710       10          cubic  9.999978    1009.993395
+    99    10      cubic  9.997400  1009.220073      99       DONE           35.236190           35.687774       10          cubic  9.999978    1009.993395
+    100   10      cubic  9.999833  1009.949983     100       DONE           35.687380           36.111318       10          cubic  9.999978    1009.993395
+
+    [101 rows x 12 columns]
 
     Optimum values
-    function: cubic
-    x: 9.99958232225758
-    b: 10
-    y: 1009.8747019108424
+      function: cubic
+      x: 9.99958232225758
+      b: 10
+      y: 1009.8747019108424
 
 Let us now provide step-by-step details about this example.
 
@@ -197,22 +155,24 @@ This DataFrame contains 1 row per ``run``-function evaluation:
 * the ``objective`` is the returned values of the ``run``-function.
 * the ``job_id`` is the ``Evaluator`` job id of the evaluation (an integer incremented by order of job creation). 
 * the ``job_status`` is the ``Evaluator`` job status of the evaluation.
-* the columns that stat with ``m:`` are metadata of each evaluations. Some are added by DeepHyper but they can also be returned by the user as part of the ``run``-function returned value.
+* the columns that start with ``m:`` are metadata of each evaluations. Some are added by DeepHyper but they can also be returned by the user as part of the ``run``-function returned value.
+* the columns that start with ``sol.`` are the estimated solution according to the current solution selection method.
 
 .. code-block:: console
 
-        p:b p:function       p:x    objective  job_id job_status  m:timestamp_submit  m:timestamp_gather
-    0      3      cubic  8.374450   590.312101       1       DONE            0.013266            1.697188
-    1      7      cubic -1.103350     5.656803       0       DONE            0.013165            1.697418
-    2      6      cubic  4.680560   108.540056       2       DONE            1.709580            1.710863
-    3      9     linear  8.787395    17.787395       3       DONE            1.709704            1.711059
-    4      2      cubic  4.012429    66.598442       5       DONE            1.721194            1.722261
-    ..   ...        ...       ...          ...     ...        ...                 ...                 ...
-    96    10      cubic  9.982052  1004.625215      96       DONE           10.093236           10.192950
-    97    10      cubic  9.999315  1009.794458      97       DONE           10.192616           10.293964
-    98     4      cubic  9.887916   970.750164      98       DONE           10.293530           10.395159
-    99    10      cubic  9.986875  1006.067558      99       DONE           10.394701           10.495718
-    100    9      cubic  9.999787  1008.936159     100       DONE           10.495265           10.595172
+        p:b p:function       p:x    objective  job_id job_status  m:timestamp_submit  m:timestamp_gather  sol.p:b sol.p:function   sol.p:x  sol.objective
+    0      7      cubic -1.103350     5.656803       0       DONE            0.011795            0.905777        3          cubic  8.374450     590.312101
+    1      3      cubic  8.374450   590.312101       1       DONE            0.011875            0.906027        3          cubic  8.374450     590.312101
+    2      6      cubic  4.680560   108.540056       2       DONE            0.917542            0.918856        3          cubic  8.374450     590.312101
+    3      9     linear  8.787395    17.787395       3       DONE            0.917645            0.929052        3          cubic  8.374450     590.312101
+    4      6      cubic  9.109560   761.948419       4       DONE            0.928757            0.938856        6          cubic  9.109560     761.948419
+    ..   ...        ...       ...          ...     ...        ...                 ...                 ...      ...            ...       ...            ...
+    96     9      cubic  9.998937  1008.681250      96       DONE           33.905465           34.311504       10          cubic  9.999978    1009.993395
+    97    10      cubic  9.999485  1009.845416      97       DONE           34.311124           34.777270       10          cubic  9.999978    1009.993395
+    98    10      cubic  9.996385  1008.915774      98       DONE           34.776732           35.236710       10          cubic  9.999978    1009.993395
+    99    10      cubic  9.997400  1009.220073      99       DONE           35.236190           35.687774       10          cubic  9.999978    1009.993395
+    100   10      cubic  9.999833  1009.949983     100       DONE           35.687380           36.111318       10          cubic  9.999978    1009.993395
+
 
 .. warning:: By convention in DeepHyper, all search algorithms are MAXIMIZING the objective function. If you want to MINIMIZE the objective function, you can simply return the negative of your objective value.
 

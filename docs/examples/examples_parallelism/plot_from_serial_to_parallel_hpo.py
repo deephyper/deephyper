@@ -77,9 +77,11 @@ problem
 # Then, we define some default search parameters for the Centralized Bayesian Optimization (CBO) algorithm.
 search_kwargs = {
     "multi_point_strategy": "qUCBd", # Multi-point strategy for asynchronous batch generations (explained later)
-    "acq_optimizer": "ga", # Use continuous Genetic Algorithm for the acquisition function optimizer
-    "filter_duplicated": False, # Deactivate filtration of duplicated new points
     "random_state": 42, # Random seed
+    "acq_optimizer": "ga", # Use continuous Genetic Algorithm for the acquisition function optimizer
+    "acq_optimizer_kwargs": {
+        "filter_duplicated": False, # Deactivate filtration of duplicated new points
+    }
 }
 
 # %%
@@ -89,10 +91,8 @@ timeout = 60 # 1 minute
 
 # %%
 # Then, we define the sequential Bayesian optimization search.
-sequential_search = CBO(problem, run_ackley, **search_kwargs)
+sequential_search = CBO(problem, **search_kwargs)
 
-# %%
-# The previously simplified definition of the search is equivalent to the following:
 sequential_evaluator = Evaluator.create(
     run_ackley,
     method="thread",  # For synchronous function defintion relying on the GIL or I/O bound tasks
@@ -101,7 +101,7 @@ sequential_evaluator = Evaluator.create(
         "callbacks": [TqdmCallback("Sequential BO:")]
     },
 )
-sequential_search = CBO(problem, sequential_evaluator, **search_kwargs)
+sequential_search = CBO(problem, **search_kwargs)
 
 # %%
 # We define a utility function to preprocess our results before plotting.
@@ -123,7 +123,7 @@ def preprocess_results(results):
 # If this step is executed multiple times without creating a new search the results will be accumulated in the same DataFrame.
 
 results = {}
-results["sequential"] = preprocess_results(sequential_search.search(timeout=timeout))
+results["sequential"] = preprocess_results(sequential_search.search(sequential_evaluator, timeout=timeout))
 results["sequential"]
 
 # %%
@@ -165,11 +165,11 @@ parallel_evaluator = Evaluator.create(
         "callbacks": [TqdmCallback("Parallel BO:")]
     },
 )
-parallel_search = CBO(problem, parallel_evaluator, **search_kwargs)
+parallel_search = CBO(problem, **search_kwargs)
 
 # %%
 # The parallel search is executed for 1 minute.
-results["parallel"] = preprocess_results(parallel_search.search(timeout=timeout))
+results["parallel"] = preprocess_results(parallel_search.search(parallel_evaluator, timeout=timeout))
 results["parallel"]
 
 # %%
@@ -240,8 +240,8 @@ parallel_evaluator = Evaluator.create(
         "callbacks": [TqdmCallback("Random Search:")]
     },
 )
-random_search = RandomSearch(problem, parallel_evaluator, random_state=search_kwargs["random_state"])
-results["random"] = preprocess_results(random_search.search(timeout=timeout))
+random_search = RandomSearch(problem, random_state=search_kwargs["random_state"])
+results["random"] = preprocess_results(random_search.search(parallel_evaluator, timeout=timeout))
 results["random"]
 
 

@@ -6,6 +6,15 @@ from typing import Any, Dict
 import numpy as np
 import scipy.stats as ss
 
+__all__ = [
+    "Loss",
+    "AbsoluteError",
+    "SquaredError",
+    "CategoricalCrossEntropy",
+    "NormalNegLogLikelihood",
+    "ZeroOneLoss",
+]
+
 
 def _check_is_array(y: Any, y_name: str) -> None:
     """Verify that the passed value is of type np.ndarray and raise a ValueError otherwise.
