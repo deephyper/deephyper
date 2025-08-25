@@ -15,6 +15,8 @@ For maintainers:
 
 For other developers, it is better to use Github Pull Requests so that the submitted code can be reviewed by maintainers of the repository. The first, step is to fork the github repository (i.e., do not forget to "synchronise" your fork regularly with the main repository), then develop new features the ``develop`` branch and once completed or well advanced submit it to the main repository ``develop`` branch.
 
+For the naming convention of commits and pull requests we follow `Conventional Commits <https://www.conventionalcommits.org>`_.
+
 .. _install-developer:
 
 Developer Installation
