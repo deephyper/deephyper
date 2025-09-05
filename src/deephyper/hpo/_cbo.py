@@ -606,8 +606,7 @@ class CBO(Search):
         opt_X = []  # input configuration
         opt_y = []  # objective value
         for cfg, obj in results:
-            # TODO: check if order of values is maintained
-            x = list(cfg.values())
+            x = [cfg[k] for k in self._problem.hyperparameter_names]
 
             if isinstance(obj, numbers.Number) or all(
                 isinstance(obj_i, numbers.Number) for obj_i in obj
