@@ -1130,7 +1130,8 @@ class Optimizer(object):
                         space=self.space,
                         x_init=x_init,
                         y_init=y_init,
-                        pop_size=pop_size,
+                        # Other can fail with discretes variables and filter_duplicates=True
+                        pop_size=min(pop_size, len(idx_sorted)), 
                         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
                         termination_kwargs=self._pymoo_termination_kwargs,
                     )
@@ -1153,7 +1154,8 @@ class Optimizer(object):
                         space=self.space,
                         x_init=Xsample_transformed[idx_sorted],
                         y_init=values[idx_sorted],
-                        pop_size=self._pymoo_pop_size,
+                        # Other can fail with discretes variables and filter_duplicates=True
+                        pop_size=min(pop_size, len(idx_sorted)), 
                         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
                         termination_kwargs=self._pymoo_termination_kwargs,
                     )
