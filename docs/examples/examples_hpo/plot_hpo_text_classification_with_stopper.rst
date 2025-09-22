@@ -19,7 +19,7 @@
 
 
 Hyperparameter Search for Text Classification with the Stopper Class
-=============================================
+====================================================================
 
 **Author(s)**: Romain Egele, Brett Eiffert.
 
@@ -318,14 +318,13 @@ the run function must invoke methods :code:`job.record()` and :code:`job.stopped
 :code:`job.record()` tells the Stopper which values to watch so it knows to stop 
 and then :code:`job.stopped()` is a state the stopper uses to exit the specific job in the search earlier than expected.
 
-.. GENERATED FROM PYTHON SOURCE LINES 213-246
+.. GENERATED FROM PYTHON SOURCE LINES 213-245
 
 .. code-block:: Python
 
 
     def get_run(train_ratio=0.95):
       def run(job: RunningJob):
-        print(type(job))
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         embed_dim = 64
@@ -362,11 +361,11 @@ and then :code:`job.stopped()` is a state the stopper uses to exit the specific 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 247-248
+.. GENERATED FROM PYTHON SOURCE LINES 246-247
 
 We create two versions of :code:`run`, one quicker to evaluate for the search, with a small training dataset, and another one, for performance evaluation, which uses a normal training/validation ratio.
 
-.. GENERATED FROM PYTHON SOURCE LINES 250-253
+.. GENERATED FROM PYTHON SOURCE LINES 249-252
 
 .. code-block:: Python
 
@@ -380,13 +379,13 @@ We create two versions of :code:`run`, one quicker to evaluate for the search, w
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 254-257
+.. GENERATED FROM PYTHON SOURCE LINES 253-256
 
 .. note:: The objective maximised by DeepHyper is the scalar value returned by the :code:`run`-function.
 
 In this tutorial it corresponds to the validation accuracy of the model after training.
 
-.. GENERATED FROM PYTHON SOURCE LINES 259-269
+.. GENERATED FROM PYTHON SOURCE LINES 258-268
 
 Define the Hyperparameter optimization problem
 ---------------------------------------------- 
@@ -399,7 +398,7 @@ Hyperparameter ranges are defined using the following syntax:
 
 We provide the default configuration of hyperparameters as a starting point of the problem.
 
-.. GENERATED FROM PYTHON SOURCE LINES 271-281
+.. GENERATED FROM PYTHON SOURCE LINES 270-280
 
 .. code-block:: Python
 
@@ -430,14 +429,14 @@ We provide the default configuration of hyperparameters as a starting point of t
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 282-286
+.. GENERATED FROM PYTHON SOURCE LINES 281-285
 
 Evaluate a default configuration
 --------------------------------
 
 We evaluate the performance of the default set of hyperparameters provided in the Pytorch tutorial.
 
-.. GENERATED FROM PYTHON SOURCE LINES 286-306
+.. GENERATED FROM PYTHON SOURCE LINES 285-305
 
 .. dropdown:: Code (Imports)
 
@@ -470,15 +469,14 @@ We evaluate the performance of the default set of hyperparameters provided in th
 
  .. code-block:: none
 
-    2025-07-28 00:52:18,030 INFO worker.py:1917 -- Started a local Ray instance.
-    <class 'deephyper.evaluator._job.RunningJob'>
+    2025-08-18 14:34:14,988 INFO worker.py:1843 -- Started a local Ray instance. View the dashboard at http://127.0.0.1:8265 
     {'batch_size': 64, 'learning_rate': 5.0}
-    Accuracy Default Configuration:  0.863
+    Accuracy Default Configuration:  0.850
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 307-313
+.. GENERATED FROM PYTHON SOURCE LINES 306-312
 
 Define the evaluator object
 ---------------------------
@@ -487,19 +485,19 @@ The :code:`Evaluator` object allows to change the parallelization backend used b
 It is a standalone object which schedules the execution of remote tasks. All evaluators needs a :code:`run_function` to be instantiated.  
 Then a keyword :code:`method` defines the backend (e.g., :code:`"ray"`) and the :code:`method_kwargs` corresponds to keyword arguments of this chosen :code:`method`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 315-318
+.. GENERATED FROM PYTHON SOURCE LINES 314-317
 
 .. code-block:: python
 
   evaluator = Evaluator.create(run_function, method, method_kwargs)
 
-.. GENERATED FROM PYTHON SOURCE LINES 320-323
+.. GENERATED FROM PYTHON SOURCE LINES 319-322
 
 Once created the :code:`evaluator.num_workers` gives access to the number of available parallel workers.
 
 Finally, to submit and collect tasks to the evaluator one just needs to use the following interface:
 
-.. GENERATED FROM PYTHON SOURCE LINES 325-332
+.. GENERATED FROM PYTHON SOURCE LINES 324-331
 
 .. code-block:: python
 
@@ -509,11 +507,11 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
 	tasks_done = evaluator.get("BATCH", size=1) # For asynchronous
 	tasks_done = evaluator.get("ALL") # For batch synchronous
 
-.. GENERATED FROM PYTHON SOURCE LINES 334-335
+.. GENERATED FROM PYTHON SOURCE LINES 333-334
 
 .. warning:: Each `Evaluator` saves its own state, therefore it is crucial to create a new evaluator when launching a fresh search.
 
-.. GENERATED FROM PYTHON SOURCE LINES 335-367
+.. GENERATED FROM PYTHON SOURCE LINES 334-367
 
 .. dropdown:: Code (Imports)
 
@@ -522,6 +520,7 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
 
         from deephyper.evaluator import Evaluator
         from deephyper.evaluator.callback import TqdmCallback
+
 
         def get_evaluator(run_function):
             # Default arguments for Ray: 1 worker and 1 worker per evaluation
@@ -548,7 +547,7 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
     
             return evaluator
 
-        evaluator_1 = get_evaluator(quick_run)
+        evaluator = get_evaluator(quick_run)
 
 
 
@@ -558,7 +557,7 @@ Finally, to submit and collect tasks to the evaluator one just needs to use the 
 
  .. code-block:: none
 
-    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x13fffc5c0>]}
+    Created new evaluator with 1 worker and config: {'num_cpus': 1, 'num_cpus_per_task': 1, 'callbacks': [<deephyper.evaluator.callback.TqdmCallback object at 0x13e0e7da0>]}
 
 
 
@@ -595,17 +594,11 @@ Instantiate the search with the problem and a specific evaluator
 .. code-block:: Python
 
     stopper = SuccessiveHalvingStopper(min_steps=1, max_steps=100)
-    search = CBO(problem, evaluator_1, stopper=stopper, log_dir="stopper-log-files")
+    search = CBO(problem, stopper=stopper, log_dir="stopper-log-files")
 
 
 
 
-
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-    WARNING:root:Results file already exists, it will be renamed to /Users/35e/Projects/DeepHyper/deephyper/examples/examples_hpo/stopper-log-files/results_20250728-005443.csv
 
 
 
@@ -622,7 +615,7 @@ Instantiate the search with the problem and a specific evaluator
 
 .. code-block:: Python
 
-    results = search.search(max_evals=30)
+    results = search.search(evaluator, max_evals=30)
 
 
 
@@ -632,7 +625,7 @@ Instantiate the search with the problem and a specific evaluator
 
  .. code-block:: none
 
-      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 1120.87it/s, failures=0, objective=0.792]      7%|▋         | 2/30 [00:01<00:24,  1.13it/s, failures=0, objective=0.792]        7%|▋         | 2/30 [00:01<00:24,  1.13it/s, failures=0, objective=0.792]     10%|█         | 3/30 [00:03<00:32,  1.21s/it, failures=0, objective=0.792]     10%|█         | 3/30 [00:03<00:32,  1.21s/it, failures=0, objective=0.792]     13%|█▎        | 4/30 [00:04<00:34,  1.34s/it, failures=0, objective=0.792]     13%|█▎        | 4/30 [00:04<00:34,  1.34s/it, failures=0, objective=0.792]     17%|█▋        | 5/30 [04:25<38:09, 91.58s/it, failures=0, objective=0.792]     17%|█▋        | 5/30 [04:25<38:09, 91.58s/it, failures=0, objective=0.813]     20%|██        | 6/30 [04:41<26:31, 66.29s/it, failures=0, objective=0.813]     20%|██        | 6/30 [04:41<26:31, 66.29s/it, failures=0, objective=0.813]     23%|██▎       | 7/30 [04:44<17:40, 46.11s/it, failures=0, objective=0.813]     23%|██▎       | 7/30 [04:44<17:40, 46.11s/it, failures=0, objective=0.813]     27%|██▋       | 8/30 [04:46<11:49, 32.27s/it, failures=0, objective=0.813]     27%|██▋       | 8/30 [04:46<11:49, 32.27s/it, failures=0, objective=0.813]     30%|███       | 9/30 [04:54<08:38, 24.67s/it, failures=0, objective=0.813]     30%|███       | 9/30 [04:54<08:38, 24.67s/it, failures=0, objective=0.813]     33%|███▎      | 10/30 [05:01<06:24, 19.24s/it, failures=0, objective=0.813]     33%|███▎      | 10/30 [05:01<06:24, 19.24s/it, failures=0, objective=0.813]     37%|███▋      | 11/30 [05:03<04:26, 14.02s/it, failures=0, objective=0.813]     37%|███▋      | 11/30 [05:03<04:26, 14.02s/it, failures=0, objective=0.813]     40%|████      | 12/30 [05:05<03:07, 10.41s/it, failures=0, objective=0.813]     40%|████      | 12/30 [05:05<03:07, 10.41s/it, failures=0, objective=0.813]     43%|████▎     | 13/30 [05:56<06:24, 22.62s/it, failures=0, objective=0.813]     43%|████▎     | 13/30 [05:56<06:24, 22.62s/it, failures=0, objective=0.813]     47%|████▋     | 14/30 [06:00<04:30, 16.89s/it, failures=0, objective=0.813]     47%|████▋     | 14/30 [06:00<04:30, 16.89s/it, failures=0, objective=0.813]     50%|█████     | 15/30 [06:57<07:13, 28.91s/it, failures=0, objective=0.813]     50%|█████     | 15/30 [06:57<07:13, 28.91s/it, failures=0, objective=0.813]     53%|█████▎    | 16/30 [13:10<30:54, 132.45s/it, failures=0, objective=0.813]     53%|█████▎    | 16/30 [13:10<30:54, 132.45s/it, failures=0, objective=0.827]     57%|█████▋    | 17/30 [13:13<20:18, 93.75s/it, failures=0, objective=0.827]      57%|█████▋    | 17/30 [13:13<20:18, 93.75s/it, failures=0, objective=0.827]     60%|██████    | 18/30 [13:19<13:26, 67.21s/it, failures=0, objective=0.827]     60%|██████    | 18/30 [13:19<13:26, 67.21s/it, failures=0, objective=0.827]     63%|██████▎   | 19/30 [13:29<09:11, 50.12s/it, failures=0, objective=0.827]     63%|██████▎   | 19/30 [13:29<09:11, 50.12s/it, failures=0, objective=0.827]     67%|██████▋   | 20/30 [13:36<06:12, 37.21s/it, failures=0, objective=0.827]     67%|██████▋   | 20/30 [13:36<06:12, 37.21s/it, failures=0, objective=0.827]     70%|███████   | 21/30 [13:42<04:10, 27.81s/it, failures=0, objective=0.827]     70%|███████   | 21/30 [13:42<04:10, 27.81s/it, failures=0, objective=0.827]     73%|███████▎  | 22/30 [13:49<02:51, 21.48s/it, failures=0, objective=0.827]     73%|███████▎  | 22/30 [13:49<02:51, 21.48s/it, failures=0, objective=0.827]     77%|███████▋  | 23/30 [13:56<01:59, 17.06s/it, failures=0, objective=0.827]     77%|███████▋  | 23/30 [13:56<01:59, 17.06s/it, failures=0, objective=0.827]     80%|████████  | 24/30 [14:02<01:22, 13.78s/it, failures=0, objective=0.827]     80%|████████  | 24/30 [14:02<01:22, 13.78s/it, failures=0, objective=0.827]     83%|████████▎ | 25/30 [14:44<01:51, 22.22s/it, failures=0, objective=0.827]     83%|████████▎ | 25/30 [14:44<01:51, 22.22s/it, failures=0, objective=0.827]     87%|████████▋ | 26/30 [14:51<01:10, 17.66s/it, failures=0, objective=0.827]     87%|████████▋ | 26/30 [14:51<01:10, 17.66s/it, failures=0, objective=0.827]     90%|█████████ | 27/30 [14:54<00:39, 13.23s/it, failures=0, objective=0.827]     90%|█████████ | 27/30 [14:54<00:39, 13.23s/it, failures=0, objective=0.827]     93%|█████████▎| 28/30 [18:44<02:36, 78.44s/it, failures=0, objective=0.827]     93%|█████████▎| 28/30 [18:44<02:36, 78.44s/it, failures=0, objective=0.827]     97%|█████████▋| 29/30 [23:55<02:28, 148.15s/it, failures=0, objective=0.827]     97%|█████████▋| 29/30 [23:55<02:28, 148.15s/it, failures=0, objective=0.827]    100%|██████████| 30/30 [25:35<00:00, 133.83s/it, failures=0, objective=0.827]    100%|██████████| 30/30 [25:35<00:00, 133.83s/it, failures=0, objective=0.827]    100%|██████████| 30/30 [25:35<00:00, 51.20s/it, failures=0, objective=0.827] 
+      0%|          | 0/30 [00:00<?, ?it/s]      3%|▎         | 1/30 [00:00<00:00, 3880.02it/s, failures=0, objective=0.806]      7%|▋         | 2/30 [00:00<00:11,  2.49it/s, failures=0, objective=0.806]        7%|▋         | 2/30 [00:00<00:11,  2.49it/s, failures=0, objective=0.806]     10%|█         | 3/30 [00:01<00:14,  1.80it/s, failures=0, objective=0.806]     10%|█         | 3/30 [00:01<00:14,  1.80it/s, failures=0, objective=0.806]     13%|█▎        | 4/30 [00:21<03:22,  7.77s/it, failures=0, objective=0.806]     13%|█▎        | 4/30 [00:21<03:22,  7.77s/it, failures=0, objective=0.811]     17%|█▋        | 5/30 [00:22<02:15,  5.42s/it, failures=0, objective=0.811]     17%|█▋        | 5/30 [00:22<02:15,  5.42s/it, failures=0, objective=0.811]     20%|██        | 6/30 [00:23<01:34,  3.93s/it, failures=0, objective=0.811]     20%|██        | 6/30 [00:23<01:34,  3.93s/it, failures=0, objective=0.811]     23%|██▎       | 7/30 [00:24<01:09,  3.03s/it, failures=0, objective=0.811]     23%|██▎       | 7/30 [00:24<01:09,  3.03s/it, failures=0, objective=0.811]     27%|██▋       | 8/30 [00:25<00:53,  2.42s/it, failures=0, objective=0.811]     27%|██▋       | 8/30 [00:25<00:53,  2.42s/it, failures=0, objective=0.811]     30%|███       | 9/30 [00:31<01:15,  3.60s/it, failures=0, objective=0.811]     30%|███       | 9/30 [00:31<01:15,  3.60s/it, failures=0, objective=0.811]     33%|███▎      | 10/30 [00:32<00:55,  2.79s/it, failures=0, objective=0.811]     33%|███▎      | 10/30 [00:32<00:55,  2.79s/it, failures=0, objective=0.811]     37%|███▋      | 11/30 [00:34<00:44,  2.35s/it, failures=0, objective=0.811]     37%|███▋      | 11/30 [00:34<00:44,  2.35s/it, failures=0, objective=0.811]     40%|████      | 12/30 [00:35<00:34,  1.93s/it, failures=0, objective=0.811]     40%|████      | 12/30 [00:35<00:34,  1.93s/it, failures=0, objective=0.811]     43%|████▎     | 13/30 [00:36<00:28,  1.71s/it, failures=0, objective=0.811]     43%|████▎     | 13/30 [00:36<00:28,  1.71s/it, failures=0, objective=0.811]     47%|████▋     | 14/30 [00:37<00:23,  1.47s/it, failures=0, objective=0.811]     47%|████▋     | 14/30 [00:37<00:23,  1.47s/it, failures=0, objective=0.811]     50%|█████     | 15/30 [00:38<00:20,  1.35s/it, failures=0, objective=0.811]     50%|█████     | 15/30 [00:38<00:20,  1.35s/it, failures=0, objective=0.811]     53%|█████▎    | 16/30 [00:39<00:18,  1.30s/it, failures=0, objective=0.811]     53%|█████▎    | 16/30 [00:39<00:18,  1.30s/it, failures=0, objective=0.811]     57%|█████▋    | 17/30 [00:40<00:15,  1.19s/it, failures=0, objective=0.811]     57%|█████▋    | 17/30 [00:40<00:15,  1.19s/it, failures=0, objective=0.811]     60%|██████    | 18/30 [00:41<00:13,  1.12s/it, failures=0, objective=0.811]     60%|██████    | 18/30 [00:41<00:13,  1.12s/it, failures=0, objective=0.811]     63%|██████▎   | 19/30 [00:42<00:11,  1.09s/it, failures=0, objective=0.811]     63%|██████▎   | 19/30 [00:42<00:11,  1.09s/it, failures=0, objective=0.811]     67%|██████▋   | 20/30 [00:43<00:10,  1.06s/it, failures=0, objective=0.811]     67%|██████▋   | 20/30 [00:43<00:10,  1.06s/it, failures=0, objective=0.811]     70%|███████   | 21/30 [00:44<00:09,  1.10s/it, failures=0, objective=0.811]     70%|███████   | 21/30 [00:44<00:09,  1.10s/it, failures=0, objective=0.811]     73%|███████▎  | 22/30 [00:45<00:08,  1.08s/it, failures=0, objective=0.811]     73%|███████▎  | 22/30 [00:45<00:08,  1.08s/it, failures=0, objective=0.811]     77%|███████▋  | 23/30 [00:46<00:07,  1.07s/it, failures=0, objective=0.811]     77%|███████▋  | 23/30 [00:46<00:07,  1.07s/it, failures=0, objective=0.811]     80%|████████  | 24/30 [00:47<00:06,  1.06s/it, failures=0, objective=0.811]     80%|████████  | 24/30 [00:47<00:06,  1.06s/it, failures=0, objective=0.811]     83%|████████▎ | 25/30 [00:48<00:05,  1.05s/it, failures=0, objective=0.811]     83%|████████▎ | 25/30 [00:48<00:05,  1.05s/it, failures=0, objective=0.811]     87%|████████▋ | 26/30 [00:49<00:04,  1.06s/it, failures=0, objective=0.811]     87%|████████▋ | 26/30 [00:49<00:04,  1.06s/it, failures=0, objective=0.811]     90%|█████████ | 27/30 [01:18<00:28,  9.34s/it, failures=0, objective=0.811]     90%|█████████ | 27/30 [01:18<00:28,  9.34s/it, failures=0, objective=0.816]     93%|█████████▎| 28/30 [02:05<00:41, 20.76s/it, failures=0, objective=0.816]     93%|█████████▎| 28/30 [02:05<00:41, 20.76s/it, failures=0, objective=0.816]     97%|█████████▋| 29/30 [02:09<00:15, 15.70s/it, failures=0, objective=0.816]     97%|█████████▋| 29/30 [02:09<00:15, 15.70s/it, failures=0, objective=0.816]    100%|██████████| 30/30 [02:10<00:00, 11.31s/it, failures=0, objective=0.816]    100%|██████████| 30/30 [02:10<00:00, 11.31s/it, failures=0, objective=0.816]    100%|██████████| 30/30 [02:10<00:00,  4.36s/it, failures=0, objective=0.816]
 
 
 
@@ -657,7 +650,7 @@ because the Stopper algorithm determined it was unnecessary to move forward in t
 .. code-block:: Python
 
     results
-    #print(results)
+
 
 
 
@@ -699,363 +692,363 @@ because the Stopper algorithm determined it was unnecessary to move forward in t
       <tbody>
         <tr>
           <th>0</th>
-          <td>467</td>
-          <td>3.791980</td>
-          <td>0.791667</td>
+          <td>89</td>
+          <td>0.936261</td>
+          <td>0.806429</td>
           <td>0</td>
           <td>DONE</td>
-          <td>3.722631</td>
+          <td>0.873358</td>
           <td>99</td>
-          <td>[0.2869047619047619, 0.31642857142857145, 0.31...</td>
-          <td>52.744195</td>
+          <td>[0.29, 0.33, 0.3597619047619048, 0.38928571428...</td>
+          <td>24.567496</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>272</td>
-          <td>0.120821</td>
-          <td>0.248810</td>
+          <td>462</td>
+          <td>0.127722</td>
+          <td>0.256667</td>
           <td>1</td>
           <td>DONE</td>
-          <td>52.819452</td>
+          <td>24.590855</td>
           <td>1</td>
-          <td>[0.2488095238095238]</td>
-          <td>54.535978</td>
+          <td>[0.25666666666666665]</td>
+          <td>25.379413</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>142</td>
-          <td>0.135677</td>
-          <td>0.252143</td>
+          <td>68</td>
+          <td>0.248208</td>
+          <td>0.273333</td>
           <td>2</td>
           <td>DONE</td>
-          <td>54.565451</td>
+          <td>25.389952</td>
           <td>1</td>
-          <td>[0.25214285714285717]</td>
-          <td>56.202157</td>
+          <td>[0.2733333333333333]</td>
+          <td>26.149187</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>269</td>
-          <td>3.187172</td>
-          <td>0.257381</td>
+          <td>122</td>
+          <td>6.620931</td>
+          <td>0.811190</td>
           <td>3</td>
           <td>DONE</td>
-          <td>56.232781</td>
-          <td>1</td>
-          <td>[0.2573809523809524]</td>
-          <td>57.758431</td>
+          <td>26.160535</td>
+          <td>99</td>
+          <td>[0.34, 0.4742857142857143, 0.48095238095238096...</td>
+          <td>46.049277</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>10</td>
-          <td>6.832404</td>
-          <td>0.813333</td>
+          <td>14</td>
+          <td>0.455865</td>
+          <td>0.290952</td>
           <td>4</td>
           <td>DONE</td>
-          <td>57.787356</td>
-          <td>99</td>
-          <td>[0.5766666666666667, 0.6607142857142857, 0.755...</td>
-          <td>318.620316</td>
+          <td>46.059753</td>
+          <td>1</td>
+          <td>[0.29095238095238096]</td>
+          <td>47.064833</td>
         </tr>
         <tr>
           <th>5</th>
-          <td>17</td>
-          <td>7.665697</td>
-          <td>0.798095</td>
+          <td>226</td>
+          <td>5.175847</td>
+          <td>0.271429</td>
           <td>5</td>
           <td>DONE</td>
-          <td>319.308617</td>
-          <td>8</td>
-          <td>[0.5059523809523809, 0.6611904761904762, 0.753...</td>
-          <td>334.014252</td>
+          <td>47.294174</td>
+          <td>1</td>
+          <td>[0.2714285714285714]</td>
+          <td>47.999485</td>
         </tr>
         <tr>
           <th>6</th>
-          <td>16</td>
-          <td>3.791349</td>
-          <td>0.413810</td>
+          <td>143</td>
+          <td>6.786172</td>
+          <td>0.382619</td>
           <td>6</td>
           <td>DONE</td>
-          <td>334.678007</td>
-          <td>1</td>
-          <td>[0.4138095238095238]</td>
-          <td>337.551448</td>
+          <td>48.232269</td>
+          <td>2</td>
+          <td>[0.38976190476190475, 0.38261904761904764]</td>
+          <td>49.135595</td>
         </tr>
         <tr>
           <th>7</th>
-          <td>327</td>
-          <td>4.115010</td>
-          <td>0.274762</td>
+          <td>122</td>
+          <td>5.489615</td>
+          <td>0.309048</td>
           <td>7</td>
           <td>DONE</td>
-          <td>338.195279</td>
+          <td>49.501916</td>
           <td>1</td>
-          <td>[0.27476190476190476]</td>
-          <td>339.683885</td>
+          <td>[0.30904761904761907]</td>
+          <td>50.226595</td>
         </tr>
         <tr>
           <th>8</th>
-          <td>9</td>
-          <td>6.067828</td>
-          <td>0.632857</td>
+          <td>82</td>
+          <td>6.303539</td>
+          <td>0.805714</td>
           <td>8</td>
           <td>DONE</td>
-          <td>340.600407</td>
-          <td>2</td>
-          <td>[0.5352380952380953, 0.6328571428571429]</td>
-          <td>347.468817</td>
+          <td>50.455649</td>
+          <td>26</td>
+          <td>[0.3788095238095238, 0.4830952380952381, 0.447...</td>
+          <td>56.438881</td>
         </tr>
         <tr>
           <th>9</th>
-          <td>10</td>
-          <td>6.938628</td>
-          <td>0.653333</td>
+          <td>118</td>
+          <td>6.322114</td>
+          <td>0.328571</td>
           <td>9</td>
           <td>DONE</td>
-          <td>348.146330</td>
-          <td>2</td>
-          <td>[0.5376190476190477, 0.6533333333333333]</td>
-          <td>354.469765</td>
+          <td>56.670742</td>
+          <td>1</td>
+          <td>[0.32857142857142857]</td>
+          <td>57.395846</td>
         </tr>
         <tr>
           <th>10</th>
-          <td>465</td>
-          <td>7.391777</td>
-          <td>0.257619</td>
+          <td>121</td>
+          <td>6.612655</td>
+          <td>0.451905</td>
           <td>10</td>
           <td>DONE</td>
-          <td>355.113294</td>
-          <td>1</td>
-          <td>[0.25761904761904764]</td>
-          <td>356.568366</td>
+          <td>57.824365</td>
+          <td>2</td>
+          <td>[0.36428571428571427, 0.4519047619047619]</td>
+          <td>58.737630</td>
         </tr>
         <tr>
           <th>11</th>
-          <td>482</td>
-          <td>3.767522</td>
-          <td>0.259524</td>
+          <td>89</td>
+          <td>1.066949</td>
+          <td>0.309762</td>
           <td>11</td>
           <td>DONE</td>
-          <td>357.218466</td>
+          <td>58.977306</td>
           <td>1</td>
-          <td>[0.25952380952380955]</td>
-          <td>358.690198</td>
+          <td>[0.30976190476190474]</td>
+          <td>59.708176</td>
         </tr>
         <tr>
           <th>12</th>
-          <td>15</td>
-          <td>8.692646</td>
-          <td>0.810714</td>
+          <td>78</td>
+          <td>5.803714</td>
+          <td>0.342381</td>
           <td>12</td>
           <td>DONE</td>
-          <td>359.350503</td>
-          <td>26</td>
-          <td>[0.5314285714285715, 0.6933333333333334, 0.736...</td>
-          <td>409.489264</td>
+          <td>59.936309</td>
+          <td>2</td>
+          <td>[0.39976190476190476, 0.3423809523809524]</td>
+          <td>60.896947</td>
         </tr>
         <tr>
           <th>13</th>
-          <td>15</td>
-          <td>8.372097</td>
-          <td>0.415952</td>
+          <td>129</td>
+          <td>6.773631</td>
+          <td>0.321190</td>
           <td>13</td>
           <td>DONE</td>
-          <td>410.146966</td>
+          <td>61.127136</td>
           <td>1</td>
-          <td>[0.41595238095238096]</td>
-          <td>413.113537</td>
+          <td>[0.3211904761904762]</td>
+          <td>61.837705</td>
         </tr>
         <tr>
           <th>14</th>
-          <td>16</td>
-          <td>9.959483</td>
-          <td>0.806667</td>
+          <td>81</td>
+          <td>9.214344</td>
+          <td>0.264762</td>
           <td>14</td>
           <td>DONE</td>
-          <td>413.770771</td>
-          <td>26</td>
-          <td>[0.5926190476190476, 0.7080952380952381, 0.747...</td>
-          <td>469.919032</td>
+          <td>62.157754</td>
+          <td>1</td>
+          <td>[0.26476190476190475]</td>
+          <td>62.898223</td>
         </tr>
         <tr>
           <th>15</th>
-          <td>11</td>
-          <td>9.359650</td>
-          <td>0.826667</td>
+          <td>82</td>
+          <td>6.868379</td>
+          <td>0.395476</td>
           <td>15</td>
           <td>DONE</td>
-          <td>471.178862</td>
-          <td>99</td>
-          <td>[0.6138095238095238, 0.7121428571428572, 0.735...</td>
-          <td>843.008658</td>
+          <td>63.133662</td>
+          <td>2</td>
+          <td>[0.3545238095238095, 0.3954761904761905]</td>
+          <td>64.081785</td>
         </tr>
         <tr>
           <th>16</th>
-          <td>54</td>
-          <td>9.984361</td>
-          <td>0.415000</td>
+          <td>189</td>
+          <td>0.941383</td>
+          <td>0.242857</td>
           <td>16</td>
           <td>DONE</td>
-          <td>843.974995</td>
+          <td>64.311886</td>
           <td>1</td>
-          <td>[0.415]</td>
-          <td>846.718395</td>
+          <td>[0.24285714285714285]</td>
+          <td>65.019591</td>
         </tr>
         <tr>
           <th>17</th>
-          <td>16</td>
-          <td>7.176530</td>
-          <td>0.441905</td>
+          <td>153</td>
+          <td>3.548180</td>
+          <td>0.306429</td>
           <td>17</td>
           <td>DONE</td>
-          <td>847.741639</td>
+          <td>65.249049</td>
           <td>1</td>
-          <td>[0.4419047619047619]</td>
-          <td>852.111367</td>
+          <td>[0.30642857142857144]</td>
+          <td>65.967033</td>
         </tr>
         <tr>
           <th>18</th>
-          <td>11</td>
-          <td>6.827136</td>
-          <td>0.645000</td>
+          <td>39</td>
+          <td>0.796331</td>
+          <td>0.265476</td>
           <td>18</td>
           <td>DONE</td>
-          <td>853.125161</td>
-          <td>2</td>
-          <td>[0.5326190476190477, 0.645]</td>
-          <td>862.413311</td>
+          <td>66.196620</td>
+          <td>1</td>
+          <td>[0.2654761904761905]</td>
+          <td>66.990159</td>
         </tr>
         <tr>
           <th>19</th>
-          <td>9</td>
-          <td>7.297038</td>
-          <td>0.522143</td>
+          <td>82</td>
+          <td>0.926323</td>
+          <td>0.268571</td>
           <td>19</td>
           <td>DONE</td>
-          <td>863.430511</td>
+          <td>67.222382</td>
           <td>1</td>
-          <td>[0.5221428571428571]</td>
-          <td>869.530121</td>
+          <td>[0.26857142857142857]</td>
+          <td>67.968843</td>
         </tr>
         <tr>
           <th>20</th>
-          <td>13</td>
-          <td>8.057263</td>
-          <td>0.522619</td>
+          <td>82</td>
+          <td>6.288300</td>
+          <td>0.459524</td>
           <td>20</td>
           <td>DONE</td>
-          <td>870.555051</td>
-          <td>1</td>
-          <td>[0.5226190476190476]</td>
-          <td>875.423834</td>
+          <td>68.235045</td>
+          <td>2</td>
+          <td>[0.38571428571428573, 0.4595238095238095]</td>
+          <td>69.176954</td>
         </tr>
         <tr>
           <th>21</th>
-          <td>10</td>
-          <td>9.156694</td>
-          <td>0.489286</td>
+          <td>124</td>
+          <td>6.642127</td>
+          <td>0.325952</td>
           <td>21</td>
           <td>DONE</td>
-          <td>876.429685</td>
+          <td>69.492247</td>
           <td>1</td>
-          <td>[0.48928571428571427]</td>
-          <td>882.153098</td>
+          <td>[0.32595238095238094]</td>
+          <td>70.213134</td>
         </tr>
         <tr>
           <th>22</th>
-          <td>10</td>
-          <td>7.323343</td>
-          <td>0.523571</td>
+          <td>82</td>
+          <td>6.306742</td>
+          <td>0.338810</td>
           <td>22</td>
           <td>DONE</td>
-          <td>883.173817</td>
+          <td>70.529433</td>
           <td>1</td>
-          <td>[0.5235714285714286]</td>
-          <td>888.889646</td>
+          <td>[0.3388095238095238]</td>
+          <td>71.268248</td>
         </tr>
         <tr>
           <th>23</th>
-          <td>13</td>
-          <td>7.645296</td>
-          <td>0.502619</td>
+          <td>89</td>
+          <td>0.936794</td>
+          <td>0.303333</td>
           <td>23</td>
           <td>DONE</td>
-          <td>890.145537</td>
+          <td>71.572120</td>
           <td>1</td>
-          <td>[0.5026190476190476]</td>
-          <td>895.009239</td>
+          <td>[0.30333333333333334]</td>
+          <td>72.305645</td>
         </tr>
         <tr>
           <th>24</th>
-          <td>9</td>
-          <td>7.415146</td>
-          <td>0.788333</td>
+          <td>90</td>
+          <td>0.934473</td>
+          <td>0.283810</td>
           <td>24</td>
           <td>DONE</td>
-          <td>896.031308</td>
-          <td>8</td>
-          <td>[0.5645238095238095, 0.7169047619047619, 0.731...</td>
-          <td>936.912898</td>
+          <td>72.597020</td>
+          <td>1</td>
+          <td>[0.2838095238095238]</td>
+          <td>73.326124</td>
         </tr>
         <tr>
           <th>25</th>
-          <td>9</td>
-          <td>5.844558</td>
-          <td>0.463095</td>
+          <td>83</td>
+          <td>6.303264</td>
+          <td>0.287619</td>
           <td>25</td>
           <td>DONE</td>
-          <td>937.907082</td>
+          <td>73.668412</td>
           <td>1</td>
-          <td>[0.4630952380952381]</td>
-          <td>943.946395</td>
+          <td>[0.2876190476190476]</td>
+          <td>74.405132</td>
         </tr>
         <tr>
           <th>26</th>
-          <td>441</td>
-          <td>3.907640</td>
-          <td>0.295714</td>
+          <td>34</td>
+          <td>6.297783</td>
+          <td>0.816429</td>
           <td>26</td>
           <td>DONE</td>
-          <td>944.813855</td>
-          <td>1</td>
-          <td>[0.2957142857142857]</td>
-          <td>946.823460</td>
+          <td>74.632590</td>
+          <td>99</td>
+          <td>[0.465, 0.5776190476190476, 0.5757142857142857...</td>
+          <td>103.068003</td>
         </tr>
         <tr>
           <th>27</th>
-          <td>15</td>
-          <td>9.995690</td>
-          <td>0.816905</td>
+          <td>10</td>
+          <td>8.341522</td>
+          <td>0.813333</td>
           <td>27</td>
           <td>DONE</td>
-          <td>947.829663</td>
+          <td>103.303074</td>
           <td>80</td>
-          <td>[0.5621428571428572, 0.7152380952380952, 0.733...</td>
-          <td>1177.423419</td>
+          <td>[0.55, 0.7361904761904762, 0.7595238095238095,...</td>
+          <td>150.467412</td>
         </tr>
         <tr>
           <th>28</th>
-          <td>11</td>
-          <td>9.857182</td>
-          <td>0.818333</td>
+          <td>19</td>
+          <td>9.167084</td>
+          <td>0.790238</td>
           <td>28</td>
           <td>DONE</td>
-          <td>1178.444980</td>
-          <td>80</td>
-          <td>[0.5852380952380952, 0.7092857142857143, 0.779...</td>
-          <td>1488.230187</td>
+          <td>150.792730</td>
+          <td>8</td>
+          <td>[0.4533333333333333, 0.638095238095238, 0.745,...</td>
+          <td>154.363692</td>
         </tr>
         <tr>
           <th>29</th>
-          <td>11</td>
-          <td>9.862205</td>
-          <td>0.810476</td>
+          <td>35</td>
+          <td>5.982289</td>
+          <td>0.311429</td>
           <td>29</td>
           <td>DONE</td>
-          <td>1489.410069</td>
-          <td>26</td>
-          <td>[0.5423809523809524, 0.7185714285714285, 0.715...</td>
-          <td>1588.634109</td>
+          <td>154.608246</td>
+          <td>1</td>
+          <td>[0.31142857142857144]</td>
+          <td>155.419572</td>
         </tr>
       </tbody>
     </table>
@@ -1073,14 +1066,19 @@ Each of the 30 jobs and the rate at which they learned against the validation da
 As shown above, not all job lines will show 100 epochs because the Stopper determined the jobs did not 
 need to run the full time to converge on a solution.
 
-.. GENERATED FROM PYTHON SOURCE LINES 418-429
+.. GENERATED FROM PYTHON SOURCE LINES 418-434
 
 .. code-block:: Python
 
+    import numpy as np
     import matplotlib.pyplot as plt
 
+    i = 0
     for row in results.iterrows():
-        plt.plot(row[1]["m:accu_list"], label=row[1]["job_id"])
+        y = row[1]["m:accu_list"]
+        x = np.arange(i+1, i+1+len(y))
+        plt.plot(x, y, label=row[1]["job_id"])
+        i += len(y)
 
     plt.xlabel('Epoch')
     plt.ylabel('Validation accuracy')
@@ -1100,19 +1098,19 @@ need to run the full time to converge on a solution.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 430-434
+.. GENERATED FROM PYTHON SOURCE LINES 435-439
 
 Evaluate the best configuration
 -------------------------------
 
 Now that the search is over, let us print the best configuration found during this run and evaluate it on the full training dataset.
 
-.. GENERATED FROM PYTHON SOURCE LINES 436-438
+.. GENERATED FROM PYTHON SOURCE LINES 441-443
 
 Show the job with best configuration and compare this with the graph above. The result of the comparison should be intuitive -
 the job with the best objective in the graph should match :code:`i_max`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 438-441
+.. GENERATED FROM PYTHON SOURCE LINES 443-446
 
 .. code-block:: Python
 
@@ -1128,11 +1126,11 @@ the job with the best objective in the graph should match :code:`i_max`.
  .. code-block:: none
 
 
-    15
+    26
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 442-451
+.. GENERATED FROM PYTHON SOURCE LINES 447-456
 
 .. code-block:: Python
 
@@ -1153,19 +1151,19 @@ the job with the best objective in the graph should match :code:`i_max`.
 
  .. code-block:: none
 
-    The default configuration has an accuracy of 0.863. 
-    The best configuration found by DeepHyper has an accuracy 0.827, 
-    finished after 843.01 seconds of search.
+    The default configuration has an accuracy of 0.850. 
+    The best configuration found by DeepHyper has an accuracy 0.816, 
+    finished after 103.07 seconds of search.
 
     {
-        "batch_size": 11,
-        "learning_rate": 9.359650082392141
+        "batch_size": 34,
+        "learning_rate": 6.297783280051977
     }
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 452-454
+.. GENERATED FROM PYTHON SOURCE LINES 457-459
 
 .. code-block:: Python
 
@@ -1179,8 +1177,7 @@ the job with the best objective in the graph should match :code:`i_max`.
 
  .. code-block:: none
 
-    <class 'deephyper.evaluator._job.RunningJob'>
-    Accuracy Best Configuration:  0.860
+    Accuracy Best Configuration:  0.857
 
 
 
@@ -1188,7 +1185,7 @@ the job with the best objective in the graph should match :code:`i_max`.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (39 minutes 26.877 seconds)
+   **Total running time of the script:** (4 minutes 34.607 seconds)
 
 
 .. _sphx_glr_download_examples_examples_hpo_plot_hpo_text_classification_with_stopper.py:

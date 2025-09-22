@@ -33,23 +33,6 @@ Black-box optimization
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
-
-.. only:: html
-
-  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_black_box_optimization_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Black-Box Optimization</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="In this tutorial, we will explore how to run black-box multi-objective optimization (MOO). In this setting, the goal is to resolve the following problem:">
 
 .. only:: html
@@ -62,6 +45,23 @@ Black-box optimization
 .. raw:: html
 
       <div class="sphx-glr-thumbnail-title">Mutli-Objective Black-Box Optimization</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele, Brett Eiffert.">
+
+.. only:: html
+
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_black_box_optimization_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Black-Box Optimization</div>
     </div>
 
 
@@ -110,8 +110,8 @@ Black-box optimization
    :hidden:
 
    /examples/examples_bbo/plot_experimental_design
-   /examples/examples_bbo/plot_black_box_optimization
    /examples/examples_bbo/plot_multi_objective_optimization
+   /examples/examples_bbo/plot_black_box_optimization
    /examples/examples_bbo/plot_notify_failures_hpo
    /examples/examples_bbo/plot_transfer_learning_for_hpo
 

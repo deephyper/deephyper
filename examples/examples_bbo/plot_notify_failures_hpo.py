@@ -76,7 +76,6 @@ for failure_strategy in ["ignore", "mean", "min"]:
 
     search = CBO(
         problem,
-        evaluator,
         acq_optimizer="ga",
         acq_optimizer_kwargs=dict(
             filter_duplicated=False,
@@ -86,7 +85,7 @@ for failure_strategy in ["ignore", "mean", "min"]:
         random_state=42,
     )
 
-    results[failure_strategy] = search.search(max_evals)
+    results[failure_strategy] = search.search(evaluator, max_evals)
 
 # %%
 # Finally we plot the collected results.
@@ -99,8 +98,8 @@ for i, (failure_strategy, df) in enumerate(results.items()):
     
     if df.objective.dtype != np.float64:
         x = np.arange(len(df))
-        mask_failed = np.where(df.objective.str.startswith("F"))[0]
-        mask_success = np.where(~df.objective.str.startswith("F"))[0]
+        mask_failed = np.where(df.objective.astype(str).str.startswith("F"))[0]
+        mask_success = np.where(~df.objective.astype(str).str.startswith("F"))[0]
         x_success, x_failed = x[mask_success], x[mask_failed]
         y_success = df["objective"][mask_success].astype(float)
 

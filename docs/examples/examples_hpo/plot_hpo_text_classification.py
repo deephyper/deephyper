@@ -348,7 +348,7 @@ def get_evaluator(run_function):
     
     return evaluator
 
-evaluator_1 = get_evaluator(quick_run)
+evaluator = get_evaluator(quick_run)
 
 # %%
 # Define and run the Centralized Bayesian Optimization search (CBO)
@@ -361,7 +361,7 @@ from deephyper.hpo import CBO
 
 # %%
 # Instanciate the search with the problem and a specific evaluator
-search = CBO(problem, evaluator_1)
+search = CBO(problem)
 
 # %%  
 # .. note:: 
@@ -371,7 +371,7 @@ search = CBO(problem, evaluator_1)
 #
 
 # %%
-results = search.search(max_evals=30)
+results = search.search(evaluator, max_evals=30)
 
 # %%
 # The returned :code:`results` is a Pandas Dataframe where columns are hyperparameters and information stored by the evaluator:

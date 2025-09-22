@@ -28,7 +28,6 @@ def test_cbo_random_seed(tmp_path):
 
     search = CBO(
         problem,
-        create_evaluator(),
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
@@ -36,19 +35,18 @@ def test_cbo_random_seed(tmp_path):
         log_dir=tmp_path,
     )
 
-    res1 = search.search(max_evals=4)
+    res1 = search.search(create_evaluator(), max_evals=4)
     res1_array = res1[["p:x"]].to_numpy()
 
     search = CBO(
         problem,
-        create_evaluator(),
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
         log_dir=tmp_path,
     )
-    res2 = search.search(max_evals=4)
+    res2 = search.search(create_evaluator(), max_evals=4)
     res2_array = res2[["p:x"]].to_numpy()
 
     assert np.array_equal(res1_array, res2_array)
@@ -62,7 +60,6 @@ def test_cbo_random_seed(tmp_path):
 
     search = CBO(
         problem,
-        create_evaluator(),
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
@@ -70,19 +67,18 @@ def test_cbo_random_seed(tmp_path):
         log_dir=tmp_path,
     )
 
-    res1 = search.search(max_evals=4)
+    res1 = search.search(create_evaluator(), max_evals=4)
     res1_array = res1[["p:x"]].to_numpy()
 
     search = CBO(
         problem,
-        create_evaluator(),
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
         log_dir=tmp_path,
     )
-    res2 = search.search(max_evals=4)
+    res2 = search.search(create_evaluator(), max_evals=4)
     res2_array = res2[["p:x"]].to_numpy()
 
     assert np.array_equal(res1_array, res2_array)
@@ -106,7 +102,6 @@ def test_sample_types(tmp_path):
     max_evals = 20
     results = CBO(
         problem,
-        run,
         n_initial_points=5,
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
@@ -114,12 +109,11 @@ def test_sample_types(tmp_path):
         surrogate_model="DUMMY",
         log_dir=tmp_path,
         verbose=0,
-    ).search(max_evals)
+    ).search(run, max_evals)
     assert len(results) == max_evals
 
     results = CBO(
         problem,
-        run,
         n_initial_points=5,
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
@@ -128,7 +122,7 @@ def test_sample_types(tmp_path):
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         log_dir=tmp_path,
         verbose=0,
-    ).search(max_evals)
+    ).search(run, max_evals)
     assert len(results) == max_evals
 
 
@@ -148,7 +142,6 @@ def test_sample_types_no_cat(tmp_path):
     max_evals = 20
     results = CBO(
         problem,
-        run,
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
@@ -156,12 +149,11 @@ def test_sample_types_no_cat(tmp_path):
         surrogate_model="DUMMY",
         log_dir=tmp_path,
         verbose=0,
-    ).search(max_evals)
+    ).search(run, max_evals)
     assert len(results) == max_evals
 
     results = CBO(
         problem,
-        run,
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
@@ -170,7 +162,7 @@ def test_sample_types_no_cat(tmp_path):
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         log_dir=tmp_path,
         verbose=0,
-    ).search(max_evals)
+    ).search(run, max_evals)
     assert len(results) == max_evals
 
 
@@ -188,14 +180,13 @@ def test_gp(tmp_path):
     max_evals = 20
     results = CBO(
         problem,
-        Evaluator.create(run, method="serial"),
         acq_optimizer="lbfgs",
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="GP",
         acq_func="UCB",
         log_dir=tmp_path,
-    ).search(max_evals)
+    ).search(Evaluator.create(run, method="serial"), max_evals)
     assert len(results) == max_evals
 
     # test int hyperparameters
@@ -204,14 +195,13 @@ def test_gp(tmp_path):
 
     results = CBO(
         problem,
-        Evaluator.create(run, method="serial"),
         acq_optimizer="lbfgs",
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="GP",
         acq_func="UCB",
         log_dir=tmp_path,
-    ).search(max_evals)
+    ).search(Evaluator.create(run, method="serial"), max_evals)
     assert len(results) == max_evals
 
     # test categorical hyperparameters
@@ -223,14 +213,13 @@ def test_gp(tmp_path):
 
     results = CBO(
         problem,
-        Evaluator.create(run_cast_output_int, method="serial"),
         acq_optimizer="lbfgs",
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="GP",
         acq_func="UCB",
         log_dir=tmp_path,
-    ).search(max_evals)
+    ).search(Evaluator.create(run_cast_output_int, method="serial"), max_evals)
     assert len(results) == max_evals
 
 
@@ -275,7 +264,6 @@ def test_sample_types_conditional(tmp_path):
     # Test classic random search
     search = CBO(
         problem,
-        run,
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
@@ -283,13 +271,12 @@ def test_sample_types_conditional(tmp_path):
         log_dir=tmp_path,
         verbose=0,
     )
-    results = search.search(10)
+    results = search.search(run, 10)
     assert len(results) == 10
 
     # Test search with ET surrogate model
     results = CBO(
         problem,
-        run,
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
@@ -298,7 +285,7 @@ def test_sample_types_conditional(tmp_path):
         surrogate_model_kwargs=SEARCH_KWARGS_DEFAULTS["surrogate_model_kwargs"],
         log_dir=tmp_path,
         verbose=1,
-    ).search(20)
+    ).search(run, 20)
     assert len(results) == 20
 
 
@@ -319,7 +306,6 @@ def test_max_evals_strict(tmp_path):
     # Test Timeout with max_evals (this should be like an "max_evals or timeout" condition)
     search = CBO(
         problem,
-        evaluator,
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
@@ -328,7 +314,7 @@ def test_max_evals_strict(tmp_path):
     )
 
     max_evals = 100
-    results = search.search(max_evals, max_evals_strict=True)
+    results = search.search(evaluator, max_evals=max_evals, max_evals_strict=True)
     assert len(results) == max_evals
 
 
@@ -343,7 +329,6 @@ def test_initial_points(tmp_path):
 
     search = CBO(
         problem,
-        run,
         initial_points=[problem.default_configuration],
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
@@ -352,7 +337,7 @@ def test_initial_points(tmp_path):
         log_dir=tmp_path,
     )
 
-    result = search.search(10)
+    result = search.search(run, 10)
     assert len(result) == 10
     assert result.loc[0, "objective"] == problem.default_configuration["x"]
 
@@ -369,7 +354,6 @@ def test_many_initial_points(tmp_path):
     max_evals = 100
     search = CBO(
         problem,
-        run,
         initial_points=[{"x": v} for v in np.linspace(0.0, 10.0, max_evals)],
         acq_optimizer="sampling",
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
@@ -377,7 +361,7 @@ def test_many_initial_points(tmp_path):
         log_dir=tmp_path,
     )
 
-    result = search.search(max_evals, max_evals_strict=True)
+    result = search.search(run, max_evals=max_evals, max_evals_strict=True)
     assert len(result) == max_evals
 
 
@@ -397,7 +381,6 @@ def test_cbo_checkpoint_restart(tmp_path):
 
     search_kwargs = dict(
         problem=problem,
-        evaluator=run,
         initial_points=[problem.default_configuration],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
@@ -414,10 +397,10 @@ def test_cbo_checkpoint_restart(tmp_path):
         **search_kwargs,
     )
 
-    results_a = search_a.search(4)
+    results_a = search_a.search(run, 4)
     assert len(results_a) == 4
 
-    new_results_a = search_a.search(6)
+    new_results_a = search_a.search(run, 6)
     assert all(results_a["p:x_int"] == new_results_a.iloc[:4]["p:x_int"])
     assert len(new_results_a) == 10
 
@@ -430,7 +413,7 @@ def test_cbo_checkpoint_restart(tmp_path):
     )
 
     search_b.fit_surrogate(results_a)
-    new_results_b = search_b.search(6)
+    new_results_b = search_b.search(run, 6)
     assert len(new_results_b) == 6
 
     # test reloading of a checkpoint from a file
@@ -441,7 +424,7 @@ def test_cbo_checkpoint_restart(tmp_path):
         **search_kwargs,
     )
     search_c.fit_surrogate(os.path.join(get_log_dir("search_b"), "results.csv"))
-    results_c = search_c.search(20)
+    results_c = search_c.search(run, 20)
 
     assert len(results_c) == 20
 
@@ -465,7 +448,6 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
 
     search_kwargs = dict(
         problem=problem,
-        evaluator=run,
         initial_points=[problem.default_configuration],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
@@ -481,7 +463,7 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
         **search_kwargs,
     )
 
-    results_a = search_a.search(4)
+    results_a = search_a.search(run, 4)
     assert len(results_a) == 4
 
     # a column must be named "pareto_efficient"
@@ -490,7 +472,7 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
     # at lest one element must be set to True
     assert any(results_a["pareto_efficient"])
 
-    new_results_a = search_a.search(6)
+    new_results_a = search_a.search(run, 6)
     assert all(results_a["p:x_int"] == new_results_a.iloc[:4]["p:x_int"])
     assert len(new_results_a) == 10
 
@@ -504,7 +486,7 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
     )
 
     search_b.fit_surrogate(results_a)
-    new_results_b = search_b.search(6)
+    new_results_b = search_b.search(run, 6)
     assert len(new_results_b) == 6
 
     # test reloading of a checkpoint from a file
@@ -516,7 +498,7 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
         **search_kwargs,
     )
     search_c.fit_surrogate(os.path.join(get_log_dir("search_b"), "results.csv"))
-    results_c = search_c.search(20)
+    results_c = search_c.search(run, 20)
 
     assert len(results_c) == 20
 
@@ -539,7 +521,6 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
 
     search_kwargs = dict(
         problem=problem,
-        evaluator=run,
         initial_points=[problem.default_configuration],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
@@ -556,10 +537,10 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
         **search_kwargs,
     )
 
-    results_a = search_a.search(10)
+    results_a = search_a.search(run, 10)
     assert len(results_a) == 10
 
-    new_results_a = search_a.search(10)
+    new_results_a = search_a.search(run, 10)
     assert len(new_results_a) == 20
 
     # test reloading of a checkpoint directly as dataframe
@@ -571,7 +552,7 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
     )
 
     search_b.fit_surrogate(results_a)
-    new_results_b = search_b.search(20)
+    new_results_b = search_b.search(run, 20)
     assert len(new_results_b) == 20
 
     # test reloading of a checkpoint from a file
@@ -582,7 +563,7 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
         **search_kwargs,
     )
     search_c.fit_surrogate(os.path.join(tmp_path, "search_b", "results.csv"))
-    results_c = search_c.search(20)
+    results_c = search_c.search(run, 20)
 
     assert len(results_c) == 20
 
@@ -595,7 +576,7 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
         **search_kwargs,
     )
     search_d.fit_surrogate(results_c)
-    results_d = search_d.search(20)
+    results_d = search_d.search(run, 20)
 
     assert len(results_d) == 20
 
@@ -622,7 +603,6 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
 
     search_kwargs = dict(
         problem=problem,
-        evaluator=run,
         initial_points=[problem.default_configuration],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -635,10 +615,10 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
         **search_kwargs,
     )
 
-    results_a = search_a.search(10)
+    results_a = search_a.search(run, 10)
     assert len(results_a) == 10
 
-    new_results_a = search_a.search(10)
+    new_results_a = search_a.search(run, 10)
     assert len(new_results_a) == 20
 
     # test reloading of a checkpoint directly as dataframe
@@ -648,7 +628,7 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
     )
 
     search_b.fit_surrogate(results_a)
-    new_results_b = search_b.search(20)
+    new_results_b = search_b.search(run, 20)
     assert len(new_results_b) == 20
 
     # test reloading of a checkpoint from a file
@@ -657,7 +637,7 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
         **search_kwargs,
     )
     search_c.fit_surrogate(os.path.join(tmp_path, "search_b", "results.csv"))
-    results_c = search_c.search(20)
+    results_c = search_c.search(run, 20)
 
     assert len(results_c) == 20
 
@@ -675,13 +655,12 @@ def test_max_total_failures():
 
     search = CBO(
         problem,
-        run_only_failures,
         acq_optimizer_kwargs={"max_total_failures": 20},
         checkpoint_history_to_csv=False,
     )
 
     with pytest.raises(ExhaustedFailures):
-        results = search.search(21)
+        results = search.search(run_only_failures, 21)
 
     results = search.history.to_dataframe()
     assert len(results) == 20
@@ -699,7 +678,6 @@ def test_max_total_failures():
 
     search = CBO(
         problem,
-        run_some_success,
         acq_optimizer_kwargs={"max_total_failures": 10},
         checkpoint_history_to_csv=False,
         n_initial_points=10,
@@ -709,7 +687,7 @@ def test_max_total_failures():
     )
 
     with pytest.raises(ExhaustedFailures):
-        results = search.search(21)
+        results = search.search(run_some_success, 21)
 
     results = search.history.to_dataframe()
     assert len(results) == 15
@@ -724,13 +702,12 @@ def test_max_total_failures():
 
     search = CBO(
         problem,
-        run_multi_only_failures,
         acq_optimizer_kwargs={"max_total_failures": 20},
         checkpoint_history_to_csv=False,
     )
 
     with pytest.raises(ExhaustedFailures):
-        results = search.search(21)
+        results = search.search(run_multi_only_failures, 21)
 
     results = search.history.to_dataframe()
     assert len(results) == 20
@@ -749,7 +726,6 @@ def test_max_total_failures():
 
     search = CBO(
         problem,
-        run_multi_some_success,
         acq_optimizer_kwargs={"max_total_failures": 10},
         checkpoint_history_to_csv=False,
         n_initial_points=10,
@@ -759,7 +735,7 @@ def test_max_total_failures():
     )
 
     with pytest.raises(ExhaustedFailures):
-        results = search.search(21)
+        results = search.search(run_multi_some_success, 21)
 
     results = search.history.to_dataframe()
     assert len(results) == 15
@@ -779,7 +755,6 @@ def test_cbo_categorical_variable(tmp_path):
     # test pause-continue of the search
     search = CBO(
         problem,
-        SerialEvaluator(run, callbacks=[]),
         initial_points=[problem.default_configuration],
         acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
@@ -788,7 +763,7 @@ def test_cbo_categorical_variable(tmp_path):
         log_dir=tmp_path,
     )
 
-    results = search.search(25)
+    results = search.search(SerialEvaluator(run, callbacks=[]), 25)
     assert results.objective.max() >= 105
 
 
@@ -807,7 +782,6 @@ def test_cbo_multi_point_strategy(tmp_path):
         t1 = time.time()
         search = CBO(
             problem,
-            Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}),
             acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
             acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
             random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
@@ -816,7 +790,9 @@ def test_cbo_multi_point_strategy(tmp_path):
             log_dir=tmp_path,
         )
         max_evals = 25
-        results = search.search(max_evals)
+        results = search.search(
+            Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}), max_evals
+        )
         durations.append(time.time() - t1)
 
         assert len(results) == max_evals
@@ -828,7 +804,6 @@ def test_cbo_multi_point_strategy(tmp_path):
         t1 = time.time()
         search = CBO(
             problem,
-            Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}),
             acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
             acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
             acq_func="EI",
@@ -839,7 +814,9 @@ def test_cbo_multi_point_strategy(tmp_path):
             log_dir=tmp_path,
         )
         max_evals = 25
-        results = search.search(25)
+        results = search.search(
+            Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}), 25
+        )
         durations.append(time.time() - t1)
 
         assert len(results) == 25
@@ -860,18 +837,16 @@ def test_cbo_fit_generative_model(tmp_path):
 
     search = CBO(
         problem,
-        run,
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
         log_dir=os.path.join(tmp_path, "search_0"),
         verbose=0,
     )
-    search.search(max_evals=100)
+    search.search(run, max_evals=100)
 
     search = CBO(
         problem,
-        run,
         acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
         random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
         surrogate_model="DUMMY",
@@ -879,7 +854,7 @@ def test_cbo_fit_generative_model(tmp_path):
         verbose=0,
     )
     search.fit_generative_model(os.path.join(tmp_path, "search_0", "results.csv"))
-    results_1 = search.search(max_evals=10)
+    results_1 = search.search(run, max_evals=10)
     assert (results_1["p:x_cat"] == "c").sum() > 5
     assert (results_1["p:x_int"] >= 7).sum() > 5
     assert (results_1["p:x_float"] >= 7).sum() > 5

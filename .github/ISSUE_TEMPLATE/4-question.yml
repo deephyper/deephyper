@@ -1,0 +1,9 @@
+name: Question
+description: Ask a question about how to use the software
+body:
+  - type: markdown
+    attributes:
+      value: "Use the [Discussions forum](https://github.com/deephyper/deephyper/discussions) for questions."
+  - type: textarea
+    attributes:
+      label: "Submit questions in the Discussions forum."

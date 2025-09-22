@@ -5,7 +5,6 @@ import numpy as np
 
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 
-from deephyper.evaluator import HPOJob
 from deephyper.hpo._search import Search
 from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
@@ -32,9 +31,6 @@ class RegularizedEvolution(Search):
     Args:
         problem:
             object describing the search/optimization problem.
-
-        evaluator:
-            object describing the evaluation process.
 
         random_state (np.random.RandomState, optional):
             Initial random state of the search. Defaults to ``None``.
@@ -68,7 +64,6 @@ class RegularizedEvolution(Search):
     def __init__(
         self,
         problem,
-        evaluator,
         random_state=None,
         log_dir=".",
         verbose=0,
@@ -82,7 +77,6 @@ class RegularizedEvolution(Search):
     ):
         super().__init__(
             problem,
-            evaluator,
             random_state,
             log_dir,
             verbose,
@@ -174,11 +168,14 @@ class RegularizedEvolution(Search):
 
         return new_samples
 
-    def _tell(self, results: List[HPOJob]):
+    def _tell(
+        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+    ):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a dictionary containing the results of the evaluations.
+            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+                a dictionary containing the results of the evaluations.
         """
         for config, obj in results:
             # Do not add failures to population

@@ -1,8 +1,7 @@
-from typing import Dict, List, Literal, Optional
+from typing import Literal, Optional
 
 import numpy as np
 
-from deephyper.evaluator import HPOJob
 from deephyper.hpo._search import Search
 from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
@@ -27,9 +26,6 @@ class RandomSearch(Search):
     Args:
         problem:
             object describing the search/optimization problem.
-
-        evaluator:
-            object describing the evaluation process.
 
         random_state (np.random.RandomState, optional):
             Initial random state of the search. Defaults to ``None``.
@@ -57,7 +53,6 @@ class RandomSearch(Search):
     def __init__(
         self,
         problem,
-        evaluator,
         random_state=None,
         log_dir=".",
         verbose=0,
@@ -69,7 +64,6 @@ class RandomSearch(Search):
     ):
         super().__init__(
             problem,
-            evaluator,
             random_state,
             log_dir,
             verbose,
@@ -79,7 +73,7 @@ class RandomSearch(Search):
         )
         self._problem.space.seed(self._random_state.randint(0, np.iinfo(np.int32).max))
 
-    def _ask(self, n: int = 1) -> List[Dict]:
+    def _ask(self, n: int = 1) -> list[dict[str, Optional[str | int | float]]]:
         """Ask the search for new configurations to evaluate.
 
         Args:
@@ -114,11 +108,14 @@ class RandomSearch(Search):
             new_samples[i] = sample
         return new_samples
 
-    def _tell(self, results: List[HPOJob]):
+    def _tell(
+        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+    ):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a dictionary containing the results of the evaluations.
+            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+                a dictionary containing the results of the evaluations.
         """
         for config, obj in results:
             pass

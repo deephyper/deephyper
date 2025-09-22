@@ -7,48 +7,48 @@ First check the status of Python versions as it is important to know which becom
 
 Then,
 
-1. Go to the develop branch: `git checkout develop`.
-2. Run unittests located at `deephyper/tests/` with:
+1. Go to the develop branch: 
 
 .. code-block:: bash
+    
+    $ git checkout develop
 
-    $ pytest --run fast,slow,hps,nas,ray,mpi tests
-
-3. Run doctests located at `deephyper/docs/` with:
+2. Sync ``develop`` with ``master``:
 
 .. code-block:: bash
+    
+    $ git merge master
 
-    $ make doctest
-
-4. Check the `deephyper/__version__.py`, edit `VERSION` and `__version_suffix__`.
-5. Start the git flow release branch:
+3. Start the git flow release branch:
 
 .. code-block:: bash
 
     $ git flow release start <version>
 
-6. End the release:
+3. Check the `deephyper/__version__.py`, edit `__version__` and `__version_suffix__` and commit.
+
+4. End the release process:
 
 .. code-block:: bash
 
     $ EDITOR=vim git flow release finish <version>
 
-7. Push commits and tags: 
+5. Push develop and master branch then check if triggered github actions finished properly.
+
+.. code-block:: bash
+
+    $ git push origin master develop
+
+6. Push new tags: 
 
 .. code-block:: bash
 
     $ git push origin --tags
 
-8. Make sure to be on the correct branch/tag
+7. Remove old builds that may be in the project root directory with ``rm -rf dist/``.
 
-**For final release only**:
+8. Install the latest version of build and twine with ``uv pip install --upgrade build twine``.
 
-Follow the instructions in the `Python Packaging User Guide <https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives>`_ to build and publish the package to PyPI.
+9. Try to build the package wheel with ``python -m build``.
 
-9. Remove old builds that may be in the project root directory with ``rm -rf dist``.
-
-10. Install the latest version of build and twine with ``pip install --upgrade build twine``.
-
-11. Build the package with ``python -m build``.
-
-12. Upload the built package to PyPI using ``twine upload dist/*``.
+10. Upload the built package to PyPI using ``twine upload dist/*``.

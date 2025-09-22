@@ -165,7 +165,7 @@ Then we define a parallel search.
  As the ``run``-function is defined in the same module  we use the "loky" backend 
 that serialize by value.
 
-.. GENERATED FROM PYTHON SOURCE LINES 86-113
+.. GENERATED FROM PYTHON SOURCE LINES 86-112
 
 .. code-block:: Python
 
@@ -182,12 +182,11 @@ that serialize by value.
 
         search = CBO(
             problem,
-            evaluator,
             multi_point_strategy="qUCBd",
             random_state=42,
         )
 
-        results = search.search(timeout=timeout)
+        results = search.search(evaluator, timeout=timeout)
 
         return results
 
@@ -204,15 +203,15 @@ that serialize by value.
 
  .. code-block:: none
 
-    0it [00:00, ?it/s]    1it [00:00, 4928.68it/s, failures=0, objective=-21.5]    2it [00:00, 61.69it/s, failures=0, objective=-19.8]      3it [00:00, 91.44it/s, failures=0, objective=-19.8]    4it [00:00,  5.36it/s, failures=0, objective=-19.8]    4it [00:00,  5.36it/s, failures=0, objective=-19.8]    5it [00:01,  4.24it/s, failures=0, objective=-19.8]    5it [00:01,  4.24it/s, failures=0, objective=-19.8]    6it [00:02,  1.66it/s, failures=0, objective=-19.8]    6it [00:02,  1.66it/s, failures=0, objective=-19.8]    7it [00:02,  1.96it/s, failures=0, objective=-19.8]    7it [00:02,  1.96it/s, failures=0, objective=-15.4]    8it [00:02,  1.96it/s, failures=0, objective=-15.4]    9it [00:03,  2.85it/s, failures=0, objective=-15.4]    9it [00:03,  2.85it/s, failures=0, objective=-15.4]    10it [00:04,  1.56it/s, failures=0, objective=-15.4]    10it [00:04,  1.56it/s, failures=0, objective=-12.6]    11it [00:05,  1.84it/s, failures=0, objective=-12.6]    11it [00:05,  1.84it/s, failures=0, objective=-12.6]    12it [00:05,  2.03it/s, failures=0, objective=-12.6]    12it [00:05,  2.03it/s, failures=0, objective=-12.6]    13it [00:05,  2.34it/s, failures=0, objective=-12.6]    13it [00:05,  2.34it/s, failures=0, objective=-12.6]    14it [00:07,  1.31it/s, failures=0, objective=-12.6]    14it [00:07,  1.31it/s, failures=0, objective=-12.6]    15it [00:07,  1.62it/s, failures=0, objective=-12.6]    15it [00:07,  1.62it/s, failures=0, objective=-4.19]    16it [00:07,  1.86it/s, failures=0, objective=-4.19]    16it [00:07,  1.86it/s, failures=0, objective=-4.19]    17it [00:08,  2.21it/s, failures=0, objective=-4.19]    17it [00:08,  2.21it/s, failures=0, objective=-4.19]    18it [00:09,  1.58it/s, failures=0, objective=-4.19]    18it [00:09,  1.58it/s, failures=0, objective=-4.19]    19it [00:09,  1.68it/s, failures=0, objective=-4.19]    19it [00:09,  1.68it/s, failures=0, objective=-2.17]    20it [00:10,  1.85it/s, failures=0, objective=-2.17]    20it [00:10,  1.85it/s, failures=0, objective=-2.17]    21it [00:10,  2.18it/s, failures=0, objective=-2.17]    21it [00:10,  2.18it/s, failures=0, objective=-2.17]    22it [00:11,  1.96it/s, failures=0, objective=-2.17]    22it [00:11,  1.96it/s, failures=0, objective=-0.729]    23it [00:11,  2.29it/s, failures=0, objective=-0.729]    23it [00:11,  2.29it/s, failures=0, objective=-0.729]    24it [00:12,  1.75it/s, failures=0, objective=-0.729]    24it [00:12,  1.75it/s, failures=0, objective=-0.729]    25it [00:12,  1.69it/s, failures=0, objective=-0.729]    25it [00:12,  1.69it/s, failures=0, objective=-0.729]    26it [00:13,  1.75it/s, failures=0, objective=-0.729]    26it [00:13,  1.75it/s, failures=0, objective=-0.729]    27it [00:13,  2.08it/s, failures=0, objective=-0.729]    27it [00:13,  2.08it/s, failures=0, objective=-0.729]    28it [00:14,  1.62it/s, failures=0, objective=-0.729]    28it [00:14,  1.62it/s, failures=0, objective=-0.729]    29it [00:15,  1.48it/s, failures=0, objective=-0.729]    29it [00:15,  1.48it/s, failures=0, objective=-0.729]    30it [00:15,  1.80it/s, failures=0, objective=-0.729]    30it [00:15,  1.80it/s, failures=0, objective=-0.729]    31it [00:15,  2.16it/s, failures=0, objective=-0.729]    31it [00:15,  2.16it/s, failures=0, objective=-0.729]    32it [00:17,  1.30it/s, failures=0, objective=-0.729]    32it [00:17,  1.30it/s, failures=0, objective=-0.729]    33it [00:18,  1.07it/s, failures=0, objective=-0.729]    33it [00:18,  1.07it/s, failures=0, objective=-0.729]    34it [00:18,  1.07it/s, failures=0, objective=-0.729]    35it [00:18,  1.07it/s, failures=0, objective=-0.729]
+    0it [00:00, ?it/s]    1it [00:00, 7530.17it/s, failures=0, objective=-19.8]    2it [00:01,  2.00it/s, failures=0, objective=-19.8]      2it [00:01,  2.00it/s, failures=0, objective=-19.8]    3it [00:01,  2.00it/s, failures=0, objective=-19.8]    4it [00:01,  2.41it/s, failures=0, objective=-19.8]    4it [00:01,  2.41it/s, failures=0, objective=-19.8]    5it [00:01,  2.99it/s, failures=0, objective=-19.8]    5it [00:01,  2.99it/s, failures=0, objective=-19.8]    6it [00:02,  1.78it/s, failures=0, objective=-19.8]    6it [00:02,  1.78it/s, failures=0, objective=-19.8]    7it [00:03,  1.99it/s, failures=0, objective=-19.8]    7it [00:03,  1.99it/s, failures=0, objective=-15.4]    8it [00:03,  2.26it/s, failures=0, objective=-15.4]    8it [00:03,  2.26it/s, failures=0, objective=-15.4]    9it [00:04,  1.84it/s, failures=0, objective=-15.4]    9it [00:04,  1.84it/s, failures=0, objective=-15.4]    10it [00:05,  1.42it/s, failures=0, objective=-15.4]    10it [00:05,  1.42it/s, failures=0, objective=-15.4]    11it [00:05,  1.58it/s, failures=0, objective=-15.4]    11it [00:05,  1.58it/s, failures=0, objective=-15.4]    12it [00:06,  1.82it/s, failures=0, objective=-15.4]    12it [00:06,  1.82it/s, failures=0, objective=-14.2]    13it [00:07,  1.37it/s, failures=0, objective=-14.2]    13it [00:07,  1.37it/s, failures=0, objective=-14.2]    14it [00:07,  1.68it/s, failures=0, objective=-14.2]    14it [00:07,  1.68it/s, failures=0, objective=-14.2]    15it [00:08,  1.85it/s, failures=0, objective=-14.2]    15it [00:08,  1.85it/s, failures=0, objective=-14.2]    16it [00:08,  1.83it/s, failures=0, objective=-14.2]    16it [00:08,  1.83it/s, failures=0, objective=-10.8]    17it [00:09,  1.85it/s, failures=0, objective=-10.8]    17it [00:09,  1.85it/s, failures=0, objective=-10.8]    18it [00:09,  2.20it/s, failures=0, objective=-10.8]    18it [00:09,  2.20it/s, failures=0, objective=-10.8]    19it [00:10,  1.43it/s, failures=0, objective=-10.8]    19it [00:10,  1.43it/s, failures=0, objective=-10.8]    20it [00:10,  1.80it/s, failures=0, objective=-10.8]    20it [00:10,  1.80it/s, failures=0, objective=-6.95]    21it [00:12,  1.36it/s, failures=0, objective=-6.95]    21it [00:12,  1.36it/s, failures=0, objective=-5.75]    22it [00:12,  1.71it/s, failures=0, objective=-5.75]    22it [00:12,  1.71it/s, failures=0, objective=-5.75]    23it [00:12,  1.99it/s, failures=0, objective=-5.75]    23it [00:12,  1.99it/s, failures=0, objective=-5.75]    24it [00:13,  2.05it/s, failures=0, objective=-5.75]    24it [00:13,  2.05it/s, failures=0, objective=-5.75]    25it [00:14,  1.33it/s, failures=0, objective=-5.75]    25it [00:14,  1.33it/s, failures=0, objective=-5.75]    26it [00:15,  1.43it/s, failures=0, objective=-5.75]    26it [00:15,  1.43it/s, failures=0, objective=-5.75]    27it [00:15,  1.65it/s, failures=0, objective=-5.75]    27it [00:15,  1.65it/s, failures=0, objective=-3.36]    28it [00:15,  1.85it/s, failures=0, objective=-3.36]    28it [00:15,  1.85it/s, failures=0, objective=-3.36]    29it [00:17,  1.21it/s, failures=0, objective=-3.36]    29it [00:17,  1.21it/s, failures=0, objective=-3.36]    30it [00:17,  1.49it/s, failures=0, objective=-3.36]    30it [00:17,  1.49it/s, failures=0, objective=-3.36]    31it [00:17,  1.49it/s, failures=0, objective=-3.36]    32it [00:17,  1.49it/s, failures=0, objective=-3.36]    33it [00:18,  1.88it/s, failures=0, objective=-3.36]    33it [00:18,  1.88it/s, failures=0, objective=-3.36]    34it [00:20,  1.52it/s, failures=0, objective=-3.36]    34it [00:20,  1.52it/s, failures=0, objective=-2.07]    35it [00:20,  1.52it/s, failures=0, objective=-0.727]    36it [00:20,  1.52it/s, failures=0, objective=-0.727]
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-115
+.. GENERATED FROM PYTHON SOURCE LINES 113-114
 
 Finally, we plot the results from the collected DataFrame.
 
-.. GENERATED FROM PYTHON SOURCE LINES 115-138
+.. GENERATED FROM PYTHON SOURCE LINES 114-137
 
 .. dropdown:: Code (Plot search trajectory an workers utilization)
 
@@ -255,7 +254,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 26.823 seconds)
+   **Total running time of the script:** (0 minutes 23.347 seconds)
 
 
 .. _sphx_glr_download_examples_examples_parallelism_plot_profile_worker_utilization.py:

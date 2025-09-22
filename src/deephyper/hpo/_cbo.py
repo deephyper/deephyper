@@ -14,7 +14,6 @@ from sklearn.base import is_regressor
 
 import deephyper.skopt
 from deephyper.analysis.hpo import filter_failed_objectives, get_mask_of_rows_without_failures
-from deephyper.evaluator import HPOJob
 from deephyper.hpo._problem import convert_to_skopt_space
 from deephyper.hpo._search import Search
 from deephyper.hpo._solution import SolutionSelection
@@ -161,13 +160,11 @@ class CBO(Search):
 
     Example Usage:
 
-        >>> search = CBO(problem, evaluator)
-        >>> results = search.search(max_evals=100, timeout=120)
+        >>> search = CBO(problem)
+        >>> results = search.search(evaluator, max_evals=100, timeout=120)
 
     Args:
         problem (HpProblem): Hyperparameter problem describing the search space to explore.
-
-        evaluator (Evaluator): An ``Evaluator`` instance responsible of distributing the tasks.
 
         random_state (int, optional): Random seed. Defaults to ``None``.
 
@@ -314,7 +311,6 @@ class CBO(Search):
     def __init__(
         self,
         problem,
-        evaluator,
         random_state: Optional[int] = None,
         log_dir: str = ".",
         verbose: int = 0,
@@ -340,7 +336,6 @@ class CBO(Search):
     ):
         super().__init__(
             problem,
-            evaluator,
             random_state,
             log_dir,
             verbose,
@@ -584,27 +579,34 @@ class CBO(Search):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
+        if self._opt is None:
+            self._setup_optimizer()
+
         new_X = self._opt.ask(n_points=n, strategy=self._multi_point_strategy)
         new_samples = [self._to_dict(x) for x in new_X]
         self._num_asked += n
         return new_samples
 
-    def _tell(self, results: List[HPOJob]):
+    def _tell(
+        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+    ):
         """Tell the search the results of the evaluations.
 
         Args:
-            results (List[HPOJob]): a dictionary containing the results of the evaluations.
+            results (list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+                a dictionary containing the results of the evaluations.
         """
+        if self._opt is None:
+            self._setup_optimizer()
+
         # Transform configurations to list to fit optimizer
         logger.info("Transforming received configurations to list...")
         t1 = time.time()
 
         opt_X = []  # input configuration
         opt_y = []  # objective value
-        for job_i in results:
-            cfg, obj = job_i
-            # TODO: check if order of values is maintained
-            x = list(cfg.values())
+        for cfg, obj in results:
+            x = [cfg[k] for k in self._problem.hyperparameter_names]
 
             if isinstance(obj, numbers.Number) or all(
                 isinstance(obj_i, numbers.Number) for obj_i in obj
@@ -632,9 +634,6 @@ class CBO(Search):
             logger.info(f"Fitting took {time.time() - t1:.4f} sec.")
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
-        if self._opt is None:
-            self._setup_optimizer()
-
         super()._search(max_evals, timeout, max_evals_strict)
 
     def _get_surrogate_model(
@@ -704,7 +703,7 @@ class CBO(Search):
 
         elif name == "GBRT":
             default_surrogate_model_kwargs = dict(
-                n_estimtaors=10,
+                n_estimators=10,
                 random_state=random_state,
             )
         elif name == "HGBRT":
@@ -804,8 +803,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
         """
         if type(df) is not str and not isinstance(df, pd.DataFrame):
             raise ValueError("The argument 'df' should be a path to a CSV file or a DataFrame!")
@@ -853,8 +853,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
 
         Args:
             df (str|DataFrame): a dataframe or path to CSV from a previous search.
@@ -927,8 +928,9 @@ class CBO(Search):
 
         Example Usage:
 
-        >>> search = CBO(problem, evaluator)
+        >>> search = CBO(problem)
         >>> search.fit_surrogate("results.csv")
+        >>> search.search(evaluator, max_evals=100)
 
         Args:
             df (str|DataFrame): a checkpoint from a previous search.

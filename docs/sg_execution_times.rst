@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**39:26.877** total execution time for 14 files **from all galleries**:
+**00:37.458** total execution time for 14 files **from all galleries**:
 
 .. container::
 
@@ -32,11 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification_with_stopper.py` (``../examples/examples_hpo/plot_hpo_text_classification_with_stopper.py``)
-     - 39:26.877
-     - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
-     - 00:00.000
+     - 00:37.458
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_experimental_design.py` (``../examples/examples_bbo/plot_experimental_design.py``)
      - 00:00.000
@@ -54,6 +51,9 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification.py` (``../examples/examples_hpo/plot_hpo_text_classification.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_examples_hpo_plot_hpo_text_classification_with_stopper.py` (``../examples/examples_hpo/plot_hpo_text_classification_with_stopper.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_parallelism_plot_from_serial_to_parallel_hpo.py` (``../examples/examples_parallelism/plot_from_serial_to_parallel_hpo.py``)

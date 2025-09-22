@@ -36,14 +36,13 @@ def test_successive_halving_stopper(tmp_path):
     stopper = SuccessiveHalvingStopper(max_steps=50, reduction_factor=3)
     search = CBO(
         problem,
-        run,
         surrogate_model="DUMMY",
         stopper=stopper,
         random_state=42,
         log_dir=tmp_path,
     )
 
-    results = search.search(max_evals=30)
+    results = search.search(run, max_evals=30)
 
     assert "m:budget" in results.columns
     assert "m:stopped" in results.columns
@@ -109,14 +108,13 @@ def test_successive_halving_stopper_with_ray(tmp_path):
     stopper = SuccessiveHalvingStopper(max_steps=50, reduction_factor=3)
     search = CBO(
         problem,
-        evaluator,
         surrogate_model="RF",
         stopper=stopper,
         random_state=42,
         log_dir=tmp_path,
     )
 
-    results = search.search(timeout=5)
+    results = search.search(evaluator, timeout=5)
 
     print(results)
 
@@ -158,7 +156,6 @@ def test_successive_halving_stopper_with_failing_evaluations(tmp_path):
     stopper = SuccessiveHalvingStopper(max_steps=50, reduction_factor=3)
     search = CBO(
         problem,
-        run_with_failures,
         surrogate_model="ET",
         stopper=stopper,
         random_state=42,
@@ -166,7 +163,7 @@ def test_successive_halving_stopper_with_failing_evaluations(tmp_path):
         acq_optimizer_kwargs=dict(filter_failures="mean"),
     )
 
-    results = search.search(max_evals=50)
+    results = search.search(run_with_failures, max_evals=50)
 
     assert "m:budget" in results.columns
     assert "m:stopped" in results.columns

@@ -54,7 +54,6 @@ class GAPymooAcqOptimizer:
             raise ValueError("The initial x_init and y_init values should have the same size.")
         self.x_init = np.array(x_init)
         self.y_init = np.array(y_init).reshape(-1)
-        assert len(y_init) == pop_size
         if len(y_init) != pop_size:
             raise ValueError("The initial x_init and y_init should have a size equal to pop_size.")
         

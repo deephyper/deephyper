@@ -24,8 +24,8 @@ def test_cbo_solution_selection():
     max_evals = 25
 
     # test 1: with default value for "solution_selection"
-    search = CBO(problem, run, checkpoint_history_to_csv=False, **CBO_DEFAULT_KWARGS)
-    results = search.search(max_evals)
+    search = CBO(problem, checkpoint_history_to_csv=False, **CBO_DEFAULT_KWARGS)
+    results = search.search(run, max_evals)
 
     assert "sol.p:x" not in results.columns
     assert "sol.objective" not in results.columns
@@ -33,12 +33,11 @@ def test_cbo_solution_selection():
     # test 2: with default value solution_selection="argmax_obs"
     search = CBO(
         problem,
-        run,
         checkpoint_history_to_csv=False,
         solution_selection="argmax_obs",
         **CBO_DEFAULT_KWARGS,
     )
-    results = search.search(max_evals)
+    results = search.search(run, max_evals)
 
     assert "sol.p:x" in results.columns
     assert "sol.objective" in results.columns
@@ -50,7 +49,6 @@ def test_cbo_solution_selection():
     with pytest.raises(ValueError):
         search = CBO(
             problem,
-            run,
             checkpoint_history_to_csv=False,
             solution_selection="helloworld",
             **CBO_DEFAULT_KWARGS,
@@ -59,12 +57,11 @@ def test_cbo_solution_selection():
     # test 4: solution_selection="argmax_est"
     search = CBO(
         problem,
-        run,
         checkpoint_history_to_csv=False,
         solution_selection="argmax_est",
         **CBO_DEFAULT_KWARGS,
     )
-    results = search.search(max_evals)
+    results = search.search(run, max_evals)
 
     assert "sol.p:x" in results.columns
     assert "sol.objective" in results.columns
@@ -73,12 +70,11 @@ def test_cbo_solution_selection():
     # test 5: with instance of ArgMaxObsSelection
     search = CBO(
         problem,
-        run,
         checkpoint_history_to_csv=False,
         solution_selection=ArgMaxObsSelection(),
         **CBO_DEFAULT_KWARGS,
     )
-    results = search.search(max_evals)
+    results = search.search(run, max_evals)
 
     assert "sol.p:x" in results.columns
     assert "sol.objective" in results.columns
@@ -89,12 +85,11 @@ def test_cbo_solution_selection():
     # test 6: with instance of ArgMaxEstSelection
     search = CBO(
         problem,
-        run,
         checkpoint_history_to_csv=False,
         solution_selection=ArgMaxEstSelection(problem, 42, "RF", {"n_estimators": 25}),
         **CBO_DEFAULT_KWARGS,
     )
-    results = search.search(max_evals)
+    results = search.search(run, max_evals)
     assert "sol.p:x" in results.columns
     assert "sol.objective" in results.columns
     assert np.any(results["sol.p:x"] != results["sol.objective"])

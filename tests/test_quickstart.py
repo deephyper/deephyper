@@ -32,9 +32,9 @@ def test_quickstart(tmp_path):
     )
 
     # define your search and execute it
-    search = CBO(problem, evaluator, log_dir=tmp_path, random_state=42)
+    search = CBO(problem, log_dir=tmp_path, random_state=42)
 
-    results = search.search(max_evals=100)
+    results = search.search(evaluator, max_evals=100)
     print(results)
 
     assert abs(results.objective.max()) > 1000

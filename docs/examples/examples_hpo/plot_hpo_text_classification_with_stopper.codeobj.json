@@ -482,7 +482,7 @@
    "name": "function"
   }
  ],
- "evaluator_1": [
+ "evaluator": [
   {
    "is_class": false,
    "is_explicit": false,
@@ -503,6 +503,15 @@
    "module": "deephyper",
    "module_short": "deephyper",
    "name": "RayEvaluator"
+  }
+ ],
+ "evaluator.num_workers": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
   }
  ],
  "get_evaluator": [
@@ -537,6 +546,15 @@
    "module": "torchtext.data.utils",
    "module_short": "torchtext.data",
    "name": "get_tokenizer"
+  }
+ ],
+ "i": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
   }
  ],
  "i_max": [
@@ -765,6 +783,22 @@
    "module": "torch.nn",
    "module_short": "torch.nn",
    "name": "Module"
+  }
+ ],
+ "np.arange": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "arange"
   }
  ],
  "num_class": [
@@ -2133,6 +2167,24 @@
    "module": "builtins",
    "module_short": "builtins",
    "name": "int"
+  }
+ ],
+ "x": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "y": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
   }
  ],
  "yield_tokens": [
