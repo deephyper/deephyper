@@ -615,6 +615,10 @@ class Search(abc.ABC):
                 n_ask = len(new_results)
                 logger.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
 
+            # Tell comes before history.extend
+            # because the optimizer state needs to be updated to selection solutions
+            self.tell([(config, obj) for config, obj in new_results])
+
             self.history.extend(new_results)
 
             logger.info("Dumping evaluations...")
@@ -622,8 +626,6 @@ class Search(abc.ABC):
             self.dump_jobs_done_to_csv()
             logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
-            new_results = [(config, obj) for config, obj in new_results]
-            self.tell(new_results)
 
             # Test if search should be stopped due to timeout
             time_left = self._evaluator.time_left
@@ -669,7 +671,14 @@ class Search(abc.ABC):
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
 
-    def tell(self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+    def tell(
+        self,
+        results: list[
+            tuple[
+                dict[str, Optional[str | int | float]], str | int | float | tuple[str | int | float]
+            ]
+        ],
+    ):
         """Tell the search the results of the evaluations.
 
         Args:
@@ -683,7 +692,12 @@ class Search(abc.ABC):
 
     @abc.abstractmethod
     def _tell(
-        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+        self,
+        results: list[
+            tuple[
+                dict[str, Optional[str | int | float]], str | int | float | tuple[str | int | float]
+            ]
+        ],
     ):
         """Tell the search the results of the evaluations.
 
