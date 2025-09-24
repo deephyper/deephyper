@@ -583,6 +583,7 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
 
 def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
     from deephyper.hpo import CBO, HpProblem
+    from deephyper.evaluator import Evaluator
 
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
@@ -640,6 +641,13 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
     results_c = search_c.search(run, 20)
 
     assert len(results_c) == 20
+
+    # test with cl mutlipoint
+    eval = Evaluator.create(run, method="thread", method_kwargs={"num_workers": 2})
+    results_d = search_c.search(eval, 20)
+
+    # this search also includes the 20 iterations of previous .search(...)
+    assert len(results_d) == 40
 
 
 def test_max_total_failures():
