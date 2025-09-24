@@ -738,7 +738,8 @@ class Optimizer(object):
             ti_available = "ps" in self.acq_func and len(opt.yi) > 0
             ti = [t for (_, t) in opt.yi] if ti_available else None
 
-            opt_yi = self._filter_failures(opt.yi)
+            # Estimate lie values based on success only
+            opt_yi = [v for v in opt.yi if v != OBJECTIVE_VALUE_FAILURE]
 
             if strategy == "cl_min":
                 y_lie = np.min(opt_yi, axis=0) if opt_yi else 0.0  # CL-min lie
