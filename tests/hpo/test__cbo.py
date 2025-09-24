@@ -645,8 +645,8 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
     # test with cl mutlipoint
     eval = Evaluator.create(run, method="thread", method_kwargs={"num_workers": 2})
     results_d = search_c.search(eval, 20)
-    
-    # this search also includes the 20 iterations of previous .search(...) 
+
+    # this search also includes the 20 iterations of previous .search(...)
     assert len(results_d) == 40
 
 
