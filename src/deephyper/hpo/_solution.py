@@ -5,7 +5,7 @@ from typing import Any, Dict, Literal, Optional, Sequence, Tuple, Union
 import numpy as np
 import scipy.stats as ss
 from pydantic import BaseModel, ConfigDict, Field
-from sklearn.base import BaseEstimator, is_regressor
+from sklearn.base import BaseEstimator
 from sklearn.model_selection import (
     GridSearchCV,
     KFold,
@@ -260,24 +260,25 @@ class ArgMaxEstSelection(SolutionSelection):
         has_success = True
 
         if self.filter_failures in ["mean", "max"]:
-            yi_no_failure = [v for v in yi if v != "F"]
+            yi_no_failure = [v for v in yi if not isinstance(v, str)]
 
-            # When all configurations are failures
-            if len(yi_no_failure) == 0:
-                yi_failed_value = 0.0
-                has_success = False
-                logger.warning("All evaluations failed, using default value of 0")
-            else:
-                if self.filter_failures == "mean":
-                    yi_failed_value = float(np.mean(yi_no_failure))
-                else:  # max
-                    yi_failed_value = float(np.max(yi_no_failure))
+            if len(yi) != len(yi_no_failure):
+                # When all configurations are failures
+                if len(yi_no_failure) == 0:
+                    yi_failed_value = 0.0
+                    has_success = False
+                    logger.warning("All evaluations failed, using default value of 0")
+                else:
+                    if self.filter_failures == "mean":
+                        yi_failed_value = float(np.mean(yi_no_failure))
+                    else:  # max
+                        yi_failed_value = float(np.max(yi_no_failure))
 
-                logger.debug(
-                    f"Replacing {len(yi) - len(yi_no_failure)} failures with {yi_failed_value}"
-                )
+                    logger.debug(
+                        f"Replacing {len(yi) - len(yi_no_failure)} failures with {yi_failed_value}"
+                    )
 
-            yi = [v if v != "F" else yi_failed_value for v in yi]
+                yi = [v if not isinstance(v, str) else yi_failed_value for v in yi]
 
         return has_success, yi
 

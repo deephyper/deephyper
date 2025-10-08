@@ -95,5 +95,31 @@ def test_cbo_solution_selection():
     assert np.any(results["sol.p:x"] != results["sol.objective"])
 
 
+def run_with_failures(job):
+    if job.parameters["x"] < 0.5:
+        return "F_failed"
+
+    return job.parameters["x"]
+
+
+def test_cbo_solution_selection_with_failures():
+    problem = HpProblem()
+    problem.add_hyperparameter((0.0, 1.0), "x")
+
+    max_evals = 25
+
+    # test 1: with default value for "solution_selection"
+    search = CBO(
+        problem,
+        checkpoint_history_to_csv=False,
+        solution_selection="argmax_est",
+        **CBO_DEFAULT_KWARGS,
+    )
+    results = search.search(run_with_failures, max_evals)
+
+    assert "sol.p:x" in results.columns
+    assert "sol.objective" in results.columns
+
+
 if __name__ == "__main__":
     test_cbo_solution_selection()

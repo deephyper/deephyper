@@ -92,6 +92,10 @@ class SearchHistory:
             self.solution_selection.num_objective = self.num_objective
 
     def extend(self, jobs: List[HPOJob]):
+        # Do nothing if input list is empty
+        if len(jobs) == 0:
+            return
+
         if self.num_objective is None:
             self.set_num_objective(jobs[0])
         self.jobs.extend(jobs)
@@ -150,9 +154,10 @@ class SearchHistory:
                     sol = dict(self.solution_history[job.id])
                     parameters = sol.pop("parameters")
                     objective = sol.pop("objective")
-                    result.update({f"sol.p:{k}": v for k, v in parameters.items()})
-                    result.update({"sol.objective": objective})
-                    result.update({f"sol.{k}": v for k, v in sol.items() if v is not None})
+                    if parameters is not None and objective is not None:
+                        result.update({f"sol.p:{k}": v for k, v in parameters.items()})
+                        result.update({"sol.objective": objective})
+                        result.update({f"sol.{k}": v for k, v in sol.items() if v is not None})
 
             results.append(result)
 
@@ -625,7 +630,6 @@ class Search(abc.ABC):
             t1 = time.time()
             self.dump_jobs_done_to_csv()
             logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
-
 
             # Test if search should be stopped due to timeout
             time_left = self._evaluator.time_left
