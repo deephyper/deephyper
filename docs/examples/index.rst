@@ -183,7 +183,7 @@ Hyperparameter optimization
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Hyperparameter Search for Text Classification with the Stopper Class</div>
+      <div class="sphx-glr-thumbnail-title">Hyperparameter Optimization for Text Classification with Early Discarding</div>
     </div>
 
 
