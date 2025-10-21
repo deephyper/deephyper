@@ -1,15 +1,15 @@
 import abc
 import logging
-from typing import Any, Dict, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Literal, Optional, Sequence, Tuple
 
 import numpy as np
 import scipy.stats as ss
+from numpy import ndarray
 from pydantic import BaseModel, ConfigDict, Field
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import (
     GridSearchCV,
     KFold,
-    ParameterGrid,
 )
 from sklearn.utils import check_random_state
 
@@ -117,6 +117,12 @@ def gaussian_ll_score(model, X, y, eps=1e-6):
     return gaussian_ll(y, y_mean, y_var)
 
 
+SCORING_FUNC_GRID_SEARCH = {
+    "gaussian_nll": gaussian_ll_score,
+    "r2": "r2",
+}
+
+
 class ArgMaxEstSelection(SolutionSelection):
     """Selects solution using a surrogate model and acquisition optimizer.
 
@@ -127,42 +133,83 @@ class ArgMaxEstSelection(SolutionSelection):
     def __init__(
         self,
         problem: HpProblem,
-        random_state: Optional[int] = None,
-        model: Union[str, BaseEstimator] = "ET",
-        model_kwargs: Optional[Dict[str, Any]] = None,
-        optimizer: Literal["sampling", "ga"] = "sampling",
+        random_state: int | None = None,
+        model: str | BaseEstimator = "RF",
+        model_kwargs: dict[str, Any] | None = None,
+        optimizer: Literal["sampling", "ga"] = "ga",
         filter_failures: Literal["mean", "max"] = "mean",
+        model_grid_search: bool = True,
+        model_grid_search_period: int = 100,
+        model_grid_search_score: Literal["r2", "gaussian_nll"] | None = None,
+        noisy_objective: bool = False,
     ):
         """Initialize the estimator-based selection strategy.
 
         Args:
-            problem: The hyperparameter optimization problem
-            random_state: Random state for reproducibility
-            model: Surrogate model name or instance
-            model_kwargs: Additional arguments for model initialization
-            optimizer: Optimization strategy for acquisition function
-            filter_failures: Strategy for handling failed evaluations
+            problem (HpProblem): The hyperparameter optimization problem.
+
+            random_state (int | None): Random state for reproducibility. Defaults to ``None``.
+
+            model: Surrogate model name or instance.
+
+            model_kwargs (dict): Additional arguments for model initialization.
+
+            optimizer: Optimization strategy for the solution's acquisition function. Defaults to
+                ``"ga"`` for Genetic Algorithm optimization.
+
+            filter_failures: Strategy for handling failed evaluations (i.e., imputation strategy of
+                missing values). Defaults to ``"mean"``.
+
+            model_grid_search (bool): Activate or deactivate grid-search for the model. Defaults to
+                ``True``.
+
+            model_grid_search_period (int): The solution's model grid search will be triggered every
+                ``model_grid_search_period`` new samples. Defaults to ``100``.
+
+            model_grid_search_score (str): The score to use for model selection in grid search.
+                Defaults to ``None``.
+
+            noisy_objective (bool): Indicative if the objective observed is noisy or not. Defaults
+                to ``False``.
         """
         super().__init__()
         self.problem = problem
         self.rng = check_random_state(random_state)
         self.optimizer = optimizer
         self.filter_failures = filter_failures
+        self.model_grid_search = model_grid_search
+        self.model_grid_search_period = model_grid_search_period
+        if model_grid_search_score is None:
+            self.model_grid_search_score = "gaussian_nll" if noisy_objective else "r2"
+        else:
+            self.model_grid_search_score = model_grid_search_score
+        self.noisy_objective = noisy_objective
 
         self.parameters_list = []
         self.objective_list = []
 
-        # Set default model parameters for Extra Trees
-        if model == "ET" and model_kwargs is None:
-            model_kwargs = {
-                # "splitter": "random",
-                "bootstrap": True,
-                "min_samples_leaf": 3,
-                "min_samples_split": 2,
-                "n_estimators": 100,
-                "n_jobs": 1,
-            }
-
+        # Set default model parameters for the model
+        if model == "RF" and model_kwargs is None:
+            if self.noisy_objective:
+                model_kwargs = {
+                    "splitter": "random",
+                    "bootstrap": True,
+                    "min_samples_leaf": 8,
+                    "min_samples_split": 4,
+                    "n_estimators": 100,
+                    "n_jobs": -1,
+                    "max_features": 1.0 if len(self.problem) < 10 else "sqrt",
+                }
+            else:
+                model_kwargs = {
+                    "splitter": "best",
+                    "bootstrap": False,
+                    "min_samples_leaf": 1,
+                    "min_samples_split": 2,
+                    "n_estimators": 100,
+                    "n_jobs": -1,
+                    "max_features": 1.0 if len(self.problem) < 10 else "sqrt",
+                }
         elif model_kwargs is None:
             model_kwargs = {}
 
@@ -183,55 +230,19 @@ class ArgMaxEstSelection(SolutionSelection):
         self.model = model
         self.count_tune_model = 0
 
-    def _fit_and_tune_model(self, X, y):
-        param_grid = []
-        # p_grid = {
-        #     "n_estimators": [100],
-        #     "bootstrap": [True],
-        #     "min_samples_leaf": [1, 2, 4, 8],
-        #     "min_samples_split": [2, 4, 8],
-        #     "max_samples": [0.8, 0.9, 1.0],  # Only used if bootstrap=True
-        #     "max_depth": [None, 10, 20],
-        #     "max_features": ["sqrt", "log2", 0.5],
-        # }
-
-        # p_grid = {
-        #     "bootstrap": [True],
-        #     "min_samples_leaf": [1, 2, 4, 8, 12],
-        #     "min_samples_split": [2, 4, 8, 12],
-        #     "max_samples": [0.8, 0.9, 1.0],
-        # }
-        # param_grid += list(ParameterGrid(p_grid))
-        # p_grid = {
-        #     "bootstrap": [False],
-        #     "min_samples_leaf": [1, 2, 4, 8, 12],
-        #     "min_samples_split": [2, 4, 8, 12],
-        # }
+    def get_parameter_grid(self) -> dict:
+        # Default grid for ExtraTrees
         p_grid = {
+            "splitter": ["random", "best"],
             "n_estimators": [100],
-            "bootstrap": [False],
-            "min_samples_leaf": [1, 2, 4, 8, 16],
-            "min_samples_split": [2, 4, 8, 16, 32, 64],
-            "max_depth": [None, 10, 20],
-            "max_features": ["sqrt"],
+            "bootstrap": [False, True],
+            "min_samples_leaf": [1],
+            "min_samples_split": [2, 4, 8, 16, 32],
+            "max_depth": [None, 20],
         }
-        # p_grid = {
-        #     "learning_rate": [0.05],
-        #     "max_depth": [2, 5],
-        #     "min_samples_leaf": [1, 9],
-        # }
-        param_grid += list(ParameterGrid(p_grid))
-        clf = GridSearchCV(
-            estimator=self.model,
-            param_grid=p_grid,
-            cv=KFold(n_splits=4, shuffle=True),
-            refit=True,
-            # scoring="r2",
-            scoring=gaussian_ll_score,
-        )
-        clf.fit(X, y)
-        self.model = clf.best_estimator_
+        return p_grid
 
+    def evaluate(self, X, y):
         try:
             y_mean, y_std, _ = self.model.predict(X, return_std=True, disentangled_std=True)
         except TypeError:
@@ -239,14 +250,32 @@ class ArgMaxEstSelection(SolutionSelection):
 
         r2_model = 1 - np.mean((y - y_mean) ** 2) / np.var(y)
         r2_ub = 1 - np.mean(y_std**2) / np.var(y)
-        print("Final best model parameters:", clf.best_params_)
-        print(f"Model     LL : {clf.best_score_:.3f}")
-        print(f"Model     R2 : {r2_model:.3f}")
-        print(f"Up. bound R2 : {r2_ub:.3f}")
 
         # The following evaluates the quality of the AL STD estimates
         p = ss.pearsonr(y_std**2, (y - y_mean) ** 2)
-        print("Corr: ", p)
+        return {
+            "r2": r2_model,
+            "r2_upper_bound": r2_ub,
+            "y_std_corr": {"statistic": p.statistic, "pvalue": p.pvalue},
+        }
+
+    def fit_and_tune_model(self, X, y):
+        if self.model_grid_search:
+            clf = GridSearchCV(
+                estimator=self.model,
+                param_grid=self.get_parameter_grid(),
+                cv=KFold(n_splits=4, shuffle=True),
+                refit=True,
+                scoring=SCORING_FUNC_GRID_SEARCH[self.model_grid_search_score],
+            )
+            clf.fit(X, y)
+            self.model = clf.best_estimator_
+            print("Tuned model parameters:", clf.best_params_)
+        else:
+            self.model.fit(X, y)
+
+        scores = self.evaluate(X, y)
+        print(f"Tuned model scores: {scores}")
 
     def _filter_failures(self, yi: Sequence[Any]) -> Tuple[bool, Sequence[float]]:
         """Filter or replace failed objectives.
@@ -287,17 +316,24 @@ class ArgMaxEstSelection(SolutionSelection):
         if not jobs:
             return
 
-        # Extract new data
-        new_parameters = [list(job.args.values()) for job in jobs]
-        self.objective_list.extend(job.objective for job in jobs)
+        def params_to_list(x: dict):
+            return [x[k] for k in self.problem.hyperparameter_names]
 
+        # Extract new data
+        parameters_list = [params_to_list(job.args) for job in jobs]
+        objective_list = [job.objective for job in jobs]
+        self._update_from_lists(parameters_list, objective_list)
+
+    def _update_from_lists(self, parameters_list, objective_list):
         # Transform parameters to model space
         try:
-            transformed_parameters = self.skopt_space.transform(new_parameters)
+            transformed_parameters = self.skopt_space.transform(parameters_list)
             self.parameters_list.extend(transformed_parameters)
         except Exception as e:
             logger.error(f"Failed to transform parameters: {e}")
             return
+        else:
+            self.objective_list.extend(objective_list)
 
         # Handle failures
         has_success, objective_list = self._filter_failures(self.objective_list)
@@ -308,9 +344,9 @@ class ArgMaxEstSelection(SolutionSelection):
         X, y = self.parameters_list, objective_list
 
         # Fit surrogate model
-        if len(objective_list) >= 100 + self.count_tune_model:
+        if len(objective_list) >= self.model_grid_search_period + self.count_tune_model:
             print("Tuning selection model...")
-            self._fit_and_tune_model(X, y)
+            self.fit_and_tune_model(X, y)
             self.count_tune_model = len(objective_list)
         else:
             try:
@@ -350,17 +386,25 @@ class ArgMaxEstSelection(SolutionSelection):
             logger.error(f"Optimization failed: {e}")
             raise e
 
-    def acq_func(self, y_mean, y_std=None, y_std_al=None, y_std_ep=None):
+    def acq_func(
+        self,
+        y_mean: ndarray,
+        y_std: ndarray | None = None,
+        y_std_al: ndarray | None = None,
+        y_std_ep: ndarray | None = None,
+    ):
+        return y_mean
         # MAXIMIZED
-        if y_std is None and y_std_al is None and y_std_ep is None:
-            return y_mean
+        # if y_std is None and y_std_al is None and y_std_ep is None:
+        #     return y_mean
 
-        assert y_std is not None or (y_std_al is not None and y_std_ep is not None)
+        # assert y_std is not None or (y_std_al is not None and y_std_ep is not None)
 
-        if y_std is not None:
-            return y_mean - 1.96 * y_std
+        # if y_std is not None:
+        #     return y_mean - 1.96 * y_std
 
-        return y_mean - 1.96 * y_std_ep
+        # y_stderr = y_std_ep / self.model.n_estimators**0.5
+        # return y_mean - 1.96 * y_stderr  # 95% CI
 
     def optimize_sampling(self, n_samples: int = 10_000) -> Tuple[Any, float, float, float]:
         """Optimize using random sampling.
@@ -389,9 +433,6 @@ class ArgMaxEstSelection(SolutionSelection):
             )
         scores = self.acq_func(y_pred, y_std, y_std_al, y_std_ep)
         idx = np.argmax(scores)
-
-        # TODO: Experimental - select candidates with lower epistemic uncertainty
-        # idx = np.argmax(y_pred - 1.96 * y_std_ep)
 
         best_parameters = self.skopt_space.inverse_transform([transformed[idx]])[0]
 
