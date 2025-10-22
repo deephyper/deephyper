@@ -914,13 +914,62 @@ def test_convert_to_skopt_space():
     assert np.any(samples_0 != samples_3)
 
 
+def test_checkpoint_restart_v2(tmp_path):
+    import shutil
+    from deephyper.hpo import CBO, HpProblem
+
+    problem = HpProblem()
+    problem.add_hyperparameter((0, 10), "x_int")
+    problem.add_hyperparameter((0.0, 10.0), "x_float")
+    problem.add_hyperparameter(["a", "b", "c"], "x_cat")
+
+    def run(job):
+        objective = (
+            job.parameters["x_int"] + job.parameters["x_float"] + ord(job.parameters["x_cat"])
+        )
+        return objective
+
+    search_kwargs = dict(
+        problem=problem,
+        initial_points=[problem.default_configuration],
+        random_state=SEARCH_KWARGS_DEFAULTS["random_state"],
+        acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
+        acq_optimizer_kwargs=SEARCH_KWARGS_DEFAULTS["acq_optimizer_kwargs"],
+    )
+
+    def get_log_dir(name):
+        return os.path.join(tmp_path, name)
+
+    if os.path.exists(get_log_dir("log_dir")):
+        shutil.rmtree(get_log_dir("log_dir"))
+
+    def run_search():
+        search = CBO(
+            log_dir=get_log_dir("log_dir"),
+            checkpoint_restart=True,
+            **search_kwargs,
+        )
+
+        results = search.search(run, 10)
+        return results
+
+    results = run_search()
+    assert len(results) == 10
+    results = run_search()
+    assert len(results) == 10 * 2
+    results = run_search()
+    assert len(results) == 10 * 3
+    assert len(set(results["job_id"])) == 30
+
+
 if __name__ == "__main__":
     # test_sample_types(".")
     # test_gp(".")
     # test_cbo_categorical_variable(".")
     # test_cbo_checkpoint_restart_moo_with_failures(".")
-    test_cbo_checkpoint_restart_with_failures(".")
+    # test_cbo_checkpoint_restart_with_failures(".")
     # test_cbo_checkpoint_restart_moo(".")
     # test_many_initial_points(".")
     # test_convert_to_skopt_space()
     # test_max_total_failures()
+    test_checkpoint_restart_v2(".")
