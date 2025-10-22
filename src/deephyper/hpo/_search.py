@@ -637,7 +637,7 @@ class Search(abc.ABC):
             # Tell comes before history.extend
             # Because the optimizer state needs to be updated to selection solutions
             # Try tell, if tell fails, execute finally then propagate error
-            try: 
+            try:
                 self.tell([(config, obj) for config, obj in new_results])
             except:
                 raise
