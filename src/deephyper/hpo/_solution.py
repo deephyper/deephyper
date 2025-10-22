@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import Any, Literal, Optional, Sequence, Tuple
+from typing import Any, Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numpy import ndarray
@@ -135,7 +135,7 @@ class ArgMaxEstSelection(SolutionSelection):
         self,
         problem: HpProblem,
         random_state: int | None = None,
-        model: str | BaseEstimator = "RF",
+        model: Union[str, BaseEstimator] = "RF",
         model_kwargs: dict[str, Any] | None = None,
         optimizer: Literal["sampling", "ga"] = "ga",
         filter_failures: Literal["mean", "max"] = "mean",
