@@ -58,11 +58,10 @@ def optimize():
 
     search = CBO(
         problem, 
-        evaluator, 
         random_state=42, 
         solution_selection="argmax_obs",
     )
-    results = search.search(max_evals=100)
+    results = search.search(evaluator, max_evals=100)
 
     return results
 

@@ -12,8 +12,11 @@ from typing import Any, Dict, List, Literal, Optional
 import numpy as np
 import pandas as pd
 
-from deephyper.analysis.hpo import get_mask_of_rows_without_failures
-from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached
+from deephyper.analysis.hpo import (
+    get_mask_of_rows_without_failures,
+    read_results_from_csv,
+)
+from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached, JobStatus
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.hpo._problem import HpProblem
 from deephyper.hpo._solution import (
@@ -257,7 +260,7 @@ class Search(abc.ABC):
             a stopper to leverage multi-fidelity when evaluating the function. Defaults
             to ``None`` which does not use any stopper.
 
-        checkpoint_history_to_csv (bool, optional):
+        checkpoint_history_to_csv (bool):
             wether the results from progressively collected evaluations should be checkpointed
             regularly to disc as a csv. Defaults to ``True``.
 
@@ -265,6 +268,8 @@ class Search(abc.ABC):
             the solution selection strategy. It can be a string where ``"argmax_obs"`` would
             select the argmax of observed objective values, and ``"argmax_est"`` would select the
             argmax of estimated objective values (through a predictive model).
+
+        checkpoint_restart (bool): ...
     """
 
     def __init__(
@@ -278,6 +283,7 @@ class Search(abc.ABC):
         solution_selection: Optional[
             Literal["argmax_obs", "argmax_est"] | SolutionSelection
         ] = None,
+        checkpoint_restart: bool = False,
     ):
         # get the __init__ parameters
         self._init_params = locals()
@@ -300,12 +306,17 @@ class Search(abc.ABC):
 
         self._verbose = verbose
         self.checkpoint_history_to_csv = checkpoint_history_to_csv
+        self.checkpoint_restart = checkpoint_restart
 
         self.is_master = True
 
         # Check if results already exist
         self._path_results = os.path.join(self._log_dir, "results.csv")
-        if os.path.exists(self._path_results) and self.checkpoint_history_to_csv:
+        if (
+            os.path.exists(self._path_results)
+            and self.checkpoint_history_to_csv
+            and not self.checkpoint_restart
+        ):
             str_current_time = time.strftime("%Y%m%d-%H%M%S")
             path_results_dirname = os.path.dirname(self._path_results)
             path_results_basename = os.path.basename(self._path_results)
@@ -492,14 +503,17 @@ class Search(abc.ABC):
             # TODO: should be replaced by a property with a setter?
             self._evaluator.set_maximum_num_jobs_submitted(max_evals)
 
-        # save the search call arguments for the context
+        # Reload checkpoint
+        self.reload_checkpoint()
+
+        # Save the search call arguments for the context
         self._call_args.append({"timeout": timeout, "max_evals": max_evals})
         if timeout is not None:
             logger.info(f"Running the search for {max_evals=} and {timeout=:.2f}")
         else:
             logger.info(f"Running the search for {max_evals=} and unlimited time...")
 
-        # init tqdm callback
+        # Init tqdm callback
         if max_evals > 1:
             for cb in self._evaluator._callbacks:
                 if isinstance(cb, TqdmCallback):
@@ -552,7 +566,7 @@ class Search(abc.ABC):
             df_results = self.history.to_dataframe()
 
         logger.info(
-            f"The search completer after {len(df_results)} evaluation(s) "
+            f"The search completed after {len(df_results)} evaluation(s) "
             f"and {time.time() - t_start_search:.2f} sec."
         )
 
@@ -719,3 +733,60 @@ class Search(abc.ABC):
         if self.is_master and self.checkpoint_history_to_csv:
             path = os.path.join(self._log_dir, "results.csv")
             self.history.to_csv_partial(path, flush=flush)
+
+    def reload_checkpoint(self):
+        if not self.is_master:
+            return
+
+        assert self._evaluator is not None
+
+        if not self.checkpoint_restart:
+            return
+
+        if os.path.exists(self._path_results):
+            logging.info("Loading previous results.csv checkpoint")
+            # Load previous results
+            df = read_results_from_csv(self._path_results)
+
+            evaluator = self._evaluator
+            search_id = evaluator._search_id
+            storage = evaluator._storage
+
+            job_ids_storage = storage.load_all_job_ids(search_id)
+            if len(job_ids_storage) == 0:
+                # The storage is not Persistent so we reset the job counter
+                for _ in range(df["job_id"].max() + 1):
+                    storage.create_new_job(search_id)
+
+            p_columns = [col for col in df.columns if col.startswith("p:")]
+            p_metadata = [col for col in df.columns if col.startswith("m:")]
+            p_objective = list(sorted([col for col in df.columns if col.startswith("objective")]))
+            jobs = []
+            for i, row in df.iterrows():
+                job_id = f"{search_id}.{row.job_id}"
+                # Set inputs
+                job = HPOJob(
+                    job_id,
+                    {k[2:]: v for k, v in row[p_columns].to_dict().items()},
+                    evaluator.run_function,
+                    storage,
+                )
+                # Set outputs
+                objective = row[p_objective].tolist()
+                if len(objective) == 1:
+                    objective = objective[0]
+                job.set_output(
+                    {
+                        "objective": objective,
+                        "metadata": {k[2:]: v for k, v in row[p_metadata].to_dict().items()},
+                    }
+                )
+                # Set status
+                job.status = JobStatus[row["job_status"]]
+                jobs.append(job)
+
+                evaluator.job_id_gathered.append(job_id)
+            self.history.extend(jobs)
+
+            x = [(config, obj) for config, obj in jobs]
+            self.tell(x)
