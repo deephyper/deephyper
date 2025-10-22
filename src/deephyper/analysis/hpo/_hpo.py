@@ -151,7 +151,7 @@ def parameters_at_topk(
             corresponding value.
     """
     df, _ = filter_failed_objectives(df)
-    df = df.nlargest(k, columns=column)
+    df = df.iloc[::-1].nlargest(k, columns=column)
     return [(parameters_from_row(row, prefix), row[column]) for _, row in df.iterrows()]
 
 
