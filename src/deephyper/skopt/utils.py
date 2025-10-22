@@ -11,6 +11,7 @@ from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize as sp_minimize
 from sklearn.base import is_regressor
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import FunctionTransformer, MinMaxScaler, QuantileTransformer
 from .learning import (
@@ -342,7 +343,7 @@ def cook_estimator(base_estimator, space=None, **kwargs):
     """
     if isinstance(base_estimator, str):
         base_estimator = base_estimator.upper()
-        if base_estimator not in ["GP", "ET", "RF", "GBRT", "DUMMY"]:
+        if base_estimator not in ["GP", "ET", "RF", "GBRT", "HGBRT", "DUMMY"]:
             raise ValueError(
                 "Valid strings for the base_estimator parameter "
                 " are: 'RF', 'ET', 'GP', 'GBRT' or 'DUMMY' not "
@@ -384,6 +385,9 @@ def cook_estimator(base_estimator, space=None, **kwargs):
     elif base_estimator == "GBRT":
         gbrt = GradientBoostingRegressor(n_estimators=30, loss="quantile")
         base_estimator = GradientBoostingQuantileRegressor(base_estimator=gbrt)
+    elif base_estimator == "HGBRT":
+        hgbrt = HistGradientBoostingRegressor(loss="quantile")
+        base_estimator = GradientBoostingQuantileRegressor(base_estimator=hgbrt)
 
     elif base_estimator == "DUMMY":
         return None

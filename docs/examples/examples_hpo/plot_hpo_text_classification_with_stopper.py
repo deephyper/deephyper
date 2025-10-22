@@ -1,10 +1,10 @@
 r"""
-Hyperparameter Search for Text Classification with the Stopper Class
-====================================================================
+Hyperparameter Optimization for Text Classification with Early Discarding
+=========================================================================
 
 **Author(s)**: Romain Egele, Brett Eiffert.
 
- In this example, we will edit the DeepHyper Hyperparameter Search for Text Classification example to use the deephyper.stopper class. The Stopper class is 
+ In this example, we will edit the DeepHyper Hyperparameter Search for Text Classification example to use the :mod:`deephyper.stopper` module. The Stopper class is 
  used to check if training per job/evaluation can be ended early and save run time if the stopper algorithm determines that
  no more training is needed. Read more about the Stopper class `here <https://deephyper.readthedocs.io/en/stable/_autosummary/deephyper.stopper.html>`_
  

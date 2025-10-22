@@ -1,6 +1,6 @@
 r"""
-Notify Failures in Hyperparameter optimization
-==============================================
+Learn to Avoid Failures with Bayesian Optimization 
+==================================================
 
 **Author(s)**: Romain Egele.
 

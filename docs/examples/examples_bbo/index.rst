@@ -27,7 +27,7 @@ Black-box optimization
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Generating Parameters with Experimental Design</div>
+      <div class="sphx-glr-thumbnail-title">Generating Combinations of Parameters with Standard Experimental Designs</div>
     </div>
 
 
@@ -71,6 +71,23 @@ Black-box optimization
 
 .. only:: html
 
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_black_box_optimization_noisy_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization_noisy.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Noisy Black-Box Optimization</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
   .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
     :alt:
 
@@ -78,7 +95,7 @@ Black-box optimization
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Notify Failures in Hyperparameter optimization</div>
+      <div class="sphx-glr-thumbnail-title">Learn to Avoid Failures with Bayesian Optimization</div>
     </div>
 
 
@@ -95,7 +112,7 @@ Black-box optimization
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Applying Transfer Learning to Black-Box Optimization</div>
+      <div class="sphx-glr-thumbnail-title">Using Transfer Learning to Speed-up Bayesian Optimization</div>
     </div>
 
 
@@ -112,6 +129,7 @@ Black-box optimization
    /examples/examples_bbo/plot_experimental_design
    /examples/examples_bbo/plot_multi_objective_optimization
    /examples/examples_bbo/plot_black_box_optimization
+   /examples/examples_bbo/plot_black_box_optimization_noisy
    /examples/examples_bbo/plot_notify_failures_hpo
    /examples/examples_bbo/plot_transfer_learning_for_hpo
 

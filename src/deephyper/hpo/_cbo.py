@@ -85,8 +85,8 @@ class AcqOptimizerKwargs(BaseModel):
 
 
 class SurrogateModelScheduler(BaseModel):
-    patience: Optional[int] = 10
-    params: Optional[dict] = dict(min_impurity_decrease=dict(factor=0.2))
+    patience: int = 10
+    params: dict = dict(min_impurity_decrease=dict(factor=0.2))
 
 
 class SurrogateModelKwargs(BaseModel):
@@ -319,6 +319,7 @@ class CBO(Search):
         solution_selection: Optional[
             Literal["argmax_obs", "argmax_est"] | SolutionSelection
         ] = None,
+        checkpoint_restart: bool = False,
         surrogate_model="ET",
         surrogate_model_kwargs: Optional[SurrogateModelKwargs | dict] = None,
         acq_func: str = "UCBd",
@@ -342,6 +343,7 @@ class CBO(Search):
             stopper,
             checkpoint_history_to_csv,
             solution_selection,
+            checkpoint_restart,
         )
         # get the __init__ parameters
         self._init_params = locals()

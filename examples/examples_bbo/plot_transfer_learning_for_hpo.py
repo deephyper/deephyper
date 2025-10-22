@@ -1,6 +1,6 @@
 r"""
-Applying Transfer Learning to Black-Box Optimization
-====================================================
+Using Transfer Learning to Speed-up Bayesian Optimization
+=========================================================
 
 **Author(s)**: Romain Egele.
 
