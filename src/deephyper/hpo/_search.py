@@ -635,15 +635,19 @@ class Search(abc.ABC):
                 logger.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
 
             # Tell comes before history.extend
-            # because the optimizer state needs to be updated to selection solutions
-            self.tell([(config, obj) for config, obj in new_results])
+            # Because the optimizer state needs to be updated to selection solutions
+            # Try tell, if tell fails, execute finally then propagate error
+            try: 
+                self.tell([(config, obj) for config, obj in new_results])
+            except:
+                raise
+            finally:
+                self.history.extend(new_results)
 
-            self.history.extend(new_results)
-
-            logger.info("Dumping evaluations...")
-            t1 = time.time()
-            self.dump_jobs_done_to_csv()
-            logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
+                logger.info("Dumping evaluations...")
+                t1 = time.time()
+                self.dump_jobs_done_to_csv()
+                logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
             # Test if search should be stopped due to timeout
             time_left = self._evaluator.time_left
