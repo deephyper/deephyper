@@ -85,8 +85,8 @@ class AcqOptimizerKwargs(BaseModel):
 
 
 class SurrogateModelScheduler(BaseModel):
-    patience: Optional[int] = 10
-    params: Optional[dict] = dict(min_impurity_decrease=dict(factor=0.2))
+    patience: int = 10
+    params: dict = dict(min_impurity_decrease=dict(factor=0.2))
 
 
 class SurrogateModelKwargs(BaseModel):

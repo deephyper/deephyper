@@ -12,7 +12,12 @@ from deephyper.hpo._problem import HpProblem
 from deephyper.hpo._random import RandomSearch
 from deephyper.hpo._regevo import RegularizedEvolution
 from deephyper.hpo._search import Search
-from deephyper.hpo._solution import ArgMaxEstSelection, ArgMaxObsSelection, SolutionSelection
+from deephyper.hpo._solution import (
+    ArgMaxEstSelection,
+    ArgMaxObsSelection,
+    SolutionSelection,
+    Solution,
+)
 
 __all__ = [
     "ArgMaxEstSelection",
@@ -23,5 +28,6 @@ __all__ = [
     "RandomSearch",
     "RegularizedEvolution",
     "Search",
+    "Solution",
     "SolutionSelection",
 ]

@@ -98,7 +98,10 @@ def parameters_from_row(row: pd.Series, prefix: str = "p:") -> dict:
 
 
 def parameters_at_max(
-    df: pd.DataFrame, column: str = "objective", prefix: str = "p:"
+    df: pd.DataFrame,
+    column: str = "objective",
+    prefix: str = "p:",
+    n_last: int | float = 1.0,
 ) -> Tuple[dict, float]:
     """Return the parameters at the maximum of the given ``column`` function.
 
@@ -106,11 +109,22 @@ def parameters_at_max(
         df (pd.DataFrame): the results of a Hyperparameter Search.
         column (str): the column to use for the maximization. Defaults to ``"objective"``.
         prefix (str): the prefix of columns of parameters.
+        n_last (int | float): Select the max among the ``n_last`` rows. If it is a ``float`` it is
+            among the ``int(n_last * len(df))`` last rows.
 
     Returns:
         Tuple[dict, float]: the parameters at the maximum of the ``column`` and its corresponding
             value.
     """
+    if n_last != 1.0:
+        if isinstance(n_last, float):
+            n_last = int(n_last * len(df))
+
+        if isinstance(n_last, int):
+            df = df.iloc[-n_last:]
+
+    df = df.iloc[::-1]
+
     df, _ = filter_failed_objectives(df)
     idx = df[column].argmax()
     value = df.iloc[idx][column]
@@ -137,7 +151,7 @@ def parameters_at_topk(
             corresponding value.
     """
     df, _ = filter_failed_objectives(df)
-    df = df.nlargest(k, columns=column)
+    df = df.iloc[::-1].nlargest(k, columns=column)
     return [(parameters_from_row(row, prefix), row[column]) for _, row in df.iterrows()]
 
 
@@ -229,11 +243,14 @@ def plot_search_trajectory_single_objective_hpo(
         x_failed = np.array([])
         y_success = results[column]
 
-    if mode == "min":
-        y_success = -y_success
-        y_plot = y_success.cummin()
+    if column.startswith("sol."):
+        y_plot = y_success
     else:
-        y_plot = y_success.cummax()
+        if mode == "min":
+            y_success = -y_success
+            y_plot = y_success.cummin()
+        else:
+            y_plot = y_success.cummax()
 
     y_min, y_max = y_success.min(), y_success.max()
     y_min = y_min - 0.05 * (y_max - y_min)

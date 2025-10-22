@@ -18,8 +18,8 @@
 .. _sphx_glr_examples_examples_bbo_plot_experimental_design.py:
 
 
-Generating Parameters with Experimental Design
-==============================================
+Generating Combinations of Parameters with Standard Experimental Designs
+========================================================================
 
 **Author(s)**: Romain Egele.
 
@@ -191,7 +191,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 1.262 seconds)
+   **Total running time of the script:** (0 minutes 1.830 seconds)
 
 
 .. _sphx_glr_download_examples_examples_bbo_plot_experimental_design.py:

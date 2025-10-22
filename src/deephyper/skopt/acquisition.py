@@ -55,11 +55,6 @@ def _gaussian_acquisition(
     xi = acq_func_kwargs.get("xi", 0.01)
     kappa = acq_func_kwargs.get("kappa", 1.96)
 
-    # Evaluate acquisition function
-    per_second = acq_func.endswith("ps")
-    if per_second:
-        model, time_model = model.estimators_
-
     if acq_func in ["LCB"]:
         func_and_grad = gaussian_lcb(
             X, model, kappa, return_grad, deterministic=deterministic
@@ -70,8 +65,8 @@ def _gaussian_acquisition(
         else:
             acq_vals = func_and_grad
 
-    elif acq_func in ["EI", "PI", "EIps", "PIps"]:
-        if acq_func in ["EI", "EIps"]:
+    elif acq_func in ["EI", "PI"]:
+        if acq_func in ["EI", "EI"]:
             func_and_grad = gaussian_ei(
                 X, model, y_opt, xi, return_grad, deterministic=deterministic
             )
@@ -85,26 +80,6 @@ def _gaussian_acquisition(
             acq_grad = -func_and_grad[1]
         else:
             acq_vals = -func_and_grad
-
-        if acq_func in ["EIps", "PIps"]:
-            if return_grad:
-                mu, std, mu_grad, std_grad = time_model.predict(
-                    X, return_std=True, return_mean_grad=True, return_std_grad=True
-                )
-            else:
-                mu, std = time_model.predict(X, return_std=True)
-
-            # acq = acq / E(t)
-            inv_t = np.exp(-mu + 0.5 * std**2)
-            acq_vals *= inv_t
-
-            # grad = d(acq_func) * inv_t + (acq_vals *d(inv_t))
-            # inv_t = exp(g)
-            # d(inv_t) = inv_t * grad(g)
-            # d(inv_t) = inv_t * (-mu_grad + std * std_grad)
-            if return_grad:
-                acq_grad *= inv_t
-                acq_grad += acq_vals * (-mu_grad + std * std_grad)
 
     elif acq_func in ["MES"]:
         acq_vals = -gaussian_mes(X, model, deterministic=deterministic)

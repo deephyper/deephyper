@@ -95,6 +95,10 @@ class SearchHistory:
             self.solution_selection.num_objective = self.num_objective
 
     def extend(self, jobs: List[HPOJob]):
+        # Do nothing if input list is empty
+        if len(jobs) == 0:
+            return
+
         if self.num_objective is None:
             self.set_num_objective(jobs[0])
         self.jobs.extend(jobs)
@@ -150,13 +154,13 @@ class SearchHistory:
             # Solution
             if isinstance(self.solution_selection, SolutionSelection):
                 if self.num_objective == 1:
-                    result.update(
-                        {
-                            f"sol.p:{k}": v
-                            for k, v in self.solution_history[job.id].parameters.items()
-                        }
-                    )
-                    result.update({"sol.objective": self.solution_history[job.id].objective})
+                    sol = dict(self.solution_history[job.id])
+                    parameters = sol.pop("parameters")
+                    objective = sol.pop("objective")
+                    if parameters is not None and objective is not None:
+                        result.update({f"sol.p:{k}": v for k, v in parameters.items()})
+                        result.update({"sol.objective": objective})
+                        result.update({f"sol.{k}": v for k, v in sol.items() if v is not None})
 
             results.append(result)
 
@@ -573,7 +577,9 @@ class Search(abc.ABC):
         """The identifier of the search used by the evaluator."""
         return self._evaluator._search_id
 
-    def _search(self, max_evals: int, timeout: Optional[int], max_evals_strict=False):
+    def _search(
+        self, max_evals: int, timeout: Optional[int | float], max_evals_strict: bool = False
+    ):
         """Search algorithm logic.
 
         Args:
@@ -628,15 +634,20 @@ class Search(abc.ABC):
                 n_ask = len(new_results)
                 logger.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
 
-            self.history.extend(new_results)
+            # Tell comes before history.extend
+            # Because the optimizer state needs to be updated to selection solutions
+            # Try tell, if tell fails, execute finally then propagate error
+            try:
+                self.tell([(config, obj) for config, obj in new_results])
+            except:
+                raise
+            finally:
+                self.history.extend(new_results)
 
-            logger.info("Dumping evaluations...")
-            t1 = time.time()
-            self.dump_jobs_done_to_csv()
-            logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
-
-            new_results = [(config, obj) for config, obj in new_results]
-            self.tell(new_results)
+                logger.info("Dumping evaluations...")
+                t1 = time.time()
+                self.dump_jobs_done_to_csv()
+                logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
 
             # Test if search should be stopped due to timeout
             time_left = self._evaluator.time_left
@@ -682,7 +693,14 @@ class Search(abc.ABC):
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
 
-    def tell(self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]):
+    def tell(
+        self,
+        results: list[
+            tuple[
+                dict[str, Optional[str | int | float]], str | int | float | tuple[str | int | float]
+            ]
+        ],
+    ):
         """Tell the search the results of the evaluations.
 
         Args:
@@ -696,7 +714,12 @@ class Search(abc.ABC):
 
     @abc.abstractmethod
     def _tell(
-        self, results: list[tuple[dict[str, Optional[str | int | float]], str | int | float]]
+        self,
+        results: list[
+            tuple[
+                dict[str, Optional[str | int | float]], str | int | float | tuple[str | int | float]
+            ]
+        ],
     ):
         """Tell the search the results of the evaluations.
 

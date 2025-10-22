@@ -1,6 +1,6 @@
 r"""
-Generating Parameters with Experimental Design
-==============================================
+Generating Combinations of Parameters with Standard Experimental Designs
+========================================================================
 
 **Author(s)**: Romain Egele.
 
