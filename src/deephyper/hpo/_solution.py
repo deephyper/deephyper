@@ -3,7 +3,6 @@ import logging
 from typing import Any, Literal, Optional, Sequence, Tuple
 
 import numpy as np
-import scipy.stats as ss
 from numpy import ndarray
 from pydantic import BaseModel, ConfigDict, Field
 from sklearn.base import BaseEstimator
@@ -22,13 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 class Solution(BaseModel):
-    """Represents the estimated solution of a search.
+    """Represents the solution of a search.
 
     Attributes:
-        parameters: The parameter configuration of the solution
-        objective: The objective value(s) of the solution
-        objective_std_al: Aleatoric uncertainty (if available)
-        objective_std_ep: Epistemic uncertainty (if available)
+        parameters: The parameter configuration of the solution.
+        objective: The objective value(s) of the solution.
+        objective_std: Total uncertainty (if available).
+        objective_std_al: Aleatoric uncertainty (if available).
+        objective_std_ep: Epistemic uncertainty (if available).
     """
 
     parameters: Any = Field(description="Parameter configuration")
@@ -44,7 +44,7 @@ class SolutionSelection(abc.ABC):
     """Base class for search solution selection strategies.
 
     This abstract base class defines the interface for different strategies
-    to select the best solution from a set of evaluated configurations.
+    to select the best solution from a set of evaluated parameter configurations.
     """
 
     def __init__(self):
@@ -80,7 +80,8 @@ class ArgMaxObsSelection(SolutionSelection):
     """Selects the best solution based on maximum observed objective(s).
 
     This strategy simply picks the configuration with the highest observed
-    objective value among all evaluated configurations.
+    objective value among all evaluated configurations. If multiple maximums
+    exists it will select the latest received result.
     """
 
     def _update(self, jobs: Sequence[HPOJob]) -> None:
@@ -252,11 +253,12 @@ class ArgMaxEstSelection(SolutionSelection):
         r2_ub = 1 - np.mean(y_std**2) / np.var(y)
 
         # The following evaluates the quality of the AL STD estimates
-        p = ss.pearsonr(y_std**2, (y - y_mean) ** 2)
+        # p = ss.pearsonr(y_std**2, (y - y_mean) ** 2)
         return {
             "r2": r2_model,
             "r2_upper_bound": r2_ub,
-            "y_std_corr": {"statistic": p.statistic, "pvalue": p.pvalue},
+            "callibration_error": calibration_error(y, y_mean, y_std**2),
+            # "y_std_corr": {"statistic": p.statistic, "pvalue": p.pvalue},
         }
 
     def fit_and_tune_model(self, X, y):
@@ -270,12 +272,12 @@ class ArgMaxEstSelection(SolutionSelection):
             )
             clf.fit(X, y)
             self.model = clf.best_estimator_
-            print("Tuned model parameters:", clf.best_params_)
+            print("Solution Selection - grid search tuned model parameters:", clf.best_params_)
         else:
             self.model.fit(X, y)
 
         scores = self.evaluate(X, y)
-        print(f"Tuned model scores: {scores}")
+        print(f"Solution Selection - grid search tuned model scores: {scores}")
 
     def _filter_failures(self, yi: Sequence[Any]) -> Tuple[bool, Sequence[float]]:
         """Filter or replace failed objectives.
