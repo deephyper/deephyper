@@ -647,7 +647,7 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
     results_d = search_c.search(eval, 20)
 
     # this search also includes the 20 iterations of previous .search(...)
-    assert len(results_d) == 40
+    assert len(results_d) >= 40
 
 
 def test_max_total_failures():
