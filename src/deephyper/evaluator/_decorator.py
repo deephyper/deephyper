@@ -1,28 +1,43 @@
 import asyncio
 import functools
-import pickle
-import psutil
+import inspect
+import io
 import os
-import sys
 import time
-
 from concurrent.futures import ProcessPoolExecutor
 
+import cloudpickle
+import psutil
 
-def register_inner_function_for_pickle(func):
-    """Register former decorated function under a new name.
 
-    This is to be called in subprocess within the decorator.
+class CloudpickleProcessPoolExecutor(ProcessPoolExecutor):
+    def _adjust_process_count(self):
+        # identical to ProcessPoolExecutor except using cloudpickle
+        super()._adjust_process_count()
 
-    See: https://stackoverflow.com/questions/73146709/python-process-inside-decorator
-    """
-    prefix = "profiled_"
-    func_name = func.__qualname__
-    saved_name = prefix + func_name
-    module_name = pickle.whichmodule(func, func_name)
-    module = sys.modules[module_name]
-    setattr(module, saved_name, func)
-    func.__qualname__ = saved_name
+    def _sendback_result(self, call_item, result_item):
+        # no change — cloudpickle is used in the worker instead
+        super()._sendback_result(call_item, result_item)
+
+
+def cloudpickle_submit(executor, func, *args, **kwargs):
+    # Use cloudpickle.dumps instead of pickle.dumps
+    buf = io.BytesIO()
+    cloudpickle.dump((func, args, kwargs), buf)
+    return executor.submit(_cloudpickle_wrapper, buf.getvalue())
+
+
+def _cloudpickle_wrapper(serialized):
+    func, args, kwargs = cloudpickle.loads(serialized)
+    return func(*args, **kwargs)
+
+
+def _wrap_output(output, metadata):
+    """Ensure consistent output format and attach metadata."""
+    if not isinstance(output, dict) or "output" not in output:
+        output = {"output": output, "metadata": {}}
+    output["metadata"].update(metadata)
+    return output
 
 
 # Example from
@@ -105,7 +120,8 @@ def profile(  # noqa: D417
 
     def decorator_profile(func):
         if register and memory:
-            register_inner_function_for_pickle(func)
+            pass
+            # register_inner_function_for_pickle(func)
 
         @functools.wraps(func)
         async def async_wrapper_profile(*args, **kwargs):
@@ -115,14 +131,14 @@ def profile(  # noqa: D417
                 p = psutil.Process()
                 output = None
 
-                with ProcessPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(os.getpid)
+                with CloudpickleProcessPoolExecutor(max_workers=1) as executor:
+                    future = cloudpickle_submit(executor, os.getpid)
                     pid = future.result()
                     p = psutil.Process(pid)
 
                     asyncio_run_func = functools.partial(asyncio_run, func)
 
-                    future = executor.submit(asyncio_run_func, *args, **kwargs)
+                    future = cloudpickle_submit(executor, asyncio_run_func, *args, **kwargs)
                     memory_peak = p.memory_info().rss
 
                     while not future.done():
@@ -148,25 +164,14 @@ def profile(  # noqa: D417
                 output = await func(*args, **kwargs)
 
             timestamp_end = time.time()
-            new_metadata = {
+            metadata = {
                 "timestamp_start": timestamp_start,
                 "timestamp_end": timestamp_end,
             }
             if memory:
-                new_metadata["memory"] = memory_peak
+                metadata["memory"] = memory_peak
 
-            # Format correctly the output to return metadata
-            if isinstance(output, dict):
-                if "output" in output:
-                    if "metadata" not in output:
-                        output["metadata"] = {}
-                else:
-                    output = {"output": output, "metadata": {}}
-            else:
-                output = {"output": output, "metadata": {}}
-
-            output["metadata"].update(new_metadata)
-            return output
+            return _wrap_output(output, metadata)
 
         @functools.wraps(func)
         def sync_wrapper_profile(*args, **kwargs):
@@ -176,12 +181,12 @@ def profile(  # noqa: D417
                 p = psutil.Process()
                 output = None
 
-                with ProcessPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(os.getpid)
+                with CloudpickleProcessPoolExecutor(max_workers=1) as executor:
+                    future = cloudpickle_submit(executor, os.getpid)
                     pid = future.result()
                     p = psutil.Process(pid)
 
-                    future = executor.submit(func, *args, **kwargs)
+                    future = cloudpickle_submit(executor, func, *args, **kwargs)
                     memory_peak = p.memory_info().rss
 
                     while not future.done():
@@ -207,27 +212,16 @@ def profile(  # noqa: D417
                 output = func(*args, **kwargs)
 
             timestamp_end = time.time()
-            new_metadata = {
+            metadata = {
                 "timestamp_start": timestamp_start,
                 "timestamp_end": timestamp_end,
             }
             if memory:
-                new_metadata["memory"] = memory_peak
+                metadata["memory"] = memory_peak
 
-            # Format correctly the output to return metadata
-            if isinstance(output, dict):
-                if "output" in output:
-                    if "metadata" not in output:
-                        output["metadata"] = {}
-                else:
-                    output = {"output": output, "metadata": {}}
-            else:
-                output = {"output": output, "metadata": {}}
+            return _wrap_output(output, metadata)
 
-            output["metadata"].update(new_metadata)
-            return output
-
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
             return async_wrapper_profile
         else:
             return sync_wrapper_profile
