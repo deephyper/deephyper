@@ -27,54 +27,58 @@ More details about the installation process can be found in our [Installation](h
 The black-box function named `run` is defined by taking an input job named `job` which contains the different variables to optimize `job.parameters`. Then the run-function is bound to an `Evaluator` in charge of distributing the computation of multiple evaluations. Finally, a Bayesian search named `CBO` is created and executed to find the values of config which **MAXIMIZE** the return value of `run(job)`.
 
 ```python
-from deephyper.hpo import HpProblem, CBO
 from deephyper.evaluator import Evaluator
+from deephyper.hpo import HpProblem, CBO
 
 
 def run(job):
+    # The suggested parameters are accessible in job.parameters (dict)
     x = job.parameters["x"]
     b = job.parameters["b"]
-    function = job.parameters["function"]
 
-    if function == "linear":
+    if job.parameters["function"] == "linear":
         y = x + b
-    elif function == "cubic":
+    elif job.parameters["function"] == "cubic":
         y = x**3 + b
 
+    # Maximization!
     return y
 
 
-def optimize():
-    problem = HpProblem()
-    problem.add_hyperparameter((-10.0, 10.0), "x")
-    problem.add_hyperparameter((0, 10), "b")
-    problem.add_hyperparameter(["linear", "cubic"], "function")
+def test_quickstart(tmp_path):
 
-    evaluator = Evaluator.create(run, method="process",
+
+    # define the variable you want to optimize
+    problem = HpProblem()
+    problem.add_hyperparameter((-10.0, 10.0), "x")  # real parameter
+    problem.add_hyperparameter((0, 10), "b")  # discrete parameter
+    problem.add_hyperparameter(["linear", "cubic"], "function")  # categorical parameter
+
+    # define the evaluator to distribute the computation
+    evaluator = Evaluator.create(
+        run,
+        method="process",
         method_kwargs={
             "num_workers": 2,
         },
     )
 
-    search = CBO(
-        problem, 
-        random_state=42, 
-        solution_selection="argmax_obs",
-    )
+    # define your search and execute it
+    search = CBO(problem, log_dir=tmp_path, random_state=42)
+
     results = search.search(evaluator, max_evals=100)
-
-    return results
-
-if __name__ == "__main__":
-    results = optimize()
     print(results)
 
-    row = results.iloc[-1]
-    print("\nOptimum values")
-    print("function:", row["sol.p:function"])
-    print("x:", row["sol.p:x"])
-    print("b:", row["sol.p:b"])
-    print("y:", row["sol.objective"])
+    assert abs(results.objective.max()) > 1000
+    assert "p:x" in results.columns
+    assert "p:b" in results.columns
+    assert "p:function" in results.columns
+    assert len(results) >= 100
+
+
+if __name__ == "__main__":
+    test_quickstart(".")
+
 ```
 
 Which outputs the following results where the best parameters are with `function == "cubic"`, 
