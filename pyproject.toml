@@ -35,8 +35,6 @@ authors = [
 maintainers = [
     { name = "Romain Egele", email = "regele@ornl.gov" },
     { name = "Prasanna Balaprakash", email = "pbalapra@ornl.gov" },
-    { name = "Gavin M. Wiggins" },
-    { name = "Brett Eiffert ", email = "eiffertbc@ornl.gov" },
 ]
 description = "Massively Parallel Hyperparameter Optimization for Machine Learning"
 readme = "README.md"
@@ -49,6 +47,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
 [project.optional-dependencies]
