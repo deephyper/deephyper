@@ -3,7 +3,8 @@ Build and Release
 
 This document describes how to build and release new wheels for DeepHyper.
 
-First check the status of Python versions as it is important to know which becomes are currently supported and which are not. See https://devguide.python.org/versions/ for more information.
+First check the status of Python versions as it is important to know which are currently supported and which are not. 
+See https://devguide.python.org/versions/ for more information.
 
 Then,
 
