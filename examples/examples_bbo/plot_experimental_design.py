@@ -1,11 +1,11 @@
 r"""
-Generating Combinations of Parameters with Standard Experimental Designs
-========================================================================
+Generating Combinations of Parameters for Standard Experimental Designs
+=======================================================================
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates how to evaluate parameters following a standard experimental
-design such as random design, factorial design (a.k.a., grid search) and quasi-monte-carlo
+This example demonstrates how to evaluate parameters following standard experimental
+designs such as random design, factorial design (a.k.a., grid search) and quasi-monte-carlo
 designs (e.g., lhs, sobol).
 
 More specifically in this example we will show factorial design.

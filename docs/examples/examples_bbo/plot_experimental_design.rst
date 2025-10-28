@@ -18,13 +18,13 @@
 .. _sphx_glr_examples_examples_bbo_plot_experimental_design.py:
 
 
-Generating Combinations of Parameters with Standard Experimental Designs
-========================================================================
+Generating Combinations of Parameters for Standard Experimental Designs
+=======================================================================
 
 **Author(s)**: Romain Egele.
 
-This example demonstrates how to evaluate parameters following a standard experimental
-design such as random design, factorial design (a.k.a., grid search) and quasi-monte-carlo
+This example demonstrates how to evaluate parameters following standard experimental
+designs such as random design, factorial design (a.k.a., grid search) and quasi-monte-carlo
 designs (e.g., lhs, sobol).
 
 More specifically in this example we will show factorial design.
@@ -191,7 +191,7 @@ Finally, we plot the results from the collected DataFrame.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 1.830 seconds)
+   **Total running time of the script:** (0 minutes 3.086 seconds)
 
 
 .. _sphx_glr_download_examples_examples_bbo_plot_experimental_design.py:

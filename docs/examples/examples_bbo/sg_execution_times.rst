@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**04:13.660** total execution time for 6 files **from examples/examples_bbo**:
+**00:03.086** total execution time for 6 files **from examples/examples_bbo**:
 
 .. container::
 
@@ -32,13 +32,13 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization_noisy.py` (``plot_black_box_optimization_noisy.py``)
-     - 04:13.660
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_experimental_design.py` (``plot_experimental_design.py``)
+     - 00:03.086
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``plot_black_box_optimization.py``)
      - 00:00.000
      - 0.0
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_experimental_design.py` (``plot_experimental_design.py``)
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization_noisy.py` (``plot_black_box_optimization_noisy.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_multi_objective_optimization.py` (``plot_multi_objective_optimization.py``)

@@ -27,7 +27,7 @@ Black-box optimization
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Generating Combinations of Parameters with Standard Experimental Designs</div>
+      <div class="sphx-glr-thumbnail-title">Generating Combinations of Parameters for Standard Experimental Designs</div>
     </div>
 
 
