@@ -214,6 +214,17 @@ class CBO(Search):
             - ``"xi"`` (float)
                 Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"``
                 acquisition function. Defaults to ``0.001``.
+            
+            - ``"scheduler"`` (dict, callable, optional)
+                a function to manage the value of ``kappa, xi`` with iterations. Defaults to 
+                ``None`` which does not use any scheduler. The periodic exponential decay scheduler
+                can be used with  ``scheduler={"type": "periodic-exp-decay", "period": 30, "rate": 
+                0.1}``. The scheduler can also be a callable function with signature 
+                ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the current iteration, ``eta_0`` 
+                is the initial value of ``[kappa, xi]`` and ``kwargs`` are other fixed parameters 
+                of the function. Instead of fixing the decay ``"rate"`` the final ``kappa`` or 
+                ``xi`` can be used ``{"type": "periodic-exp-decay", "period": 25, "kappa_final": 
+                1.96}``.
 
         acq_optimizer (str, optional):
             Method used to minimze the acquisition function. Can be a value in
