@@ -91,7 +91,7 @@ def optimization_test_bayesian_lce_model_speed():
     y = f(z)
     # y = y + rng.normal(0, 0.01, size=y.shape)
 
-    t_start = time.time()
+    t_start = time.monotonic()
     with cProfile.Profile() as pr:
         model = BayesianLearningCurveRegressor(batch_size=100, verbose=0)
         for r in range(5):
@@ -104,7 +104,7 @@ def optimization_test_bayesian_lce_model_speed():
 
         pr.print_stats(SortKey.TIME)
 
-    t_end = time.time()
+    t_end = time.monotonic()
     duration = t_end - t_start
 
     print(f"duration: {duration:.3f} sec")

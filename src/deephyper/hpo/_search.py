@@ -519,7 +519,7 @@ class Search(abc.ABC):
                 if isinstance(cb, TqdmCallback):
                     cb.set_max_evals(max_evals)
 
-        t_start_search = time.time()
+        t_start_search = time.monotonic()
         try:
             if isinstance(timeout, (int, float)):
                 if timeout > 0:
@@ -567,7 +567,7 @@ class Search(abc.ABC):
 
         logger.info(
             f"The search completed after {len(df_results)} evaluation(s) "
-            f"and {time.time() - t_start_search:.2f} sec."
+            f"and {time.monotonic() - t_start_search:.2f} sec."
         )
 
         return df_results
@@ -611,12 +611,12 @@ class Search(abc.ABC):
             new_batch = self.ask(n_ask)
 
             logger.info(f"Submitting {len(new_batch)} configurations...")
-            t1 = time.time()
+            t1 = time.monotonic()
             self._evaluator.submit(new_batch)
-            logger.info(f"Submition took {time.time() - t1:.4f} sec.")
+            logger.info(f"Submition took {time.monotonic() - t1:.4f} sec.")
 
             logger.info("Gathering jobs...")
-            t1 = time.time()
+            t1 = time.monotonic()
 
             new_results = self._evaluator.gather(self.gather_type, self.gather_batch_size)
 
@@ -628,11 +628,11 @@ class Search(abc.ABC):
                 new_results = local_results + other_results
                 logger.info(
                     f"Gathered {len(local_results)} local job(s) and {len(other_results)} other "
-                    f"job(s) in {time.time() - t1:.4f} sec."
+                    f"job(s) in {time.monotonic() - t1:.4f} sec."
                 )
             else:
                 n_ask = len(new_results)
-                logger.info(f"Gathered {len(new_results)} job(s) in {time.time() - t1:.4f} sec.")
+                logger.info(f"Gathered {len(new_results)} job(s) in {time.monotonic() - t1:.4f} sec.")
 
             # Tell comes before history.extend
             # Because the optimizer state needs to be updated to selection solutions
@@ -645,9 +645,9 @@ class Search(abc.ABC):
                 self.history.extend(new_results)
 
                 logger.info("Dumping evaluations...")
-                t1 = time.time()
+                t1 = time.monotonic()
                 self.dump_jobs_done_to_csv()
-                logger.info(f"Dumping took {time.time() - t1:.4f} sec.")
+                logger.info(f"Dumping took {time.monotonic() - t1:.4f} sec.")
 
             # Test if search should be stopped due to timeout
             time_left = self._evaluator.time_left
@@ -674,11 +674,11 @@ class Search(abc.ABC):
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
         logger.info(f"Asking {n} configuration(s)...")
-        t1 = time.time()
+        t1 = time.monotonic()
 
         new_samples = self._ask(n)
 
-        logger.info(f"Asking took {time.time() - t1:.4f} sec.")
+        logger.info(f"Asking took {time.monotonic() - t1:.4f} sec.")
 
         return new_samples
 
@@ -708,9 +708,9 @@ class Search(abc.ABC):
                 a dictionary containing the results of the evaluations.
         """
         logger.info(f"Telling {len(results)} new result(s)...")
-        t1 = time.time()
+        t1 = time.monotonic()
         self._tell(results)
-        logger.info(f"Telling took {time.time() - t1:.4f} sec.")
+        logger.info(f"Telling took {time.monotonic() - t1:.4f} sec.")
 
     @abc.abstractmethod
     def _tell(

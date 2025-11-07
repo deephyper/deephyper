@@ -614,7 +614,7 @@ class CBO(Search):
 
         # Transform configurations to list to fit optimizer
         logger.info("Transforming received configurations to list...")
-        t1 = time.time()
+        t1 = time.monotonic()
 
         opt_X = []  # input configuration
         opt_y = []  # objective value
@@ -635,16 +635,16 @@ class CBO(Search):
                     opt_X.append(x)
                     opt_y.append("F")
 
-        logger.info(f"Transformation took {time.time() - t1:.4f} sec.")
+        logger.info(f"Transformation took {time.monotonic() - t1:.4f} sec.")
 
         # apply scheduler
         self._apply_scheduler(self._num_asked)
 
         if len(opt_y) > 0:
             logger.info("Fitting the optimizer...")
-            t1 = time.time()
+            t1 = time.monotonic()
             self._opt.tell(opt_X, opt_y)
-            logger.info(f"Fitting took {time.time() - t1:.4f} sec.")
+            logger.info(f"Fitting took {time.monotonic() - t1:.4f} sec.")
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
         super()._search(max_evals, timeout, max_evals_strict)

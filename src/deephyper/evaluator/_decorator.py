@@ -125,7 +125,7 @@ def profile(  # noqa: D417
 
         @functools.wraps(func)
         async def async_wrapper_profile(*args, **kwargs):
-            timestamp_start = time.time()
+            timestamp_start = time.monotonic()
 
             if memory:
                 p = psutil.Process()
@@ -163,7 +163,7 @@ def profile(  # noqa: D417
             else:
                 output = await func(*args, **kwargs)
 
-            timestamp_end = time.time()
+            timestamp_end = time.monotonic()
             metadata = {
                 "timestamp_start": timestamp_start,
                 "timestamp_end": timestamp_end,
@@ -175,7 +175,7 @@ def profile(  # noqa: D417
 
         @functools.wraps(func)
         def sync_wrapper_profile(*args, **kwargs):
-            timestamp_start = time.time()
+            timestamp_start = time.monotonic()
 
             if memory:
                 p = psutil.Process()
@@ -211,7 +211,7 @@ def profile(  # noqa: D417
             else:
                 output = func(*args, **kwargs)
 
-            timestamp_end = time.time()
+            timestamp_end = time.monotonic()
             metadata = {
                 "timestamp_start": timestamp_start,
                 "timestamp_end": timestamp_end,

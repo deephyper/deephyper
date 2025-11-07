@@ -787,7 +787,7 @@ def test_cbo_multi_point_strategy(tmp_path):
 
     durations = []
     for multi_point_strategy in ["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]:
-        t1 = time.time()
+        t1 = time.monotonic()
         search = CBO(
             problem,
             acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
@@ -801,7 +801,7 @@ def test_cbo_multi_point_strategy(tmp_path):
         results = search.search(
             Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}), max_evals
         )
-        durations.append(time.time() - t1)
+        durations.append(time.monotonic() - t1)
 
         assert len(results) == max_evals
 
@@ -809,7 +809,7 @@ def test_cbo_multi_point_strategy(tmp_path):
 
     durations = []
     for multi_point_strategy in ["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]:
-        t1 = time.time()
+        t1 = time.monotonic()
         search = CBO(
             problem,
             acq_optimizer=SEARCH_KWARGS_DEFAULTS["acq_optimizer"],
@@ -825,7 +825,7 @@ def test_cbo_multi_point_strategy(tmp_path):
         results = search.search(
             Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}), 25
         )
-        durations.append(time.time() - t1)
+        durations.append(time.monotonic() - t1)
 
         assert len(results) == 25
 

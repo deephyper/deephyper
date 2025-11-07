@@ -89,7 +89,7 @@ class Evaluator(abc.ABC):
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
         self.job_id_submitted = []  # List of jobs'id submitted by the evaluator.
         self.job_id_gathered = []  # List of jobs'id gathered by the evaluator.
-        self.timestamp = time.time()  # Recorded time of when this evaluator interface was created.
+        self.timestamp = time.monotonic()  # Recorded time of when this evaluator interface was created.
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop: Optional[asyncio.AbstractEventLoop] = None  # Event loop for asyncio.
@@ -148,7 +148,7 @@ class Evaluator(abc.ABC):
         It will create new tasks with a "time budget" and it will cancel the
         the task if this budget is exhausted.
         """
-        self._time_timeout_set = time.time()
+        self._time_timeout_set = time.monotonic()
         self._timeout = value
 
     @property
@@ -158,7 +158,7 @@ class Evaluator(abc.ABC):
             val = None
         else:
             if self._time_timeout_set is not None:
-                time_consumed = time.time() - self._time_timeout_set
+                time_consumed = time.monotonic() - self._time_timeout_set
                 val = self.timeout - time_consumed
             else:
                 raise RuntimeError(f"{self._time_timeout_set=} should not be set to a float")
@@ -300,7 +300,7 @@ class Evaluator(abc.ABC):
         """Called after a job is started."""
         job.status = JobStatus.READY
 
-        job.metadata["timestamp_submit"] = time.time() - self.timestamp
+        job.metadata["timestamp_submit"] = time.monotonic() - self.timestamp
 
         # Call callbacks
         for cb in self._callbacks:
@@ -311,7 +311,7 @@ class Evaluator(abc.ABC):
         if job.status is JobStatus.RUNNING:
             job.status = JobStatus.DONE
 
-        job.metadata["timestamp_gather"] = time.time() - self.timestamp
+        job.metadata["timestamp_gather"] = time.monotonic() - self.timestamp
 
         if isinstance(job, HPOJob):
             if np.isscalar(job.objective):
