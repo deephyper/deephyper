@@ -7,7 +7,7 @@ from sklearn.ensemble._forest import DecisionTreeRegressor, ForestRegressor
 from deephyper.skopt.joblib import Parallel, delayed
 
 
-def _accumulate_prediction_disentangled(tree, X, min_variance, out, lock):
+def _accumulate_prediction_disentangled_v1(tree, X, min_variance, out, lock):
     """This is a utility function for joblib's Parallel.
 
     It can't go locally in ForestClassifier or ForestRegressor, because joblib
@@ -29,7 +29,7 @@ def _accumulate_prediction_disentangled(tree, X, min_variance, out, lock):
         out[2] += mean_tree**2
 
 
-def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs):
+def _return_mean_and_std_distentangled_v1(X, n_outputs, trees, min_variance, n_jobs):
     """Returns `std(Y | X)`.
 
     Can be calculated by E[Var(Y | Tree)] + Var(E[Y | Tree]) where
@@ -67,7 +67,7 @@ def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs
     # Parallel loop
     lock = threading.Lock()
     Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
-        delayed(_accumulate_prediction_disentangled)(
+        delayed(_accumulate_prediction_disentangled_v1)(
             tree, X, min_variance, [mean, std_al, std_ep], lock
         )
         for tree in trees
@@ -87,7 +87,91 @@ def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs
 
     return mean.reshape(-1), std_al.reshape(-1), std_ep.reshape(-1)
 
+def _accumulate_prediction_disentangled_v2(tree, X, min_variance, out):
+    """This is a utility function for joblib's Parallel.
 
+    It can't go locally in ForestClassifier or ForestRegressor, because joblib
+    complains that it cannot pickle it when placed there.
+    """
+    # Compute leaf indices once
+    leaf_idx = tree.apply(X)
+
+    # Mean prediction from leaves
+    mean_tree = tree.tree_.value[leaf_idx].ravel()
+
+    # Impurity (e.g. variance for regression)
+    var_tree = tree.tree_.impurity[leaf_idx].ravel()
+
+    # This rounding off is done in accordance with the
+    # adjustment done in section 4.3.3
+    # of http://arxiv.org/pdf/1211.0906v2.pdf to account
+    # for cases such as leaves with 1 sample in which there
+    # is zero variance.
+    var_tree[var_tree < min_variance] = min_variance
+
+    out[0] += mean_tree
+    out[1] += var_tree
+    out[2] += mean_tree**2
+
+def _return_mean_and_std_distentangled_v2(X, n_outputs, trees, min_variance, n_jobs):
+    """Returns `std(Y | X)`.
+
+    Can be calculated by E[Var(Y | Tree)] + Var(E[Y | Tree]) where
+    P(Tree) is `1 / len(trees)`.
+
+    Parameters
+    ----------
+    X : array-like, shape=(n_samples, n_features)
+        Input data.
+
+    n_outputs: int.
+        Number of outputs.
+
+    trees : list, shape=(n_estimators,)
+        List of fit sklearn trees as obtained from the ``estimators_``
+        attribute of a fit RandomForestRegressor or ExtraTreesRegressor.
+
+    predictions : array-like, shape=(n_samples,)
+        Prediction of each data point as returned by RandomForestRegressor
+        or ExtraTreesRegressor.
+
+    Returns:
+    -------
+    std : array-like, shape=(n_samples,)
+        Standard deviation of `y` at `X`. If criterion
+        is set to "mse", then `std[i] ~= std(y | X[i])`.
+
+    """
+    # This derives std(y | x) as described in 4.3.2 of arXiv:1211.0906
+
+    n = len(trees)
+    mean = np.zeros((len(X),))
+    std_al = np.zeros((len(X),))
+    std_ep = np.zeros((len(X),))
+
+    # Parallel loop
+    for tree in trees:
+        _accumulate_prediction_disentangled_v2(tree, X, min_variance, [mean, std_al, std_ep])
+
+    mean /= n
+
+    std_al /= n
+    std_ep = std_ep / n - mean**2
+
+    std_al[std_al <= 0.0] = 0.0
+    std_al **= 0.5
+
+    std_ep[std_ep <= 0.0] = 0.0
+    std_ep **= 0.5
+
+    return mean, std_al, std_ep
+
+def _return_mean_and_std_distentangled(X, n_outputs, trees, min_variance, n_jobs):
+    if n_jobs == 1:
+        return _return_mean_and_std_distentangled_v2(X, n_outputs, trees, min_variance, n_jobs)
+    else:
+        return _return_mean_and_std_distentangled_v1(X, n_outputs, trees, min_variance, n_jobs)
+    
 def _accumulate_prediction(tree, X, min_variance, out, lock):
     """This is a utility function for joblib's Parallel.
 

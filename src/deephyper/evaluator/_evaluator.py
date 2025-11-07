@@ -89,7 +89,9 @@ class Evaluator(abc.ABC):
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
         self.job_id_submitted = []  # List of jobs'id submitted by the evaluator.
         self.job_id_gathered = []  # List of jobs'id gathered by the evaluator.
-        self.timestamp = time.monotonic()  # Recorded time of when this evaluator interface was created.
+        self.timestamp = (
+            time.monotonic()
+        )  # Recorded time of when this evaluator interface was created.
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop: Optional[asyncio.AbstractEventLoop] = None  # Event loop for asyncio.

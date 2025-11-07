@@ -632,7 +632,9 @@ class Search(abc.ABC):
                 )
             else:
                 n_ask = len(new_results)
-                logger.info(f"Gathered {len(new_results)} job(s) in {time.monotonic() - t1:.4f} sec.")
+                logger.info(
+                    f"Gathered {len(new_results)} job(s) in {time.monotonic() - t1:.4f} sec."
+                )
 
             # Tell comes before history.extend
             # Because the optimizer state needs to be updated to selection solutions
