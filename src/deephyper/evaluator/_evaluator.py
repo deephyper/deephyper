@@ -144,7 +144,8 @@ class Evaluator(abc.ABC):
             self.executor.__exit__(type, value, traceback)  # type: ignore
 
     @property
-    def timeout(self):
+    def timeout(self) -> float | None:
+        """The timeout value set."""
         return self._timeout
 
     @timeout.setter
@@ -158,8 +159,8 @@ class Evaluator(abc.ABC):
         self._timeout = value
 
     @property
-    def time_left(self):
-        """Returns the time remaining according to a previously set timeout."""
+    def time_left(self) -> float | None:
+        """The time remaining according to a previously set timeout."""
         if self.timeout is None:
             val = None
         else:
@@ -178,12 +179,14 @@ class Evaluator(abc.ABC):
         self._num_jobs_offset = self.num_jobs_gathered
 
     @property
-    def num_jobs_submitted(self):
+    def num_jobs_submitted(self) -> int:
+        """The number of jobs submitted."""
         job_ids = self._storage.load_all_job_ids(self._search_id)
         return len(job_ids) - self._num_jobs_offset
 
     @property
-    def num_jobs_gathered(self):
+    def num_jobs_gathered(self) -> int:
+        """The number of jobs gathered."""
         return len(self.job_id_gathered) - self._num_jobs_offset
 
     def to_json(self):
@@ -196,22 +199,24 @@ class Evaluator(abc.ABC):
         """Create evaluator with a specific backend and configuration.
 
         Args:
-            run_function (function):
+            run_function (callable):
                 The function to execute in parallel.
+
             method (str, optional):
-                The backend to use in ``
-                ["serial", "thread", "process", "ray", "mpicomm"]``. Defaults
-                to ``"serial"``.
+                The backend to use in ``["serial", "thread", "process", "ray",
+                "mpicomm"]``. Defaults to ``"serial"``.
+
             method_kwargs (dict, optional):
                 Configuration dictionnary of the corresponding backend. Keys
                 corresponds to the keyword arguments of the corresponding
-                implementation. Defaults to "{}".
+                implementation. Defaults to ``"{}"``.
 
         Raises:
-            ValueError: if the ``method is`` not acceptable.
+            ValueError: if the ``method`` is not acceptable.
 
         Returns:
-            Evaluator: the ``Evaluator`` with the corresponding backend and configuration.
+            Evaluator: the instanciated ``Evaluator`` with the corresponding backend and
+            configuration.
         """
         if method not in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
@@ -493,6 +498,16 @@ class Evaluator(abc.ABC):
         return local_results
 
     def close(self) -> List[Job]:
+        """Closes the ``Evaluator``.
+
+        This will:
+
+        #. check if there are still running tasks in the AsyncIO loop.
+        #. check if there are task's results not collected yet.
+        #. cancel running tasks.
+        #. wait for running tasks to complete.
+        #. close the asyncio loop.
+        """
         logger.info(f"Closing {type(self).__name__}")
         jobs = []
         if self.loop is None:
@@ -556,6 +571,6 @@ class Evaluator(abc.ABC):
         return job
 
     @property
-    def is_master(self):
-        """Boolean that indicates if the current Evaluator object is a "Master"."""
+    def is_master(self) -> bool:
+        """Indicates if the current Evaluator object is a "master"."""
         return True
