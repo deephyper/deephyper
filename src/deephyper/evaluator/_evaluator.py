@@ -33,23 +33,27 @@ class MaximumJobsSpawnReached(RuntimeError):
 
 
 class Evaluator(abc.ABC):
-    """This ``Evaluator`` class asynchronously manages a series of Job objects.
+    """This class manages the execution of asynchronous parallel calls of a Python function.
 
-    It helps to execute given HPS or NAS tasks on various environments with
-    differing system settings and properties.
+    This base class defines the general logic and interface.
 
     Args:
         run_function (callable):
-            Functions to be executed by the ``Evaluator``.
+            Function to be executed by the ``Evaluator``.
+
         num_workers (int, optional):
-            Number of parallel workers available for the ``Evaluator``. Defaults to 1.
+            Number of parallel workers available for the ``Evaluator``. Defaults to ``1``.
+
         callbacks (list, optional):
             A list of callbacks to trigger custom actions at the creation or
-            completion of jobs. Defaults to None.
+            completion of jobs. Defaults to ``None``.
+
         run_function_kwargs (dict, optional):
             Static keyword arguments to pass to the ``run_function`` when executed.
+
         storage (Storage, optional):
             Storage used by the evaluator. Defaults to ``MemoryStorage``.
+
         search_id (Hashable, optional):
             The id of the search to use in the corresponding storage. If
             ``None`` it will create a new search identifier when initializing

@@ -15,7 +15,7 @@ class JobContext:
 
 
 class JobStatus(Enum):
-    """Represents the job status states."""
+    """Represents the execution status of a job."""
 
     READY = 0
     RUNNING = 1
@@ -25,12 +25,20 @@ class JobStatus(Enum):
 
 
 class Job:
-    """Represents an evaluation executed by the ``Evaluator`` class.
+    """Represents the execution of a generic ``run_function`` by the ``Evaluator``.
 
     Args:
-        id (Any): unique identifier of the job. Usually an integer.
-        args (dict): argument dictionnary of the ``run_function``.
-        run_function (callable): function executed by the ``Evaluator``
+        id (str):
+            unique identifier of the job. Usually an integer.
+
+        args (dict):
+            argument dictionnary of the ``run_function``.
+
+        run_function (callable):
+            function executed by the ``Evaluator``.
+
+        storage (Storage):
+            the storage client passed to the ``run_function``.
     """
 
     def __init__(
@@ -75,6 +83,22 @@ class Job:
 
 
 class HPOJob(Job):
+    """Represents the execution of a ``run_function`` for HPO by the Evaluator.
+
+    Args:
+        id (str):
+            unique identifier of the job. Usually an integer.
+
+        args (dict):
+            argument dictionnary of the ``run_function``.
+
+        run_function (callable):
+            function executed by the ``Evaluator``.
+        
+        storage (Storage):
+            the storage client passed to the ``run_function``.
+    """
+
     def __init__(self, id, args: dict, run_function: Callable, storage: Storage):
         super().__init__(id, args, run_function, storage)
 

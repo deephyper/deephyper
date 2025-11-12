@@ -1,7 +1,7 @@
 """Evaluator subpackage.
 
-This provides a common interface to execute isolated tasks with different
-parallel backends and system properties.
+This package a common interface to execute asynchronous parallel tasks with different
+backends and system properties.
 
 This interface is used by search algorithm to perform black-box optimization
 (the black-box being represented by the ``run``-function). An ``Evaluator``,
@@ -14,7 +14,7 @@ An example ``run``-function is:
 
 .. code-block:: python
 
-    def run(job: RunningJob) -> Union[float, str, Dict]:
+    def run(job: RunningJob) -> float | str | dict:
 
         config = job.parameters
         y = config["x"]**2

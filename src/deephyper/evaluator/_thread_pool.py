@@ -17,17 +17,22 @@ class ThreadPoolEvaluator(Evaluator):
 
     Args:
         run_function (callable):
-            Functions to be executed by the ``Evaluator``.
+            function to be executed by the ``Evaluator``.
+
         num_workers (int, optional):
             Number of concurrent threads used to compute the ``run_function``.
-            Defaults to 1.
+            Defaults to ``1``.
+
         callbacks (list, optional):
             A list of callbacks to trigger custom actions at the creation or
-            completion of jobs. Defaults to None.
+            completion of jobs. Defaults to ``None``.
+
         run_function_kwargs (dict, optional):
             Static keyword arguments to pass to the ``run_function`` when executed.
+
         storage (Storage, optional):
             Storage used by the evaluator. Defaults to ``MemoryStorage``.
+
         search_id (Hashable, optional):
             The id of the search to use in the corresponding storage. If
             ``None`` it will create a new search identifier when initializing
