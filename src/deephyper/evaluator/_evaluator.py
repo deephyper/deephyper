@@ -203,13 +203,57 @@ class Evaluator(abc.ABC):
                 The function to execute in parallel.
 
             method (str, optional):
-                The backend to use in ``["serial", "thread", "process", "ray",
-                "mpicomm"]``. Defaults to ``"serial"``.
+                The backend to use in ``["serial", "thread", "process", "loky",
+                "ray", "mpicomm"]``. Defaults to ``"serial"``.
+
+                - ``"serial"``: creates an instance of :class:`deephyper.evaluator.SerialEvaluator`.
+                This uses Python's ``asyncio`` base module for concurrency. It is an efficient method
+                for Python's functions that are I/O bound and implemented through the `async def`
+                and `await` primitives. It is running the code in in the local memory context of the
+                current process.
+
+                - ``"thread"``: creates an instance of :class:`deephyper.evaluator.ThreadPoolEvaluator`.
+                This uses Python's ``threading`` base module for concurrency. It is an efficient method
+                for Python's functions that are synchronously defined `def foo(...)` but use the `threading`
+                module internaly. It is running the code in in the local memory context of the
+                current process.
+
+                - ``"process"``: creates an instance of :class:`deephyper.evaluator.ProcessPoolEvaluator`.
+                This uses Python's ``concurrents.futures`` base module for concurrency. It is an efficient
+                method for Python's functions that are compute bound and should be scheduled on different CPU
+                cores of the local node. This method uses serialization by reference through the ``pickle`` base
+                module. Therefore it can only work with functions that are "importable". It is running the code
+                in a different memory context of the current process.
+
+                - ``"loky"``: creates an instance of :class:`deephyper.evaluator.LokyEvaluator`. This uses the
+                ``loky`` Python package for concurrency.  It is an efficient method for Python's functions that
+                are compute bound and should be scheduled on different CPU cores of the local node. This method
+                uses serialization by value through the ``cloudpickle`` Python package. Therefore it can be usesful
+                to schedule the execution of localy defined functions (i.e., not at the module level, inside an other
+                function for example) that are not importable or lambda functions. It is running the code
+                in a different memory context of the current process.
+
+                - ``"ray"``: creates an instance of :class:`deephyper.evaluator.RayEvaluator`. This uses the
+                ``ray`` Python package. It is an efficient method for Python's function that are compute bound and
+                should be scheduled on different compute ressources not necessarily on the local node. For a multi-nodes
+                setting it requires a Ray cluster to be started before creating the evaluator. This method
+                uses serialization by value through the ``cloudpickle`` Python package. Therefore it can also work with
+                local definitions of functions. It is also useful to easily perform some I/O optimization for example by
+                pre-loading data to remote processes (e.g., using the ``ray.put`` and ``ray.get`` primitives). It is running
+                the code in a different memory context of the current process. However, a global "Object Storage" is accessible
+                to all executed code.
+
+                - ``"mpicomm"``: creates an instance of :class:`deephyper.evaluator.MPICommEvaluator`. This 
+                uses the ``mpi4py`` Python package. It is an efficient method for Python's function that are compute bound and
+                should be scheduled on different compute ressources not necessarily on the local node. It schedules task
+                on MPI ranks available. This method uses serialization by reference through the ``pickle`` base
+                module. Therefore it can only work with functions that are "importable". It is running the code
+                in a different memory context of the current process.
 
             method_kwargs (dict, optional):
                 Configuration dictionnary of the corresponding backend. Keys
-                corresponds to the keyword arguments of the corresponding
-                implementation. Defaults to ``"{}"``.
+                corresponds to the keyword arguments of the constructor of the corresponding
+                evaluator class. Defaults to ``"{}"``.
 
         Raises:
             ValueError: if the ``method`` is not acceptable.
@@ -217,7 +261,7 @@ class Evaluator(abc.ABC):
         Returns:
             Evaluator: the instanciated ``Evaluator`` with the corresponding backend and
             configuration.
-        """
+        """  # noqa: E501
         if method not in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
             raise ValueError(
