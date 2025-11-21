@@ -60,13 +60,6 @@ class ThreadPoolEvaluator(Evaluator):
             max_workers=num_workers,
             thread_name_prefix="ThreadPoolEvaluator",
         )
-        self.sem = None
-
-    def set_event_loop(self):
-        super().set_event_loop()
-        # The semaphore should be created after getting the event loop to avoid
-        # binding it to a different event loop
-        self.sem = asyncio.Semaphore(self.num_workers)
 
     async def execute(self, job: Job) -> Job:
         async with self.sem:

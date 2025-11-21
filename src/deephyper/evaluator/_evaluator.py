@@ -99,6 +99,7 @@ class Evaluator(abc.ABC):
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop: Optional[asyncio.AbstractEventLoop] = None  # Event loop for asyncio.
+        self.sem = None
         self.num_objective = None  # record if multi-objective are recorded
         self._stopper = None  # stopper object
         self.search = None  # search instance
@@ -412,6 +413,10 @@ class Evaluator(abc.ABC):
             except RuntimeError:
                 # required when `timeout` is set because code is not running in main thread
                 self.loop = asyncio.new_event_loop()
+
+            # The semaphore should be created after getting the event loop to avoid
+            # binding it to a different event loop
+            self.sem = asyncio.Semaphore(self.num_workers)
 
     def submit(self, args_list: List[Dict]):
         """Send configurations to be evaluated by available workers.
