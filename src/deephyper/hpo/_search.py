@@ -241,7 +241,7 @@ class SearchHistory:
 
 
 class Search(abc.ABC):
-    """Abstract class which represents a search algorithm.
+    """Base class search/optimization algorithms.
 
     Args:
         problem:

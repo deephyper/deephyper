@@ -181,7 +181,7 @@ class HpProblem:
         `ConfigurationSpace`.
     """
 
-    def __init__(self, config_space=None):
+    def __init__(self, config_space=None, seed: int | None = None):
         if config_space is not None and not (isinstance(config_space, cs.ConfigurationSpace)):
             raise ValueError(
                 "Parameter 'config_space' should be an instance of ConfigurationSpace!"
@@ -191,6 +191,8 @@ class HpProblem:
             self._space = copy.deepcopy(config_space)
         else:
             self._space = cs.ConfigurationSpace()
+        if seed is not None:
+            self._space.seed(seed)
         self.references = []  # starting points
 
     def __str__(self):
@@ -284,15 +286,15 @@ class HpProblem:
         Add a `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to
         the ``HpProblem``.
 
-                >>> from deephyper.hpo import HpProblem
-                >>> import ConfigSpace as cs
-                >>> problem = HpProblem()
-                >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
-                >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
-                >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
-        s
-                Args:
-                    condition: A ConfigSpace condition.
+        >>> from deephyper.hpo import HpProblem
+        >>> import ConfigSpace as cs
+        >>> problem = HpProblem()
+        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
+        >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
+        >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
+
+        Args:
+            condition: A ConfigSpace condition.
         """
         self._space.add(condition)
 
@@ -304,9 +306,31 @@ class HpProblem:
         """
         self._space.add(*conditions)
 
+    def add(self, value, name=None, default_value=None) -> None:
+        """Add a component to the configuration space.
+
+        An added component can be an hyperparameter, a forbidden rule or a condition.
+        """
+        if name is not None:
+            self.add_hyperparameter(value, name, default_value)
+            return
+
+        self._space.add(value)
+
+    def sample(self, size: int = 1) -> list[dict]:
+        """Sample a list of hyperparameter configuration.
+
+        Args:
+            size (int): The number of configurations to sample.
+
+        Returns:
+            list[dict]: the list of sampled configurations.
+        """
+        return self._space.sample_configuration(size=size)
+
     @property
-    def space(self):
-        """The wrapped ConfigSpace object."""
+    def space(self) -> cs.ConfigurationSpace:
+        """The wrapped ConfigurationSpace object."""
         return self._space
 
     @property
@@ -344,3 +368,7 @@ class HpProblem:
         """Returns a dictionary of the space which can be saved as JSON."""
         d = self._space.to_serialized_dict()
         return d
+
+    def set_seed(self, seed: int):
+        """Set the random seed of the space."""
+        self._space.seed(seed)

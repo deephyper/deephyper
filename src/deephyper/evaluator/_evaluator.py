@@ -243,7 +243,7 @@ class Evaluator(abc.ABC):
                 the code in a different memory context of the current process. However, a global "Object Storage" is accessible
                 to all executed code.
 
-                - ``"mpicomm"``: creates an instance of :class:`deephyper.evaluator.MPICommEvaluator`. This 
+                - ``"mpicomm"``: creates an instance of :class:`deephyper.evaluator.MPICommEvaluator`. This
                 uses the ``mpi4py`` Python package. It is an efficient method for Python's function that are compute bound and
                 should be scheduled on different compute ressources not necessarily on the local node. It schedules task
                 on MPI ranks available. This method uses serialization by reference through the ``pickle`` base

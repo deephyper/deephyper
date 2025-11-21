@@ -20,14 +20,17 @@ from deephyper.hpo._solution import (
 )
 
 __all__ = [
-    "ArgMaxEstSelection",
-    "ArgMaxObsSelection",
+    # Definition of hyperparameter space
+    "HpProblem",
+    # Optimization algorithms
     "CBO",
     "ExperimentalDesignSearch",
-    "HpProblem",
     "RandomSearch",
     "RegularizedEvolution",
     "Search",
+    # Selection methods
+    "ArgMaxEstSelection",
+    "ArgMaxObsSelection",
     "Solution",
     "SolutionSelection",
 ]
