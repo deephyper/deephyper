@@ -751,29 +751,30 @@ class Optimizer(object):
         """Filter out duplicated values in ``samples``.
 
         Args:
-            samples (list): the list of samples to filter.
+            samples (list[list]): the list of samples to filter.
 
         Returns:
-            list: the filtered list of samples
+            list[list]: the filtered list of samples.
         """
-        if self.filter_duplicated:
-            # check duplicated values
+        if not self.filter_duplicated or not samples:
+            return samples
 
-            hps_names = self.space.dimension_names
+        # Remove duplicates inside `samples`
+        # use tuples for efficient hashing
+        unique_samples = list(dict.fromkeys(tuple(s) for s in samples))
 
-            df_samples = pd.DataFrame(data=samples, columns=hps_names, dtype="O")
-            df_samples = df_samples[~df_samples.duplicated(keep="first")]
+        # Exclude samples already seen in history
+        if self.sampled:
+            history = set(tuple(s) for s in self.sampled)
+            unique_samples = [list(s) for s in unique_samples if s not in history]
+        else:
+            unique_samples = [list(s) for s in unique_samples]
 
-            if len(self.sampled) > 0:
-                df_history = pd.DataFrame(data=self.sampled, columns=hps_names)
-                df_merge = pd.merge(df_samples, df_history, on=None, how="inner")
-                df_samples = pd.concat([df_samples, df_merge])
-                df_samples = df_samples[~df_samples.duplicated(keep=False)]
-
-            if len(df_samples) > 0:
-                samples = df_samples.values.tolist()
-
-        return samples
+        if len(unique_samples) > 0:
+            return unique_samples
+        else:
+            return samples
+    
 
     def _filter_failures(self, yi):
         """Filter or replace failed objectives.
