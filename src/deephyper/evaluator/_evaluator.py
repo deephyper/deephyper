@@ -516,13 +516,6 @@ class Evaluator(abc.ABC):
 
         return other_results
 
-    def decode(self, key):
-        """Decode the key following a JSON format to return a dict."""
-        x = json.loads(key)
-        if not isinstance(x, dict):
-            raise ValueError(f"Expected dict, but got {type(x)}")
-        return x
-
     def process_local_tasks_done(self, tasks):
         local_results = []
         for task in tasks:
