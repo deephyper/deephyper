@@ -426,22 +426,19 @@ class Evaluator(abc.ABC):
         self._create_tasks(args_list)
         logger.info("submit done")
 
-    def gather(self, type, size=1) -> list[Job] | tuple[list[Job], list[Job]]:
+    def gather(self, type, size: int = 1) -> list[Job] | tuple[list[Job], list[Job]]:
         """Collect the completed tasks from the evaluator in batches of one or more.
 
         Args:
             type (str):
-                Options:
-                    ``"ALL"``
-                        Block until all jobs submitted to the evaluator are completed.
-                    ``"BATCH"``
-                        Specify a minimum batch size of jobs to collect from
-                        the evaluator. The method will block until at least
-                        ``size`` evaluations are completed.
+                - ``"ALL"``: Block until all jobs submitted to the evaluator are completed.
 
-            size (int, optional):
+                - ``"BATCH"`` Specify a minimum batch size of jobs to collect from the evaluator.
+                The method will block until at least ``size`` evaluations are completed.
+
+            size (int):
                 The minimum batch size that we want to collect from the
-                evaluator. Defaults to 1.
+                evaluator. Defaults to ``1``.
 
         Raises:
             Exception: Raised when a gather operation other than "ALL" or "BATCH" is provided.
@@ -460,7 +457,7 @@ class Evaluator(abc.ABC):
         if size > 0:
             self.loop.run_until_complete(self._await_at_least_n_tasks(size))
 
-        local_results = self.process_local_tasks_done(self._tasks_done)
+        local_results = self._process_local_tasks_done(self._tasks_done)
 
         # Access storage to return results from other processes
         other_results = self.gather_other_jobs_done()
@@ -481,8 +478,12 @@ class Evaluator(abc.ABC):
 
             return local_results, other_results
 
-    def gather_other_jobs_done(self):
-        """Access storage to return results from other processes."""
+    def gather_other_jobs_done(self) -> list[Job]:
+        """Access storage to return results from other processes.
+
+        Returns:
+            list[Job]: A batch of completed jobs.
+        """
         logger.info("gather jobs from other processes")
 
         job_id_all = self._storage.load_all_job_ids(self._search_id)
@@ -516,7 +517,7 @@ class Evaluator(abc.ABC):
 
         return other_results
 
-    def process_local_tasks_done(self, tasks):
+    def _process_local_tasks_done(self, tasks):
         local_results = []
         for task in tasks:
             if task.cancelled():
