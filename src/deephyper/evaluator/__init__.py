@@ -6,7 +6,7 @@ backends and system properties.
 This interface is used by search algorithm to perform black-box optimization
 (the black-box being represented by the ``run``-function). An ``Evaluator``,
 when instanciated, is bound to a ``run``-function which takes as first
-argument a ``job`` and optionally has other keyword-arguments. 
+argument a ``job`` and optionally has other keyword-arguments.
 In it's most basic form the return value is a ``float``. The standard way of
 creating an ``Evaluator`` is to use :meth:`deephyper.evaluator.Evaluator.create`.
 

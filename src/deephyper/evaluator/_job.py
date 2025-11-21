@@ -94,7 +94,7 @@ class HPOJob(Job):
 
         run_function (callable):
             function executed by the ``Evaluator``.
-        
+
         storage (Storage):
             the storage client passed to the ``run_function``.
     """
