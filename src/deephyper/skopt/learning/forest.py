@@ -243,144 +243,109 @@ def _return_mean_and_std(X, n_outputs, trees, min_variance, n_jobs):
 
 
 class RandomForestRegressor(ForestRegressor):
-    """RandomForestRegressor that supports conditional std computation.
+    """RandomForestRegressor that supports conditional standard deviation computation.
 
-    Parameters
-    ----------
-    n_estimators : integer, optional (default=10)
-        The number of trees in the forest.
+    Args:
+        n_estimators (int, optional): The number of trees in the forest.
+            Defaults to ``100``.
 
-    criterion : string, optional (default="mse")
-        The function to measure the quality of a split. Supported criteria
-        are "mse" for the mean squared error, which is equal to variance
-        reduction as feature selection criterion, and "mae" for the mean
-        absolute error.
+        criterion (str, optional): The function to measure the quality of a split.
+            Supported criteria are:
+            - ``"mse"``: mean squared error (variance reduction)
+            - ``"mae"``: mean absolute error  
+            Defaults to ``"mse"``.
 
-    max_features : int, float, string or None, optional (default="1.0")
-        The number of features to consider when looking for the best split:
+        max_features (int | float | str | None, optional): The number of features
+            to consider when looking for the best split. Defaults to ``"1.0"``.
 
-        - If int, then consider `max_features` features at each split.
-        - If float, then `max_features` is a percentage and
-          `int(max_features * n_features)` features are considered at each
-          split.
-        - If "sqrt", then `max_features=sqrt(n_features)`.
-        - If "log2", then `max_features=log2(n_features)`.
-        - If None, then `max_features=n_features`.
+            - If int, consider ``max_features`` features at each split.
+            - If float, treat as a percentage: ``int(max_features * n_features)``.
+            - If ``"sqrt"``, use ``sqrt(n_features)``.
+            - If ``"log2"``, use ``log2(n_features)``.
+            - If ``None``, use all features.
 
-        .. note::
-            The search for a split does not stop until at least one
-            valid partition of the node samples is found, even if it
-            requires to effectively inspect more than ``max_features``
-            features.
+            Note:
+                The search for a split does not stop until at least one valid
+                partition of the node samples is found, even if this requires
+                inspecting more than ``max_features`` features.
 
-    max_depth : integer or None, optional (default=None)
-        The maximum depth of the tree. If None, then nodes are expanded until
-        all leaves are pure or until all leaves contain less than
-        min_samples_split samples.
+        max_depth (int | None, optional): Maximum depth of the tree. If None, nodes
+            expand until all leaves are pure or contain fewer than
+            `min_samples_split` samples. Defaults to`` None``.
 
-    min_samples_split : int, float, optional (default=2)
-        The minimum number of samples required to split an internal node:
+        min_samples_split (int | float, optional): Minimum number of samples
+            required to split an internal node. Defaults to ``2``.
 
-        - If int, then consider `min_samples_split` as the minimum number.
-        - If float, then `min_samples_split` is a percentage and
-          `ceil(min_samples_split * n_samples)` are the minimum
-          number of samples for each split.
+            - If int, use the exact number.
+            - If float, interpret as a percentage:
+            `ceil(min_samples_split * n_samples)`.
 
-    min_samples_leaf : int, float, optional (default=1)
-        The minimum number of samples required to be at a leaf node:
+        min_samples_leaf (int | float, optional): Minimum number of samples
+            required at a leaf node. Defaults to ``1``.
 
-        - If int, then consider `min_samples_leaf` as the minimum number.
-        - If float, then `min_samples_leaf` is a percentage and
-          `ceil(min_samples_leaf * n_samples)` are the minimum
-          number of samples for each node.
+            - If int, use the exact number.
+            - If float, interpret as a percentage: ``ceil(min_samples_leaf * n_samples)``.
 
-    min_weight_fraction_leaf : float, optional (default=0.)
-        The minimum weighted fraction of the sum total of weights (of all
-        the input samples) required to be at a leaf node. Samples have
-        equal weight when sample_weight is not provided.
+        min_weight_fraction_leaf (float, optional): Minimum weighted fraction of
+            the total sample weight required at a leaf node. Defaults to ``0.0``.
 
-    max_leaf_nodes : int or None, optional (default=None)
-        Grow trees with ``max_leaf_nodes`` in best-first fashion.
-        Best nodes are defined as relative reduction in impurity.
-        If None then unlimited number of leaf nodes.
+        max_leaf_nodes (int | None, optional): Grow trees with at most
+            ``max_leaf_nodes`` in best-first fashion. If None, unlimited.
+            Defaults to ``None``.
 
-    min_impurity_decrease : float, optional (default=0.)
-        A node will be split if this split induces a decrease of the impurity
-        greater than or equal to this value.
-        The weighted impurity decrease equation is the following::
+        min_impurity_decrease (float, optional): A node will be split if the
+            impurity decrease is greater than or equal to this value. Defaults to 0.0.
 
-            N_t / N * (impurity - N_t_R / N_t * right_impurity
+            Weighted impurity decrease::
+
+                N_t / N * (impurity - N_t_R / N_t * right_impurity
                                 - N_t_L / N_t * left_impurity)
 
-        where ``N`` is the total number of samples, ``N_t`` is the number of
-        samples at the current node, ``N_t_L`` is the number of samples in the
-        left child, and ``N_t_R`` is the number of samples in the right child.
-        ``N``, ``N_t``, ``N_t_R`` and ``N_t_L`` all refer to the weighted sum,
-        if ``sample_weight`` is passed.
+            where ``N`` is total weighted samples, ``N_t`` samples at current node,
+            ``N_t_L`` left child, and ``N_t_R`` right child.
 
-    bootstrap : boolean, optional (default=True)
-        Whether bootstrap samples are used when building trees.
+        bootstrap (bool, optional): Whether bootstrap samples are used when
+            building trees. Defaults to ``True``.
 
-    oob_score : bool, optional (default=False)
-        whether to use out-of-bag samples to estimate
-        the R^2 on unseen data.
+        oob_score (bool, optional): Whether to use out-of-bag samples to estimate
+            R² on unseen data. Defaults to ``False``.
 
-    n_jobs : integer, optional (default=1)
-        The number of jobs to run in parallel for both `fit` and `predict`.
-        If -1, then the number of jobs is set to the number of cores.
+        n_jobs (int, optional): Number of parallel jobs for ``fit`` and ``predict``.
+            If -1, use all cores. Defaults to ``1``.
 
-    random_state : int, RandomState instance or None, optional (default=None)
-        If int, random_state is the seed used by the random number generator;
-        If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by `np.random`.
+        random_state (int | RandomState | None, optional): Seed or random number
+            generator. Defaults to ``None``.
 
-    verbose : int, optional (default=0)
-        Controls the verbosity of the tree building process.
+        verbose (int, optional): Verbosity level of the tree-building process.
+            Defaults to ``0``.
 
-    warm_start : bool, optional (default=False)
-        When set to ``True``, reuse the solution of the previous call to fit
-        and add more estimators to the ensemble, otherwise, just fit a whole
-        new forest.
+        warm_start (bool, optional): If ``True``, reuse solution from previous call to
+            ``fit`` and add more estimators. Otherwise fit a new forest. Defaults to
+            ``False``.
+
+        splitter (str): The splitter strategy in ``["random", "best"]``. Defaults 
+            to ``"best"``.
 
     Attributes:
-    ----------
-    estimators_ : list of DecisionTreeRegressor
-        The collection of fitted sub-estimators.
-
-    feature_importances_ : array of shape = [n_features]
-        The feature importances (the higher, the more important the feature).
-
-    n_features_ : int
-        The number of features when ``fit`` is performed.
-
-    n_outputs_ : int
-        The number of outputs when ``fit`` is performed.
-
-    oob_score_ : float
-        Score of the training dataset obtained using an out-of-bag estimate.
-
-    oob_prediction_ : array of shape = [n_samples]
-        Prediction computed with out-of-bag estimate on the training set.
+        estimators_ (list[DecisionTreeRegressor]): Fitted sub-estimators.
+        feature_importances_ (ndarray): Feature importances, shape (n_features,).
+        n_features_ (int): Number of features at `fit` time.
+        n_outputs_ (int): Number of outputs at `fit` time.
+        oob_score_ (float): Out-of-bag R² score.
+        oob_prediction_ (ndarray): Out-of-bag predictions, shape (n_samples,).
 
     Notes:
-    -----
-    The default values for the parameters controlling the size of the trees
-    (e.g. ``max_depth``, ``min_samples_leaf``, etc.) lead to fully grown and
-    unpruned trees which can potentially be very large on some data sets. To
-    reduce memory consumption, the complexity and size of the trees should be
-    controlled by setting those parameter values.
-    The features are always randomly permuted at each split. Therefore,
-    the best found split may vary, even with the same training data,
-    ``max_features=n_features`` and ``bootstrap=False``, if the improvement
-    of the criterion is identical for several splits enumerated during the
-    search of the best split. To obtain a deterministic behaviour during
-    fitting, ``random_state`` has to be fixed.
+        The default hyperparameters (e.g., ``max_depth``, ``min_samples_leaf``)
+        result in fully grown, unpruned trees, which may become large in memory.
+        Consider adjusting these values to reduce complexity.
+
+        Features are always randomly permuted at each split. Therefore, the best
+        split may vary even with identical training data, ``max_features=n_features``,
+        and ``bootstrap=False``. To ensure deterministic behavior, set
+        ``random_state``.
 
     References:
-    ----------
-    .. [1] L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001.
-
+        Breiman, L. (2001). *Random Forests*. Machine Learning, 45(1), 5-32.
     """
 
     def __init__(
@@ -404,7 +369,7 @@ class RandomForestRegressor(ForestRegressor):
         ccp_alpha=0.0,
         max_samples=None,
         min_variance=0.0,
-        splitter="random",
+        splitter="best",
     ):
         super().__init__(
             # !keyword-argument changing from sklearn==1.2.0, positional fixed it!
@@ -491,143 +456,104 @@ class RandomForestRegressor(ForestRegressor):
 class ExtraTreesRegressor(_sk_ExtraTreesRegressor):
     """ExtraTreesRegressor that supports conditional standard deviation.
 
-    Parameters
-    ----------
-    n_estimators : integer, optional (default=10)
-        The number of trees in the forest.
+    Args:
+        n_estimators (int, optional): The number of trees in the forest.
+            Defaults to ``100``.
 
-    criterion : string, optional (default="squared_error")
-        The function to measure the quality of a split. Supported criteria
-        are "squared_error" for the mean squared error, which is equal to variance
-        reduction as feature selection criterion, and "mae" for the mean
-        absolute error.
+        criterion (str, optional): The function to measure the quality of a split.
+            Supported criteria are:
+            - ``"mse"``: mean squared error (variance reduction)
+            - ``"mae"``: mean absolute error  
+            Defaults to ``"mse"``.
 
-    max_features : int, float, string or None, optional (default="auto")
-        The number of features to consider when looking for the best split:
+        max_features (int | float | str | None, optional): The number of features
+            to consider when looking for the best split. Defaults to ``"1.0"``.
 
-        - If int, then consider `max_features` features at each split.
-        - If float, then `max_features` is a percentage and
-          `int(max_features * n_features)` features are considered at each
-          split.
-        - If "auto", then `max_features=n_features`.
-        - If "sqrt", then `max_features=sqrt(n_features)`.
-        - If "log2", then `max_features=log2(n_features)`.
-        - If None, then `max_features=n_features`.
+            - If int, consider ``max_features`` features at each split.
+            - If float, treat as a percentage: ``int(max_features * n_features)``.
+            - If ``"sqrt"``, use ``sqrt(n_features)``.
+            - If ``"log2"``, use ``log2(n_features)``.
+            - If ``None``, use all features.
 
-        .. note::
-            The search for a split does not stop until at least one
-            valid partition of the node samples is found, even if it
-            requires to effectively inspect more than ``max_features``
-            features.
+            Note:
+                The search for a split does not stop until at least one valid
+                partition of the node samples is found, even if this requires
+                inspecting more than ``max_features`` features.
 
-    max_depth : integer or None, optional (default=None)
-        The maximum depth of the tree. If None, then nodes are expanded until
-        all leaves are pure or until all leaves contain less than
-        min_samples_split samples.
+        max_depth (int | None, optional): Maximum depth of the tree. If None, nodes
+            expand until all leaves are pure or contain fewer than
+            `min_samples_split` samples. Defaults to`` None``.
 
-    min_samples_split : int, float, optional (default=2)
-        The minimum number of samples required to split an internal node:
+        min_samples_split (int | float, optional): Minimum number of samples
+            required to split an internal node. Defaults to ``2``.
 
-        - If int, then consider `min_samples_split` as the minimum number.
-        - If float, then `min_samples_split` is a percentage and
-          `ceil(min_samples_split * n_samples)` are the minimum
-          number of samples for each split.
+            - If int, use the exact number.
+            - If float, interpret as a percentage:
+            `ceil(min_samples_split * n_samples)`.
 
-    min_samples_leaf : int, float, optional (default=1)
-        The minimum number of samples required to be at a leaf node:
+        min_samples_leaf (int | float, optional): Minimum number of samples
+            required at a leaf node. Defaults to ``1``.
 
-        - If int, then consider `min_samples_leaf` as the minimum number.
-        - If float, then `min_samples_leaf` is a percentage and
-          `ceil(min_samples_leaf * n_samples)` are the minimum
-          number of samples for each node.
+            - If int, use the exact number.
+            - If float, interpret as a percentage: ``ceil(min_samples_leaf * n_samples)``.
 
-    min_weight_fraction_leaf : float, optional (default=0.)
-        The minimum weighted fraction of the sum total of weights (of all
-        the input samples) required to be at a leaf node. Samples have
-        equal weight when sample_weight is not provided.
+        min_weight_fraction_leaf (float, optional): Minimum weighted fraction of
+            the total sample weight required at a leaf node. Defaults to ``0.0``.
 
-    max_leaf_nodes : int or None, optional (default=None)
-        Grow trees with ``max_leaf_nodes`` in best-first fashion.
-        Best nodes are defined as relative reduction in impurity.
-        If None then unlimited number of leaf nodes.
+        max_leaf_nodes (int | None, optional): Grow trees with at most
+            ``max_leaf_nodes`` in best-first fashion. If None, unlimited.
+            Defaults to ``None``.
 
-    min_impurity_decrease : float, optional (default=0.)
-        A node will be split if this split induces a decrease of the impurity
-        greater than or equal to this value.
-        The weighted impurity decrease equation is the following::
+        min_impurity_decrease (float, optional): A node will be split if the
+            impurity decrease is greater than or equal to this value. Defaults to 0.0.
 
-            N_t / N * (impurity - N_t_R / N_t * right_impurity
+            Weighted impurity decrease::
+
+                N_t / N * (impurity - N_t_R / N_t * right_impurity
                                 - N_t_L / N_t * left_impurity)
 
-        where ``N`` is the total number of samples, ``N_t`` is the number of
-        samples at the current node, ``N_t_L`` is the number of samples in the
-        left child, and ``N_t_R`` is the number of samples in the right child.
-        ``N``, ``N_t``, ``N_t_R`` and ``N_t_L`` all refer to the weighted sum,
-        if ``sample_weight`` is passed.
+            where ``N`` is total weighted samples, ``N_t`` samples at current node,
+            ``N_t_L`` left child, and ``N_t_R`` right child.
 
-    bootstrap : boolean, optional (default=True)
-        Whether bootstrap samples are used when building trees.
+        bootstrap (bool, optional): Whether bootstrap samples are used when
+            building trees. Defaults to ``True``.
 
-    oob_score : bool, optional (default=False)
-        whether to use out-of-bag samples to estimate
-        the R^2 on unseen data.
+        oob_score (bool, optional): Whether to use out-of-bag samples to estimate
+            R² on unseen data. Defaults to ``False``.
 
-    n_jobs : integer, optional (default=1)
-        The number of jobs to run in parallel for both `fit` and `predict`.
-        If -1, then the number of jobs is set to the number of cores.
+        n_jobs (int, optional): Number of parallel jobs for ``fit`` and ``predict``.
+            If -1, use all cores. Defaults to ``1``.
 
-    random_state : int, RandomState instance or None, optional (default=None)
-        If int, random_state is the seed used by the random number generator;
-        If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by `np.random`.
+        random_state (int | RandomState | None, optional): Seed or random number
+            generator. Defaults to ``None``.
 
-    verbose : int, optional (default=0)
-        Controls the verbosity of the tree building process.
+        verbose (int, optional): Verbosity level of the tree-building process.
+            Defaults to ``0``.
 
-    warm_start : bool, optional (default=False)
-        When set to ``True``, reuse the solution of the previous call to fit
-        and add more estimators to the ensemble, otherwise, just fit a whole
-        new forest.
+        warm_start (bool, optional): If ``True``, reuse solution from previous call to
+            ``fit`` and add more estimators. Otherwise fit a new forest. Defaults to
+            ``False``.
 
     Attributes:
-    ----------
-    estimators_ : list of DecisionTreeRegressor
-        The collection of fitted sub-estimators.
-
-    feature_importances_ : array of shape = [n_features]
-        The feature importances (the higher, the more important the feature).
-
-    n_features_ : int
-        The number of features when ``fit`` is performed.
-
-    n_outputs_ : int
-        The number of outputs when ``fit`` is performed.
-
-    oob_score_ : float
-        Score of the training dataset obtained using an out-of-bag estimate.
-
-    oob_prediction_ : array of shape = [n_samples]
-        Prediction computed with out-of-bag estimate on the training set.
+        estimators_ (list[DecisionTreeRegressor]): Fitted sub-estimators.
+        feature_importances_ (ndarray): Feature importances, shape (n_features,).
+        n_features_ (int): Number of features at `fit` time.
+        n_outputs_ (int): Number of outputs at `fit` time.
+        oob_score_ (float): Out-of-bag R² score.
+        oob_prediction_ (ndarray): Out-of-bag predictions, shape (n_samples,).
 
     Notes:
-    -----
-    The default values for the parameters controlling the size of the trees
-    (e.g. ``max_depth``, ``min_samples_leaf``, etc.) lead to fully grown and
-    unpruned trees which can potentially be very large on some data sets. To
-    reduce memory consumption, the complexity and size of the trees should be
-    controlled by setting those parameter values.
-    The features are always randomly permuted at each split. Therefore,
-    the best found split may vary, even with the same training data,
-    ``max_features=n_features`` and ``bootstrap=False``, if the improvement
-    of the criterion is identical for several splits enumerated during the
-    search of the best split. To obtain a deterministic behaviour during
-    fitting, ``random_state`` has to be fixed.
+        The default hyperparameters (e.g., ``max_depth``, ``min_samples_leaf``)
+        result in fully grown, unpruned trees, which may become large in memory.
+        Consider adjusting these values to reduce complexity.
+
+        Features are always randomly permuted at each split. Therefore, the best
+        split may vary even with identical training data, ``max_features=n_features``,
+        and ``bootstrap=False``. To ensure deterministic behavior, set
+        ``random_state``.
 
     References:
-    ----------
-    .. [1] L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001.
-
+        Breiman, L. (2001). *Random Forests*. Machine Learning, 45(1), 5-32.
     """
 
     def __init__(

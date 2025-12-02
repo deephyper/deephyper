@@ -142,7 +142,7 @@ def scheduler_constant(i, eta_0, num_dim):
 
 
 class CBO(Search):
-    """Centralized Bayesian Optimisation Search.
+    r"""Centralized Bayesian Optimisation Search.
 
     It follows a manager-workers architecture where the manager runs the Bayesian optimization
     loop and workers execute parallel evaluations of the black-box function.
@@ -185,21 +185,32 @@ class CBO(Search):
             select the argmax of observed objective values, and ``"argmax_est"`` would select the
             argmax of estimated objective values (through a predictive model).
 
-        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
+        surrogate_model (str | sklearn.base.RegressorMixin, optional): Surrogate model used by
             the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
-            "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
-            the best compromise between speed and quality when performing a lot of parallel
-            evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-
-            Process which is the best choice when maximizing the quality of iteration but quickly
-            slow down when reaching hundreds of evaluations, also it does not support conditional
-            search space. ``"RF"`` is for Random-Forest, slower than extremely randomized trees but
-            with better mean estimate and worse epistemic uncertainty quantification capabilities.
-            ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than
-            other tree-based method worse uncertainty quantification capabilities and slower than
-            ``"RF"``. Defaults to ``"ET"``.
+            "DUMMY"]`` or a sklearn regressor. Defaults to ``"ET"``.
 
-        surrogate_model_kwargs (dict, optional): Additional parameters to pass to the surrogate
-            model. Defaults to ``None``.
+            - ``"ET"`` :
+                is for Extremely Randomized Trees which is the best compromise between speed and
+                quality when performing a lot of parallel evaluations, i.e., reaching more than
+                hundreds of evaluations.
+
+            - ``"GP"`` :
+                is for Gaussian-Process which is the best choice when maximizing the quality of
+                iteration but quickly slow down when reaching hundreds of evaluations, also it
+                does not support constrained search space.
+
+            - ``"RF"`` :
+                is for Random-Forest, slower than extremely randomized trees but with better
+                mean estimate and worse epistemic uncertainty quantification capabilities.
+
+            - ``"GBRT"`` :
+                is for Gradient-Boosting Regression Tree, it has better mean estimate than
+                other tree-based method worse uncertainty quantification capabilities and slower
+                than ``"RF"``.
+
+        surrogate_model_kwargs (dict, optional): keyword-arguments to pass to the surrogate
+            model. Defaults to ``None``. See the description of these arguments in the module
+            :mod:`deephyper.skopt.learning`.
 
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a
             value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
@@ -230,8 +241,28 @@ class CBO(Search):
             Method used to minimze the acquisition function. Can be a value in
             ``["sampling", "lbfgs", "ga", "mixedga"]``. Defaults to ``"auto"``.
 
-        acq_optimizer_kwargs (dict, optional):
-            A dictionnary of parameters for the acquisition function optimizer:
+            - ``"sampling"``
+                the optimization is performed via sampling where the number of
+                samples is controlled by ``acq_optimizer_kwargs={"n_points": 10_000}``.
+
+            - ``"lbfgs"``:
+                the optimization is performed via gradient-descent. It is only compatible
+                with ``surrogate_model="GP"``.
+
+            - ``"mixedga"``:
+                the optimization is performed via a Mixed Genetic Algorithm. It is made for
+                mixed-integer search space (with continuous, discrete and categorical variables).
+                It can increase the cost of BO iterations. In order to amortize this cost we can use
+                ``acq_optimizer_kwargs={"acq_optimizer_freq": 2}`` with a value ``> 1``.
+
+            - ``"ga"``:
+                the optimization is performed via a continuous Genetic Algorithm. It is made
+                for surrogate models without gradients (e.g., trees, forest) and for search space
+                that contains mostly continuous variables. Its cost can also be amortized using
+                ``acq_optimizer_freq > 1``.
+
+        acq_optimizer_kwargs (dict, optional): A dictionnary of parameters for the acquisition
+            function optimizer:
 
             - ``"acq_optimizer_freq"`` (int)
                 Frequency of optimization calls for the acquisition function. Defaults
@@ -266,13 +297,13 @@ class CBO(Search):
 
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
             strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]``. All
-            ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are
-            requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the
-            minimum, mean and maximum objective found so far; for multiple objectives, these are
-            the minimum, mean and maximum of the individual objectives) to infer the acquisition
-            function. Constant-Liar strategy have poor scalability because of this repeated re-
-            fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value
-            for each new requested point without re-fitting the model.
+            ``"cl_..."`` strategies follow the constant-liar scheme, where if :math:`N` new points
+            are requested, the surrogate model is re-fitted :math:`N-1` times with lies
+            (respectively, the minimum, mean and maximum objective found so far; for multiple
+            objectives, these are the minimum, mean and maximum of the individual objectives) to
+            infer the acquisition function. Constant-Liar strategy have poor scalability because of
+            this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a
+            new :math:`\kappa` value for each new requested point without re-fitting the model.
 
         n_initial_points (int, optional): Number of collected objectives required before fitting
             the surrogate-model. Defaults to ``None`` that will use ``2 * N + 1`` where ``N`` is
