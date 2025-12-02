@@ -1,5 +1,6 @@
 import asyncio
 import functools
+from inspect import iscoroutinefunction
 from typing import Callable, Hashable
 
 from deephyper.evaluator import Evaluator, Job, JobStatus
@@ -46,7 +47,7 @@ class SerialEvaluator(Evaluator):
         storage: Storage = None,
         search_id: Hashable = None,
     ):
-        if not asyncio.iscoroutinefunction(run_function):
+        if not iscoroutinefunction(run_function):
             raise ValueError(
                 f"The {run_function=} passed to {type(self).__name__} is not a coroutine "
                 "(e.g., with 'async def' in its definition) either make it a coroutine function "

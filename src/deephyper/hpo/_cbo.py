@@ -601,6 +601,10 @@ class CBO(Search):
             )
             logger.info(f"Set up scheduler '{scheduler}'")
 
+        if self._problem.sampling_fn or self._problem.constraint_fn:
+            logger.info("Using problem sampler as sampling_fn or constraint_fn was detect.")
+            self._opt_kwargs["custom_sampler"] = self._problem
+
         self._num_asked = 0
 
     def _setup_optimizer(self):
@@ -883,9 +887,8 @@ class CBO(Search):
 
     def fit_generative_model(
         self,
-        df,
-        q=0.90,
-        verbose=False,
+        df: str | pd.DataFrame,
+        q: float = 0.90,
     ):
         """Fits a generative model for sampling during BO.
 
@@ -902,14 +905,11 @@ class CBO(Search):
         >>> search.search(evaluator, max_evals=100)
 
         Args:
-            df (str|DataFrame): a dataframe or path to CSV from a previous search.
+            df (str | DataFrame): a dataframe or path to CSV from a previous search.
 
-            q (float, optional): the quantile defined the set of top configurations used to bias
+            q (float): the quantile defined the set of top configurations used to bias
                 the search. Defaults to ``0.90`` which select the top-10% configurations from
                 ``df``.
-
-            verbose (bool, optional): If set to ``True`` it will print the score of the generative
-                model. Defaults to ``False``.
 
         Returns:
             model: the generative model.
@@ -967,7 +967,9 @@ class CBO(Search):
 
         return model
 
-    def fit_search_space(self, df, fac_numerical=0.125, fac_categorical=10):
+    def fit_search_space(
+        self, df: str | pd.DataFrame, fac_numerical: float = 0.125, fac_categorical: int = 10
+    ):
         """Apply prior-guided transfer learning based on a DataFrame of results.
 
         Example Usage:
@@ -977,7 +979,7 @@ class CBO(Search):
         >>> search.search(evaluator, max_evals=100)
 
         Args:
-            df (str|DataFrame): a checkpoint from a previous search.
+            df (str | DataFrame): a checkpoint from a previous search.
 
             fac_numerical (float): the factor used to compute the sigma of a truncated normal
                 distribution based on ``sigma = max(1.0, (upper - lower) * fac_numerical)``. A

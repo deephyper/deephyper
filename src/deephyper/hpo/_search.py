@@ -1,5 +1,4 @@
 import abc
-import asyncio
 import copy
 import csv
 import json
@@ -8,6 +7,7 @@ import os
 import pathlib
 import time
 from typing import Any, Dict, List, Literal, Optional
+from inspect import iscoroutinefunction
 
 import numpy as np
 import pandas as pd
@@ -368,7 +368,7 @@ class Search(abc.ABC):
         if not (isinstance(evaluator, Evaluator)):
             if callable(evaluator):
                 # Pick the adapted evaluator depending if the passed function is a coroutine
-                if asyncio.iscoroutinefunction(evaluator):
+                if iscoroutinefunction(evaluator):
                     method = "serial"
                 else:
                     method = "thread"

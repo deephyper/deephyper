@@ -6,6 +6,7 @@ import ConfigSpace as CS
 import numpy as np
 import scipy.stats as ss
 import yaml
+import pandas as pd
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 from sklearn.utils import check_random_state
 
@@ -1156,6 +1157,8 @@ class Space:
                 return columns.tolist()
             else:
                 confs = self.custom_sampler.sample(n_samples)
+                if isinstance(confs, list) and isinstance(confs[0], dict):
+                    confs = pd.DataFrame(confs)
 
                 columns = []
                 for dim in self.dimensions:

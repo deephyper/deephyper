@@ -1,7 +1,12 @@
 import os
 import time
-import pytest
+
+import ConfigSpace as cs
 import numpy as np
+import pytest
+
+from deephyper.evaluator import Evaluator
+from deephyper.hpo import CBO, HpProblem
 
 SEARCH_KWARGS_DEFAULTS = dict(
     random_state=42,
@@ -14,9 +19,6 @@ SEARCH_KWARGS_DEFAULTS = dict(
 
 
 def test_cbo_random_seed(tmp_path):
-    from deephyper.evaluator import Evaluator
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
@@ -85,8 +87,6 @@ def test_cbo_random_seed(tmp_path):
 
 
 def test_sample_types(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
     problem.add_hyperparameter((0.0, 10.0), "x_float")
@@ -127,8 +127,6 @@ def test_sample_types(tmp_path):
 
 
 def test_sample_types_no_cat(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
     problem.add_hyperparameter((0.0, 10.0), "x_float")
@@ -167,9 +165,6 @@ def test_sample_types_no_cat(tmp_path):
 
 
 def test_gp(tmp_path):
-    from deephyper.evaluator import Evaluator
-    from deephyper.hpo import CBO, HpProblem
-
     # test float hyperparameters
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
@@ -224,9 +219,6 @@ def test_gp(tmp_path):
 
 
 def test_sample_types_conditional(tmp_path):
-    import ConfigSpace as cs
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
 
     # choices
@@ -295,9 +287,6 @@ def run_max_evals(job):
 
 
 def test_max_evals_strict(tmp_path):
-    from deephyper.evaluator import Evaluator
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
@@ -319,8 +308,6 @@ def test_max_evals_strict(tmp_path):
 
 
 def test_initial_points(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
@@ -343,8 +330,6 @@ def test_initial_points(tmp_path):
 
 
 def test_many_initial_points(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
@@ -366,8 +351,6 @@ def test_many_initial_points(tmp_path):
 
 
 def test_cbo_checkpoint_restart(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
     problem.add_hyperparameter((0.0, 10.0), "x_float")
@@ -430,8 +413,6 @@ def test_cbo_checkpoint_restart(tmp_path):
 
 
 def test_cbo_checkpoint_restart_moo(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
     problem.add_hyperparameter((0.0, 10.0), "x_float")
@@ -504,8 +485,6 @@ def test_cbo_checkpoint_restart_moo(tmp_path):
 
 
 def test_cbo_checkpoint_restart_with_failures(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
     problem.add_hyperparameter((0.0, 10.0), "x_float")
@@ -582,9 +561,6 @@ def test_cbo_checkpoint_restart_with_failures(tmp_path):
 
 
 def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-    from deephyper.evaluator import Evaluator
-
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
     problem.add_hyperparameter((0.0, 10.0), "x_float")
@@ -651,7 +627,6 @@ def test_cbo_checkpoint_restart_moo_with_failures(tmp_path):
 
 
 def test_max_total_failures():
-    from deephyper.hpo import CBO, HpProblem
     from deephyper.skopt.optimizer import ExhaustedFailures
 
     # Case 1 - only failures
@@ -751,7 +726,6 @@ def test_max_total_failures():
 
 def test_cbo_categorical_variable(tmp_path):
     from deephyper.evaluator import SerialEvaluator
-    from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
     problem.add_hyperparameter([32, 64, 96], "x", default_value=64)
@@ -776,9 +750,6 @@ def test_cbo_categorical_variable(tmp_path):
 
 
 def test_cbo_multi_point_strategy(tmp_path):
-    from deephyper.evaluator import Evaluator
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0.0, 10.0), "x")
 
@@ -797,9 +768,11 @@ def test_cbo_multi_point_strategy(tmp_path):
             multi_point_strategy=multi_point_strategy,
             log_dir=tmp_path,
         )
-        max_evals = 25
+        max_evals = 50
         results = search.search(
-            Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}), max_evals
+            Evaluator.create(run, method="serial", method_kwargs={"num_workers": 5}),
+            max_evals,
+            max_evals_strict=True,
         )
         durations.append(time.monotonic() - t1)
 
@@ -833,8 +806,6 @@ def test_cbo_multi_point_strategy(tmp_path):
 
 
 def test_cbo_fit_generative_model(tmp_path):
-    from deephyper.hpo import CBO, HpProblem
-
     problem = HpProblem()
     problem.add_hyperparameter((0, 10), "x_int")
     problem.add_hyperparameter((0.0, 10.0), "x_float")
@@ -869,7 +840,7 @@ def test_cbo_fit_generative_model(tmp_path):
 
 
 def test_convert_to_skopt_space():
-    from ConfigSpace import ConfigurationSpace, Float, Integer, Categorical
+    from ConfigSpace import Categorical, ConfigurationSpace, Float, Integer
 
     from deephyper.hpo._cbo import convert_to_skopt_space
 
@@ -916,6 +887,7 @@ def test_convert_to_skopt_space():
 
 def test_checkpoint_restart_v2(tmp_path):
     import shutil
+
     from deephyper.hpo import CBO, HpProblem
 
     problem = HpProblem()
@@ -960,6 +932,65 @@ def test_checkpoint_restart_v2(tmp_path):
     results = run_search()
     assert len(results) == 10 * 3
     assert len(set(results["job_id"])) == 30
+
+
+def test_cbo_with_constraint_fn():
+    def run_fn(j):
+        return j.parameters["x"] ** 2 + j.parameters["y"] ** 2
+
+    pb = HpProblem()
+    pb.add((0.0, 10.0), "x")
+    pb.add((0.0, 10.0), "y")
+
+    def constraint_fn(df):
+        return df["x"] + df["y"] < 10.0
+
+    pb.set_constraint_fn(constraint_fn)
+
+    # Test 1: with optimization "sampling"
+    search = CBO(
+        pb,
+        verbose=1,
+        acq_optimizer="sampling",
+        acq_optimizer_kwargs={"n_points": 100},
+        checkpoint_history_to_csv=False,
+    )
+    results = search.search(
+        run_fn,
+        max_evals=25,
+    )
+
+    assert all(results["p:x"] + results["p:y"] < 10.0)
+
+    # Test 2: with optimization "ga"
+    search = CBO(
+        pb,
+        verbose=1,
+        acq_optimizer="ga",
+        acq_optimizer_kwargs={"n_points": 100},
+        checkpoint_history_to_csv=False,
+    )
+    results = search.search(
+        run_fn,
+        max_evals=25,
+    )
+
+    assert all(results["p:x"] + results["p:y"] < 10.0)
+
+    # Test 3: with optimization "mixedga"
+    search = CBO(
+        pb,
+        verbose=1,
+        acq_optimizer="mixedga",
+        acq_optimizer_kwargs={"n_points": 100},
+        checkpoint_history_to_csv=False,
+    )
+    results = search.search(
+        run_fn,
+        max_evals=25,
+    )
+
+    assert all(results["p:x"] + results["p:y"] < 10.0)
 
 
 if __name__ == "__main__":
