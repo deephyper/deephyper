@@ -1,6 +1,6 @@
 """Define version number for the package."""
 
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 
 # alpha/beta/rc tags
 __version_suffix__ = ""

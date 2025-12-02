@@ -66,10 +66,10 @@ def test_timeout_simple(tmp_path):
             log_dir=tmp_path,
         )
 
-        t1 = time.time()
+        t1 = time.monotonic()
         result = search.search(evaluator, timeout=timeout)
         print(f"{result=}")
-        duration = time.time() - t1
+        duration = time.monotonic() - t1
         assert duration < timeout + 1
         assert isinstance(result, pd.DataFrame)
         assert result["objective"].iloc[0] >= timeout
@@ -110,20 +110,20 @@ def test_timeout_stop_then_continue(tmp_path):
         )
 
         # First call
-        t1 = time.time()
+        t1 = time.monotonic()
         result = search.search(evaluator, timeout=timeout)
         print(f"{result=}")
-        duration = time.time() - t1
+        duration = time.monotonic() - t1
         assert duration < timeout + 1
         assert isinstance(result, pd.DataFrame)
         assert result["objective"].iloc[0] >= timeout
         assert len(result) == num_workers
 
         # Second call
-        t1 = time.time()
+        t1 = time.monotonic()
         result = search.search(evaluator, timeout=timeout)
         print(f"{result=}")
-        duration = time.time() - t1
+        duration = time.monotonic() - t1
 
         assert duration < timeout + 1
         assert isinstance(result, pd.DataFrame)

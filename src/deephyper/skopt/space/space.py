@@ -6,6 +6,7 @@ import ConfigSpace as CS
 import numpy as np
 import scipy.stats as ss
 import yaml
+import pandas as pd
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 from sklearn.utils import check_random_state
 
@@ -551,9 +552,9 @@ class Integer(Dimension):
                     low, high
                 )
             )
-        if prior not in ["uniform", "log-uniform"]:
+        if prior not in ["uniform", "log-uniform", "normal"]:
             raise ValueError(
-                "prior should be 'uniform' or 'log-uniform'" " got {}".format(prior)
+                "prior should be 'uniform' or 'log-uniform' or 'normal' " " got {}".format(prior)
             )
         self.low = low
         self.high = high
@@ -1156,6 +1157,8 @@ class Space:
                 return columns.tolist()
             else:
                 confs = self.custom_sampler.sample(n_samples)
+                if isinstance(confs, list) and isinstance(confs[0], dict):
+                    confs = pd.DataFrame(confs)
 
                 columns = []
                 for dim in self.dimensions:

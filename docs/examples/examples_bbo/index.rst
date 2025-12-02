@@ -88,6 +88,23 @@ Black-box optimization
 
 .. only:: html
 
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_constrained_black_box_optimization_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Constrained Black-Box Optimization with Rejection Sampling</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
   .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
     :alt:
 
@@ -116,6 +133,23 @@ Black-box optimization
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_constrained_black_box_optimization_chained_sampler_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization_chained_sampler.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Constrained Black-Box Optimization with Custom Chained Sampler</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
@@ -130,6 +164,8 @@ Black-box optimization
    /examples/examples_bbo/plot_multi_objective_optimization
    /examples/examples_bbo/plot_black_box_optimization
    /examples/examples_bbo/plot_black_box_optimization_noisy
+   /examples/examples_bbo/plot_constrained_black_box_optimization
    /examples/examples_bbo/plot_notify_failures_hpo
    /examples/examples_bbo/plot_transfer_learning_for_hpo
+   /examples/examples_bbo/plot_constrained_black_box_optimization_chained_sampler
 

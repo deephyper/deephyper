@@ -1,7 +1,6 @@
 import abc
 import asyncio
 import importlib
-import json
 import logging
 import os
 import sys
@@ -33,23 +32,27 @@ class MaximumJobsSpawnReached(RuntimeError):
 
 
 class Evaluator(abc.ABC):
-    """This ``Evaluator`` class asynchronously manages a series of Job objects.
+    """This class manages the execution of asynchronous parallel calls of a Python function.
 
-    It helps to execute given HPS or NAS tasks on various environments with
-    differing system settings and properties.
+    This base class defines the general logic and interface.
 
     Args:
         run_function (callable):
-            Functions to be executed by the ``Evaluator``.
+            Function to be executed by the ``Evaluator``.
+
         num_workers (int, optional):
-            Number of parallel workers available for the ``Evaluator``. Defaults to 1.
+            Number of parallel workers available for the ``Evaluator``. Defaults to ``1``.
+
         callbacks (list, optional):
             A list of callbacks to trigger custom actions at the creation or
-            completion of jobs. Defaults to None.
+            completion of jobs. Defaults to ``None``.
+
         run_function_kwargs (dict, optional):
             Static keyword arguments to pass to the ``run_function`` when executed.
+
         storage (Storage, optional):
             Storage used by the evaluator. Defaults to ``MemoryStorage``.
+
         search_id (Hashable, optional):
             The id of the search to use in the corresponding storage. If
             ``None`` it will create a new search identifier when initializing
@@ -89,10 +92,13 @@ class Evaluator(abc.ABC):
         self._tasks_pending = []  # Temp list to hold pending tasks from asyncio.
         self.job_id_submitted = []  # List of jobs'id submitted by the evaluator.
         self.job_id_gathered = []  # List of jobs'id gathered by the evaluator.
-        self.timestamp = time.time()  # Recorded time of when this evaluator interface was created.
+        self.timestamp = (
+            time.monotonic()
+        )  # Recorded time of when this evaluator interface was created.
         self.maximum_num_jobs_submitted = -1  # Maximum number of jobs to spawn.
         self._num_jobs_offset = 0
         self.loop: Optional[asyncio.AbstractEventLoop] = None  # Event loop for asyncio.
+        self.sem = None
         self.num_objective = None  # record if multi-objective are recorded
         self._stopper = None  # stopper object
         self.search = None  # search instance
@@ -138,7 +144,8 @@ class Evaluator(abc.ABC):
             self.executor.__exit__(type, value, traceback)  # type: ignore
 
     @property
-    def timeout(self):
+    def timeout(self) -> float | None:
+        """The timeout value set."""
         return self._timeout
 
     @timeout.setter
@@ -148,17 +155,17 @@ class Evaluator(abc.ABC):
         It will create new tasks with a "time budget" and it will cancel the
         the task if this budget is exhausted.
         """
-        self._time_timeout_set = time.time()
+        self._time_timeout_set = time.monotonic()
         self._timeout = value
 
     @property
-    def time_left(self):
-        """Returns the time remaining according to a previously set timeout."""
+    def time_left(self) -> float | None:
+        """The time remaining according to a previously set timeout."""
         if self.timeout is None:
             val = None
         else:
             if self._time_timeout_set is not None:
-                time_consumed = time.time() - self._time_timeout_set
+                time_consumed = time.monotonic() - self._time_timeout_set
                 val = self.timeout - time_consumed
             else:
                 raise RuntimeError(f"{self._time_timeout_set=} should not be set to a float")
@@ -172,12 +179,14 @@ class Evaluator(abc.ABC):
         self._num_jobs_offset = self.num_jobs_gathered
 
     @property
-    def num_jobs_submitted(self):
+    def num_jobs_submitted(self) -> int:
+        """The number of jobs submitted."""
         job_ids = self._storage.load_all_job_ids(self._search_id)
         return len(job_ids) - self._num_jobs_offset
 
     @property
-    def num_jobs_gathered(self):
+    def num_jobs_gathered(self) -> int:
+        """The number of jobs gathered."""
         return len(self.job_id_gathered) - self._num_jobs_offset
 
     def to_json(self):
@@ -190,23 +199,69 @@ class Evaluator(abc.ABC):
         """Create evaluator with a specific backend and configuration.
 
         Args:
-            run_function (function):
+            run_function (callable):
                 The function to execute in parallel.
+
             method (str, optional):
-                The backend to use in ``
-                ["serial", "thread", "process", "ray", "mpicomm"]``. Defaults
-                to ``"serial"``.
+                The backend to use in ``["serial", "thread", "process", "loky",
+                "ray", "mpicomm"]``. Defaults to ``"serial"``.
+
+                - ``"serial"``: creates an instance of :class:`deephyper.evaluator.SerialEvaluator`.
+                This uses Python's ``asyncio`` base module for concurrency. It is an efficient method
+                for Python's functions that are I/O bound and implemented through the `async def`
+                and `await` primitives. It is running the code in in the local memory context of the
+                current process.
+
+                - ``"thread"``: creates an instance of :class:`deephyper.evaluator.ThreadPoolEvaluator`.
+                This uses Python's ``threading`` base module for concurrency. It is an efficient method
+                for Python's functions that are synchronously defined `def foo(...)` but use the `threading`
+                module internaly. It is running the code in in the local memory context of the
+                current process.
+
+                - ``"process"``: creates an instance of :class:`deephyper.evaluator.ProcessPoolEvaluator`.
+                This uses Python's ``concurrents.futures`` base module for concurrency. It is an efficient
+                method for Python's functions that are compute bound and should be scheduled on different CPU
+                cores of the local node. This method uses serialization by reference through the ``pickle`` base
+                module. Therefore it can only work with functions that are "importable". It is running the code
+                in a different memory context of the current process.
+
+                - ``"loky"``: creates an instance of :class:`deephyper.evaluator.LokyEvaluator`. This uses the
+                ``loky`` Python package for concurrency.  It is an efficient method for Python's functions that
+                are compute bound and should be scheduled on different CPU cores of the local node. This method
+                uses serialization by value through the ``cloudpickle`` Python package. Therefore it can be usesful
+                to schedule the execution of localy defined functions (i.e., not at the module level, inside an other
+                function for example) that are not importable or lambda functions. It is running the code
+                in a different memory context of the current process.
+
+                - ``"ray"``: creates an instance of :class:`deephyper.evaluator.RayEvaluator`. This uses the
+                ``ray`` Python package. It is an efficient method for Python's function that are compute bound and
+                should be scheduled on different compute ressources not necessarily on the local node. For a multi-nodes
+                setting it requires a Ray cluster to be started before creating the evaluator. This method
+                uses serialization by value through the ``cloudpickle`` Python package. Therefore it can also work with
+                local definitions of functions. It is also useful to easily perform some I/O optimization for example by
+                pre-loading data to remote processes (e.g., using the ``ray.put`` and ``ray.get`` primitives). It is running
+                the code in a different memory context of the current process. However, a global "Object Storage" is accessible
+                to all executed code.
+
+                - ``"mpicomm"``: creates an instance of :class:`deephyper.evaluator.MPICommEvaluator`. This
+                uses the ``mpi4py`` Python package. It is an efficient method for Python's function that are compute bound and
+                should be scheduled on different compute ressources not necessarily on the local node. It schedules task
+                on MPI ranks available. This method uses serialization by reference through the ``pickle`` base
+                module. Therefore it can only work with functions that are "importable". It is running the code
+                in a different memory context of the current process.
+
             method_kwargs (dict, optional):
                 Configuration dictionnary of the corresponding backend. Keys
-                corresponds to the keyword arguments of the corresponding
-                implementation. Defaults to "{}".
+                corresponds to the keyword arguments of the constructor of the corresponding
+                evaluator class. Defaults to ``"{}"``.
 
         Raises:
-            ValueError: if the ``method is`` not acceptable.
+            ValueError: if the ``method`` is not acceptable.
 
         Returns:
-            Evaluator: the ``Evaluator`` with the corresponding backend and configuration.
-        """
+            Evaluator: the instanciated ``Evaluator`` with the corresponding backend and
+            configuration.
+        """  # noqa: E501
         if method not in EVALUATORS.keys():
             val = ", ".join(EVALUATORS)
             raise ValueError(
@@ -300,7 +355,7 @@ class Evaluator(abc.ABC):
         """Called after a job is started."""
         job.status = JobStatus.READY
 
-        job.metadata["timestamp_submit"] = time.time() - self.timestamp
+        job.metadata["timestamp_submit"] = time.monotonic() - self.timestamp
 
         # Call callbacks
         for cb in self._callbacks:
@@ -311,7 +366,7 @@ class Evaluator(abc.ABC):
         if job.status is JobStatus.RUNNING:
             job.status = JobStatus.DONE
 
-        job.metadata["timestamp_gather"] = time.time() - self.timestamp
+        job.metadata["timestamp_gather"] = time.monotonic() - self.timestamp
 
         if isinstance(job, HPOJob):
             if np.isscalar(job.objective):
@@ -358,6 +413,10 @@ class Evaluator(abc.ABC):
                 # required when `timeout` is set because code is not running in main thread
                 self.loop = asyncio.new_event_loop()
 
+            # The semaphore should be created after getting the event loop to avoid
+            # binding it to a different event loop
+            self.sem = asyncio.Semaphore(self.num_workers)
+
     def submit(self, args_list: List[Dict]):
         """Send configurations to be evaluated by available workers.
 
@@ -371,22 +430,19 @@ class Evaluator(abc.ABC):
         self._create_tasks(args_list)
         logger.info("submit done")
 
-    def gather(self, type, size=1) -> list[Job] | tuple[list[Job], list[Job]]:
+    def gather(self, type, size: int = 1) -> list[Job] | tuple[list[Job], list[Job]]:
         """Collect the completed tasks from the evaluator in batches of one or more.
 
         Args:
             type (str):
-                Options:
-                    ``"ALL"``
-                        Block until all jobs submitted to the evaluator are completed.
-                    ``"BATCH"``
-                        Specify a minimum batch size of jobs to collect from
-                        the evaluator. The method will block until at least
-                        ``size`` evaluations are completed.
+                - ``"ALL"``: Block until all jobs submitted to the evaluator are completed.
 
-            size (int, optional):
+                - ``"BATCH"`` Specify a minimum batch size of jobs to collect from the evaluator.
+                The method will block until at least ``size`` evaluations are completed.
+
+            size (int):
                 The minimum batch size that we want to collect from the
-                evaluator. Defaults to 1.
+                evaluator. Defaults to ``1``.
 
         Raises:
             Exception: Raised when a gather operation other than "ALL" or "BATCH" is provided.
@@ -405,7 +461,7 @@ class Evaluator(abc.ABC):
         if size > 0:
             self.loop.run_until_complete(self._await_at_least_n_tasks(size))
 
-        local_results = self.process_local_tasks_done(self._tasks_done)
+        local_results = self._process_local_tasks_done(self._tasks_done)
 
         # Access storage to return results from other processes
         other_results = self.gather_other_jobs_done()
@@ -426,8 +482,12 @@ class Evaluator(abc.ABC):
 
             return local_results, other_results
 
-    def gather_other_jobs_done(self):
-        """Access storage to return results from other processes."""
+    def gather_other_jobs_done(self) -> list[Job]:
+        """Access storage to return results from other processes.
+
+        Returns:
+            list[Job]: A batch of completed jobs.
+        """
         logger.info("gather jobs from other processes")
 
         job_id_all = self._storage.load_all_job_ids(self._search_id)
@@ -461,14 +521,7 @@ class Evaluator(abc.ABC):
 
         return other_results
 
-    def decode(self, key):
-        """Decode the key following a JSON format to return a dict."""
-        x = json.loads(key)
-        if not isinstance(x, dict):
-            raise ValueError(f"Expected dict, but got {type(x)}")
-        return x
-
-    def process_local_tasks_done(self, tasks):
+    def _process_local_tasks_done(self, tasks):
         local_results = []
         for task in tasks:
             if task.cancelled():
@@ -487,6 +540,16 @@ class Evaluator(abc.ABC):
         return local_results
 
     def close(self) -> List[Job]:
+        """Closes the ``Evaluator``.
+
+        This will:
+
+        #. check if there are still running tasks in the AsyncIO loop.
+        #. check if there are task's results not collected yet.
+        #. cancel running tasks.
+        #. wait for running tasks to complete.
+        #. close the asyncio loop.
+        """
         logger.info(f"Closing {type(self).__name__}")
         jobs = []
         if self.loop is None:
@@ -550,6 +613,6 @@ class Evaluator(abc.ABC):
         return job
 
     @property
-    def is_master(self):
-        """Boolean that indicates if the current Evaluator object is a "Master"."""
+    def is_master(self) -> bool:
+        """Indicates if the current Evaluator object is a "master"."""
         return True

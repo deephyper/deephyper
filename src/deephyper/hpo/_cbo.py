@@ -142,7 +142,7 @@ def scheduler_constant(i, eta_0, num_dim):
 
 
 class CBO(Search):
-    """Centralized Bayesian Optimisation Search.
+    r"""Centralized Bayesian Optimisation Search.
 
     It follows a manager-workers architecture where the manager runs the Bayesian optimization
     loop and workers execute parallel evaluations of the black-box function.
@@ -185,21 +185,32 @@ class CBO(Search):
             select the argmax of observed objective values, and ``"argmax_est"`` would select the
             argmax of estimated objective values (through a predictive model).
 
-        surrogate_model (Union[str,sklearn.base.RegressorMixin], optional): Surrogate model used by
+        surrogate_model (str | sklearn.base.RegressorMixin, optional): Surrogate model used by
             the Bayesian optimization. Can be a value in ``["RF", "GP", "ET", "GBRT",
-            "DUMMY"]`` or a sklearn regressor. ``"ET"`` is for Extremely Randomized Trees which is
-            the best compromise between speed and quality when performing a lot of parallel
-            evaluations, i.e., reaching more than hundreds of evaluations. ``"GP"`` is for Gaussian-
-            Process which is the best choice when maximizing the quality of iteration but quickly
-            slow down when reaching hundreds of evaluations, also it does not support conditional
-            search space. ``"RF"`` is for Random-Forest, slower than extremely randomized trees but
-            with better mean estimate and worse epistemic uncertainty quantification capabilities.
-            ``"GBRT"`` is for Gradient-Boosting Regression Tree, it has better mean estimate than
-            other tree-based method worse uncertainty quantification capabilities and slower than
-            ``"RF"``. Defaults to ``"ET"``.
+            "DUMMY"]`` or a sklearn regressor. Defaults to ``"ET"``.
 
-        surrogate_model_kwargs (dict, optional): Additional parameters to pass to the surrogate
-            model. Defaults to ``None``.
+            - ``"ET"`` :
+                is for Extremely Randomized Trees which is the best compromise between speed and
+                quality when performing a lot of parallel evaluations, i.e., reaching more than
+                hundreds of evaluations.
+
+            - ``"GP"`` :
+                is for Gaussian-Process which is the best choice when maximizing the quality of
+                iteration but quickly slow down when reaching hundreds of evaluations, also it
+                does not support constrained search space.
+
+            - ``"RF"`` :
+                is for Random-Forest, slower than extremely randomized trees but with better
+                mean estimate and worse epistemic uncertainty quantification capabilities.
+
+            - ``"GBRT"`` :
+                is for Gradient-Boosting Regression Tree, it has better mean estimate than
+                other tree-based method worse uncertainty quantification capabilities and slower
+                than ``"RF"``.
+
+        surrogate_model_kwargs (dict, optional): keyword-arguments to pass to the surrogate
+            model. Defaults to ``None``. See the description of these arguments in the module
+            :mod:`deephyper.skopt.learning`.
 
         acq_func (str, optional): Acquisition function used by the Bayesian optimization. Can be a
             value in ``["UCB", "EI", "PI", "gp_hedge"]``. Defaults to ``"UCB"``.
@@ -215,12 +226,43 @@ class CBO(Search):
                 Manage the exploration/exploitation tradeoff of ``"EI"`` and ``"PI"``
                 acquisition function. Defaults to ``0.001``.
 
+            - ``"scheduler"`` (dict, callable, optional)
+                a function to manage the value of ``kappa, xi`` with iterations. Defaults to
+                ``None`` which does not use any scheduler. The periodic exponential decay scheduler
+                can be used with  ``scheduler={"type": "periodic-exp-decay", "period": 30, "rate":
+                0.1}``. The scheduler can also be a callable function with signature
+                ``scheduler(i, eta_0, **kwargs)`` where ``i`` is the current iteration, ``eta_0``
+                is the initial value of ``[kappa, xi]`` and ``kwargs`` are other fixed parameters
+                of the function. Instead of fixing the decay ``"rate"`` the final ``kappa`` or
+                ``xi`` can be used ``{"type": "periodic-exp-decay", "period": 25, "kappa_final":
+                1.96}``.
+
         acq_optimizer (str, optional):
             Method used to minimze the acquisition function. Can be a value in
             ``["sampling", "lbfgs", "ga", "mixedga"]``. Defaults to ``"auto"``.
 
-        acq_optimizer_kwargs (dict, optional):
-            A dictionnary of parameters for the acquisition function optimizer:
+            - ``"sampling"``
+                the optimization is performed via sampling where the number of
+                samples is controlled by ``acq_optimizer_kwargs={"n_points": 10_000}``.
+
+            - ``"lbfgs"``:
+                the optimization is performed via gradient-descent. It is only compatible
+                with ``surrogate_model="GP"``.
+
+            - ``"mixedga"``:
+                the optimization is performed via a Mixed Genetic Algorithm. It is made for
+                mixed-integer search space (with continuous, discrete and categorical variables).
+                It can increase the cost of BO iterations. In order to amortize this cost we can use
+                ``acq_optimizer_kwargs={"acq_optimizer_freq": 2}`` with a value ``> 1``.
+
+            - ``"ga"``:
+                the optimization is performed via a continuous Genetic Algorithm. It is made
+                for surrogate models without gradients (e.g., trees, forest) and for search space
+                that contains mostly continuous variables. Its cost can also be amortized using
+                ``acq_optimizer_freq > 1``.
+
+        acq_optimizer_kwargs (dict, optional): A dictionnary of parameters for the acquisition
+            function optimizer:
 
             - ``"acq_optimizer_freq"`` (int)
                 Frequency of optimization calls for the acquisition function. Defaults
@@ -255,13 +297,13 @@ class CBO(Search):
 
         multi_point_strategy (str, optional): Definition of the constant value use for the Liar
             strategy. Can be a value in ``["cl_min", "cl_mean", "cl_max", "qUCB", "qUCBd"]``. All
-            ``"cl_..."`` strategies follow the constant-liar scheme, where if $N$ new points are
-            requested, the surrogate model is re-fitted $N-1$ times with lies (respectively, the
-            minimum, mean and maximum objective found so far; for multiple objectives, these are
-            the minimum, mean and maximum of the individual objectives) to infer the acquisition
-            function. Constant-Liar strategy have poor scalability because of this repeated re-
-            fitting. The ``"qUCB"`` strategy is much more efficient by sampling a new $kappa$ value
-            for each new requested point without re-fitting the model.
+            ``"cl_..."`` strategies follow the constant-liar scheme, where if :math:`N` new points
+            are requested, the surrogate model is re-fitted :math:`N-1` times with lies
+            (respectively, the minimum, mean and maximum objective found so far; for multiple
+            objectives, these are the minimum, mean and maximum of the individual objectives) to
+            infer the acquisition function. Constant-Liar strategy have poor scalability because of
+            this repeated re-fitting. The ``"qUCB"`` strategy is much more efficient by sampling a
+            new :math:`\kappa` value for each new requested point without re-fitting the model.
 
         n_initial_points (int, optional): Number of collected objectives required before fitting
             the surrogate-model. Defaults to ``None`` that will use ``2 * N + 1`` where ``N`` is
@@ -559,6 +601,10 @@ class CBO(Search):
             )
             logger.info(f"Set up scheduler '{scheduler}'")
 
+        if self._problem.sampling_fn or self._problem.constraint_fn:
+            logger.info("Using problem sampler as sampling_fn or constraint_fn was detect.")
+            self._opt_kwargs["custom_sampler"] = self._problem
+
         self._num_asked = 0
 
     def _setup_optimizer(self):
@@ -603,7 +649,7 @@ class CBO(Search):
 
         # Transform configurations to list to fit optimizer
         logger.info("Transforming received configurations to list...")
-        t1 = time.time()
+        t1 = time.monotonic()
 
         opt_X = []  # input configuration
         opt_y = []  # objective value
@@ -624,16 +670,16 @@ class CBO(Search):
                     opt_X.append(x)
                     opt_y.append("F")
 
-        logger.info(f"Transformation took {time.time() - t1:.4f} sec.")
+        logger.info(f"Transformation took {time.monotonic() - t1:.4f} sec.")
 
         # apply scheduler
         self._apply_scheduler(self._num_asked)
 
         if len(opt_y) > 0:
             logger.info("Fitting the optimizer...")
-            t1 = time.time()
+            t1 = time.monotonic()
             self._opt.tell(opt_X, opt_y)
-            logger.info(f"Fitting took {time.time() - t1:.4f} sec.")
+            logger.info(f"Fitting took {time.monotonic() - t1:.4f} sec.")
 
     def _search(self, max_evals, timeout, max_evals_strict=False):
         super()._search(max_evals, timeout, max_evals_strict)
@@ -841,9 +887,8 @@ class CBO(Search):
 
     def fit_generative_model(
         self,
-        df,
-        q=0.90,
-        verbose=False,
+        df: str | pd.DataFrame,
+        q: float = 0.90,
     ):
         """Fits a generative model for sampling during BO.
 
@@ -860,14 +905,11 @@ class CBO(Search):
         >>> search.search(evaluator, max_evals=100)
 
         Args:
-            df (str|DataFrame): a dataframe or path to CSV from a previous search.
+            df (str | DataFrame): a dataframe or path to CSV from a previous search.
 
-            q (float, optional): the quantile defined the set of top configurations used to bias
+            q (float): the quantile defined the set of top configurations used to bias
                 the search. Defaults to ``0.90`` which select the top-10% configurations from
                 ``df``.
-
-            verbose (bool, optional): If set to ``True`` it will print the score of the generative
-                model. Defaults to ``False``.
 
         Returns:
             model: the generative model.
@@ -925,7 +967,9 @@ class CBO(Search):
 
         return model
 
-    def fit_search_space(self, df, fac_numerical=0.125, fac_categorical=10):
+    def fit_search_space(
+        self, df: str | pd.DataFrame, fac_numerical: float = 0.125, fac_categorical: int = 10
+    ):
         """Apply prior-guided transfer learning based on a DataFrame of results.
 
         Example Usage:
@@ -935,7 +979,7 @@ class CBO(Search):
         >>> search.search(evaluator, max_evals=100)
 
         Args:
-            df (str|DataFrame): a checkpoint from a previous search.
+            df (str | DataFrame): a checkpoint from a previous search.
 
             fac_numerical (float): the factor used to compute the sigma of a truncated normal
                 distribution based on ``sigma = max(1.0, (upper - lower) * fac_numerical)``. A

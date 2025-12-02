@@ -37,7 +37,7 @@ def _test_mpicomm_evaluator():
 
     configs = [{"x": i} for i in range(8)]
 
-    t1 = time.time()
+    t1 = time.monotonic()
 
     with Evaluator.create(
         run_sync,
@@ -61,7 +61,7 @@ def _test_mpicomm_evaluator():
             objectives = sorted([job.output for job in results])
             assert objectives == list(range(8))
 
-            duration = time.time() - t1
+            duration = time.monotonic() - t1
             assert duration < 2
 
             durations = [

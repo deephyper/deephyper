@@ -1,8 +1,14 @@
 import copy
+import warnings
+
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
+import pandas as pd
+from sklearn.utils import check_random_state
+
 import deephyper.skopt
+from deephyper.skopt.joblib import Parallel, delayed
 
 
 def convert_to_skopt_dim(cs_hp, surrogate_model=None):
@@ -51,6 +57,24 @@ def convert_to_skopt_dim(cs_hp, surrogate_model=None):
         categories = [cs_hp.value]
         skopt_dim = deephyper.skopt.space.Categorical(
             categories=categories, name=cs_hp.name, transform="label"
+        )
+    elif isinstance(cs_hp, csh.NormalIntegerHyperparameter):
+        skopt_dim = deephyper.skopt.space.Integer(
+            low=cs_hp.lower,
+            high=cs_hp.upper,
+            prior="normal",
+            name=cs_hp.name,
+            loc=cs_hp.mu,
+            scale=cs_hp.sigma,
+        )
+    elif isinstance(cs_hp, csh.NormalFloatHyperparameter):
+        skopt_dim = deephyper.skopt.space.Real(
+            low=cs_hp.lower,
+            high=cs_hp.upper,
+            prior="normal",
+            name=cs_hp.name,
+            loc=cs_hp.mu,
+            scale=cs_hp.sigma,
         )
     else:
         raise TypeError(f"Cannot convert hyperparameter of type {type(cs_hp)}")
@@ -181,7 +205,7 @@ class HpProblem:
         `ConfigurationSpace`.
     """
 
-    def __init__(self, config_space=None):
+    def __init__(self, config_space=None, seed: int | None = None):
         if config_space is not None and not (isinstance(config_space, cs.ConfigurationSpace)):
             raise ValueError(
                 "Parameter 'config_space' should be an instance of ConfigurationSpace!"
@@ -191,7 +215,15 @@ class HpProblem:
             self._space = copy.deepcopy(config_space)
         else:
             self._space = cs.ConfigurationSpace()
+        if seed is not None:
+            self._space.seed(seed)
+        self.rng = check_random_state(seed)
+
+        self.skopt_dims = []
         self.references = []  # starting points
+
+        self.constraint_fn = None
+        self.sampling_fn = None
 
     def __str__(self):
         return repr(self)
@@ -243,6 +275,10 @@ class HpProblem:
             )
         csh_parameter = check_hyperparameter(value, name, default_value=default_value)
         self._space.add(csh_parameter)
+
+        if isinstance(csh_parameter, csh.Hyperparameter):
+            self.skopt_dims.append(convert_to_skopt_dim(csh_parameter, surrogate_model="ET"))
+
         return csh_parameter
 
     def add_hyperparameters(self, hp_list):
@@ -284,15 +320,15 @@ class HpProblem:
         Add a `condition <https://automl.github.io/ConfigSpace/master/API-Doc.html#conditions>`_ to
         the ``HpProblem``.
 
-                >>> from deephyper.hpo import HpProblem
-                >>> import ConfigSpace as cs
-                >>> problem = HpProblem()
-                >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
-                >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
-                >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
-        s
-                Args:
-                    condition: A ConfigSpace condition.
+        >>> from deephyper.hpo import HpProblem
+        >>> import ConfigSpace as cs
+        >>> problem = HpProblem()
+        >>> x = problem.add_hyperparameter((0.0, 10.0), "x")
+        >>> y = problem.add_hyperparameter((1e-4, 1.0), "y")
+        >>> problem.add_condition(cs.LessThanCondition(y, x, 1.0))
+
+        Args:
+            condition: A ConfigSpace condition.
         """
         self._space.add(condition)
 
@@ -304,9 +340,125 @@ class HpProblem:
         """
         self._space.add(*conditions)
 
+    def add(self, value, name=None, default_value=None) -> None:
+        """Add a component to the configuration space.
+
+        An added component can be an hyperparameter, a forbidden rule or a condition.
+        """
+        if name is not None:
+            self.add_hyperparameter(value, name, default_value)
+            return
+
+        if isinstance(value, csh.Hyperparameter):
+            self.skopt_dims.append(convert_to_skopt_dim(value, surrogate_model="ET"))
+
+        self._space.add(value)
+
+    def sample(
+        self,
+        size: int = 1,
+        strict: bool = False,
+        max_trials: int = 5,
+        n_jobs: int = 1,
+    ) -> list[dict]:
+        """Sample a list of hyperparameter configuration.
+
+        Args:
+            size (int): The number of configurations to sample.
+            strict (bool): If the returned number of samples should be strictly equal to
+                ``size``. Defaults to ``False``.
+            max_trials (int): The maximum number of sampling trials. Defaults to ``5``.
+            n_jobs (int): The number of concurrent threads for sampling flat search space.
+
+        Returns:
+            list[dict]: the list of sampled configurations.
+        """
+
+        def _sample_dimension(dim, i, n_samples, random_state, out):
+            """Wrapper to sample dimension for joblib parallelization."""
+            out[0][:, i] = dim.rvs(n_samples=n_samples, random_state=random_state)
+
+        def sample_fn(size: int) -> list[dict]:
+            if self.sampling_fn is None:
+                sample_with_config_space = (
+                    len(self._space.conditions) > 0 or len(self._space.forbidden_clauses) > 0
+                )
+                if sample_with_config_space:
+                    samples = self._space.sample_configuration(size=size)
+                    samples = [dict(s) for s in samples]
+                else:
+                    # Regular sampling without transfer learning from flat search space
+                    # Joblib parallel optimization
+                    # Draw
+                    columns = np.zeros((size, len(self.skopt_dims)), dtype="O")
+                    random_states = self.rng.randint(
+                        low=0, high=np.iinfo(np.int32).max, size=len(self.skopt_dims)
+                    )
+                    Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
+                        delayed(_sample_dimension)(
+                            dim,
+                            i,
+                            size,
+                            np.random.RandomState(random_states[i]),
+                            [columns],
+                        )
+                        for i, dim in enumerate(self.skopt_dims)
+                    )
+                    df = pd.DataFrame(
+                        {k: columns[:, i] for i, k in enumerate(self.hyperparameter_names)}
+                    )
+                    samples = df.to_dict(orient="records")
+            else:
+                samples = self.sampling_fn(size)
+            return samples
+
+        if self.constraint_fn is None:
+            # Fast path: no constraint
+            return sample_fn(size)
+
+        accepted = []
+        trials = 0
+        batch_size = size
+
+        while len(accepted) < size and trials < max_trials:
+            # Sample a batch
+            batch = sample_fn(size)
+
+            # Convert batch into DataFrame only once
+            df = pd.DataFrame(batch)
+
+            # Apply constraint ---
+            accept_mask = self.constraint_fn(df)
+
+            df = df[accept_mask]
+            accepted.extend(df.to_dict(orient="records"))
+
+            trials += 1
+            ratio_accept = accept_mask.sum() / batch_size
+            if ratio_accept <= 1e-3:
+                batch_size = 2 * batch_size
+                if batch_size > 100_000:
+                    warnings.warn(
+                        f"Constraint is hard to sample with {ratio_accept=}! "
+                        "Consider setting a custom sampling_fn",
+                        category=UserWarning,
+                    )
+            else:
+                batch_size = int((size - len(accepted)) / ratio_accept + 0.5)
+
+        # If constraints are too strict, return what we have (or raise)
+        # You can choose to raise if you need strictly size samples
+        if strict:
+            accepted = accepted[:size]
+
+            if len(accepted) < size:
+                return RuntimeError(f"The number of samples is less than {size=}!")
+
+        return accepted
+
     @property
-    def space(self):
-        """The wrapped ConfigSpace object."""
+    def space(self) -> cs.ConfigurationSpace:
+        """The wrapped ConfigurationSpace object."""
         return self._space
 
     @property
@@ -314,10 +466,33 @@ class HpProblem:
         """The list of hyperparameters names."""
         return list(self._space.keys())
 
-    def check_configuration(self, parameters: dict):
-        """Check if a configuration is valid. Raise an error if not."""
-        # Check is included in the init of Configuration
-        cs.Configuration(self._space, parameters)
+    def check_configuration(self, parameters: dict, raise_if_not_valid: bool = True) -> bool:
+        """Check if a configuration is valid.
+
+        Args:
+            parameters (dict): the configuration of parameters to test.
+            raise_if_not_valid (bool): indicate if an error is raised if the configuration of
+                parameters is invalid.
+
+        Raise:
+            ValueError: if the configuration is invalid.
+        """
+        try:
+            # Check is included in the init of Configuration
+            cs.Configuration(self._space, parameters)
+        except ValueError as e:
+            if raise_if_not_valid:
+                raise ValueError(str(e))
+            return False
+        if self.constraint_fn:
+            if not self.constraint_fn(parameters):
+                if raise_if_not_valid:
+                    raise ValueError(
+                        f"The {parameters=} are not valid with respect to the defined constraint_fn"
+                    )
+                else:
+                    return False
+        return True
 
     @property
     def default_configuration(self):
@@ -344,3 +519,35 @@ class HpProblem:
         """Returns a dictionary of the space which can be saved as JSON."""
         d = self._space.to_serialized_dict()
         return d
+
+    def set_seed(self, seed: int):
+        """Set the random seed of the space."""
+        self._space.seed(seed)
+        self.rng = check_random_state(seed)
+
+    def set_constraint_fn(self, fn: callable):
+        """Set the constraint function.
+
+        Example:
+
+            .. code-block:: python
+
+                pb = HpProblem()
+                pb.add((0.0, 10.0), "x")
+                pb.add((0.0, 10.0), "y")
+
+                def constraint_fn(df: pd.DataFrame) -> pd.Series:
+                    accept = df["x"] + df["y"] >= 10
+                    return accept
+
+                pb.set_constraint_fn(constraint_fn)
+
+                samples = pb.sample(size=100)
+                df = pd.DataFrame(samples)
+                assert all(df["x"] + df["y"] >= 10)
+        """
+        self.constraint_fn = fn
+
+    def set_sampling_fn(self, fn: callable):
+        """Set the sampling function."""
+        self.sampling_fn = fn

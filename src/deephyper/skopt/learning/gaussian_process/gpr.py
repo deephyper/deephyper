@@ -37,117 +37,102 @@ def _param_for_white_kernel_in_Sum(kernel, kernel_str=""):
 class GaussianProcessRegressor(sk_GaussianProcessRegressor):
     """GaussianProcessRegressor that allows noise tunability.
 
-    The implementation is based on Algorithm 2.1 of Gaussian Processes
-    for Machine Learning (GPML) by Rasmussen and Williams.
+    This implementation is based on Algorithm 2.1 of *Gaussian Processes for
+    Machine Learning* (GPML) by Rasmussen and Williams.
 
-    In addition to standard scikit-learn estimator API,
-    GaussianProcessRegressor:
+    In addition to the standard scikit-learn estimator API,
+    `GaussianProcessRegressor`:
 
-       * allows prediction without prior fitting (based on the GP prior);
-       * provides an additional method sample_y(X), which evaluates samples
-         drawn from the GPR (prior or posterior) at given inputs;
-       * exposes a method log_marginal_likelihood(theta), which can be used
-         externally for other ways of selecting hyperparameters, e.g., via
-         Markov chain Monte Carlo.
+        * Allows prediction without prior fitting (based on the GP prior).
+        * Provides an additional method `sample_y(X)` to evaluate samples drawn
+        from the GPR (prior or posterior) at given inputs.
+        * Exposes a method `log_marginal_likelihood(theta)` that can be used
+        externally for alternative hyperparameter selection strategies,
+        such as Markov chain Monte Carlo.
 
-    Parameters
-    ----------
-    kernel : kernel object
-        The kernel specifying the covariance function of the GP. If None is
-        passed, the kernel "1.0 * RBF(1.0)" is used as default. Note that
-        the kernel's hyperparameters are optimized during fitting.
+    Args:
+        kernel (Kernel):  
+            The kernel specifying the covariance function of the GP. If None,
+            the default kernel ``1.0 * RBF(1.0)`` is used. Kernel hyperparameters
+            are optimized during fitting.
 
-    alpha : float or array-like, optional (default: 1e-10)
-        Value added to the diagonal of the kernel matrix during fitting.
-        Larger values correspond to increased noise level in the observations
-        and reduce potential numerical issue during fitting. If an array is
-        passed, it must have the same number of entries as the data used for
-        fitting and is used as datapoint-dependent noise level. Note that this
-        is equivalent to adding a WhiteKernel with c=alpha. Allowing to specify
-        the noise level directly as a parameter is mainly for convenience and
-        for consistency with Ridge.
+        alpha (float or array-like, optional):  
+            Value added to the diagonal of the kernel matrix during fitting
+            (default: 1e-10). Larger values correspond to higher assumed noise
+            levels and improve numerical stability. If an array is provided, it
+            must match the number of training samples and is interpreted as a
+            per-sample noise level. Equivalent to adding a `WhiteKernel` with
+            `c = alpha`. Provided mainly for convenience and consistency with
+            Ridge regression.
 
-    optimizer : string or callable, optional (default: "fmin_l_bfgs_b")
-        Can either be one of the internally supported optimizers for optimizing
-        the kernel's parameters, specified by a string, or an externally
-        defined optimizer passed as a callable. If a callable is passed, it
-        must have the signature::
+        optimizer (str or callable, optional):  
+            Optimizer for kernel parameter tuning (default: `"fmin_l_bfgs_b"`).  
+            A string selects one of the built-in optimizers.  
+            A callable must follow the signature:
 
-            def optimizer(obj_func, initial_theta, bounds):
-                # * 'obj_func' is the objective function to be maximized, which
-                #   takes the hyperparameters theta as parameter and an
-                #   optional flag eval_gradient, which determines if the
-                #   gradient is returned additionally to the function value
-                # * 'initial_theta': the initial value for theta, which can be
-                #   used by local optimizers
-                # * 'bounds': the bounds on the values of theta
-                ....
-                # Returned are the best found hyperparameters theta and
-                # the corresponding value of the target function.
-                return theta_opt, func_min
+            .. code-block:: python
+            
+                def optimizer(obj_func, initial_theta, bounds):
+                    # obj_func: objective to maximize; accepts theta and
+                    #           optionally eval_gradient
+                    # initial_theta: initial hyperparameter state
+                    # bounds: box constraints for theta
+                    return theta_opt, func_min
 
-        Per default, the 'fmin_l_bfgs_b' algorithm from scipy.optimize
-        is used. If None is passed, the kernel's parameters are kept fixed.
-        Available internal optimizers are::
+            If None, kernel parameters are kept fixed.
 
-            'fmin_l_bfgs_b'
+            Available built-in optimizers:
+                * `"fmin_l_bfgs_b"`
 
-    n_restarts_optimizer : int, optional (default: 0)
-        The number of restarts of the optimizer for finding the kernel's
-        parameters which maximize the log-marginal likelihood. The first run
-        of the optimizer is performed from the kernel's initial parameters,
-        the remaining ones (if any) from thetas sampled log-uniform randomly
-        from the space of allowed theta-values. If greater than 0, all bounds
-        must be finite. Note that n_restarts_optimizer == 0 implies that one
-        run is performed.
+        n_restarts_optimizer (int, optional):  
+            Number of optimizer restarts to maximize the log-marginal
+            likelihood (default: 0). The first run uses the kernel's initial
+            parameters; additional runs start from random log-uniform samples.
+            If > 0, all parameter bounds must be finite. A value of 0 implies a
+            single run.
 
-    normalize_y : boolean, optional (default: False)
-        Whether the target values y are normalized, i.e., the mean of the
-        observed target values become zero. This parameter should be set to
-        True if the target values' mean is expected to differ considerable from
-        zero. When enabled, the normalization effectively modifies the GP's
-        prior based on the data, which contradicts the likelihood principle;
-        normalization is thus disabled per default.
+        normalize_y (bool, optional):  
+            Whether to normalize target values to have zero mean (default:
+            False). Should be enabled when the target mean deviates significantly
+            from zero. Note: this effectively alters the GP prior using the data,
+            which contradicts the likelihood principle; thus the default is False.
 
-    copy_X_train : bool, optional (default: True)
-        If True, a persistent copy of the training data is stored in the
-        object. Otherwise, just a reference to the training data is stored,
-        which might cause predictions to change if the data is modified
-        externally.
+        copy_X_train (bool, optional):  
+            If True (default), a persistent copy of the training data is stored.
+            If False, only a reference is kept, so external modification of the
+            data may affect predictions.
 
-    random_state : integer or numpy.RandomState, optional
-        The generator used to initialize the centers. If an integer is
-        given, it fixes the seed. Defaults to the global numpy random
-        number generator.
+        random_state (int or numpy.random.RandomState, optional):  
+            Random generator used for initialization. If an integer is provided,
+            it sets the seed. Defaults to NumPy's global RNG.
 
-    noise : string, "gaussian", optional
-        If set to "gaussian", then it is assumed that `y` is a noisy
-        estimate of `f(x)` where the noise is gaussian.
+        noise (str, optional):  
+            If set to `"gaussian"`, the model assumes that `y` is a noisy estimate
+            of the latent function `f(x)` with Gaussian noise.
 
     Attributes:
-    ----------
-    X_train_ : array-like, shape = (n_samples, n_features)
-        Feature values in training data (also required for prediction)
+        X_train_ (array-like of shape (n_samples, n_features)):  
+            Training feature values.
 
-    y_train_ : array-like, shape = (n_samples, [n_output_dims])
-        Target values in training data (also required for prediction)
+        y_train_ (array-like of shape (n_samples, [n_output_dims])):  
+            Training target values.
 
-    kernel_ kernel object
-        The kernel used for prediction. The structure of the kernel is the
-        same as the one passed as parameter but with optimized hyperparameters
+        kernel_ (Kernel):  
+            The kernel used for prediction, identical in structure to the input
+            kernel but with optimized hyperparameters.
 
-    L_ : array-like, shape = (n_samples, n_samples)
-        Lower-triangular Cholesky decomposition of the kernel in ``X_train_``
+        L_ (array-like of shape (n_samples, n_samples)):  
+            Lower-triangular Cholesky decomposition of the kernel matrix evaluated
+            at ``X_train_``.
 
-    alpha_ : array-like, shape = (n_samples,)
-        Dual coefficients of training data points in kernel space
+        alpha_ (array-like of shape (n_samples,)):  
+            Dual coefficients of training data points in kernel space.
 
-    log_marginal_likelihood_value_ : float
-        The log-marginal-likelihood of ``self.kernel_.theta``
+        log_marginal_likelihood_value_ (float):  
+            Log-marginal likelihood evaluated at ``self.kernel_.theta``.
 
-    noise_ : float
-        Estimate of the gaussian noise. Useful only when noise is set to
-        "gaussian".
+        noise_ (float):  
+            Estimated Gaussian noise level. Only relevant when ``noise="gaussian"``.
     """
 
     def __init__(

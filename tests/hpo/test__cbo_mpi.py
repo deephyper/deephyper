@@ -31,7 +31,7 @@ def _test_mpi_timeout(tmp_path):
     with Evaluator.create(run_sync_sleep_forever, method="mpicomm") as evaluator:
         if evaluator.is_master:
             search = CBO(problem, random_state=42, surrogate_model="DUMMY", log_dir=tmp_path)
-            t1 = time.time()
+            t1 = time.monotonic()
             results = search.search(evaluator, timeout=1)
 
             assert len(results) == evaluator.num_workers
@@ -40,7 +40,7 @@ def _test_mpi_timeout(tmp_path):
     # The search should have been interrupted after 1 second.
     # The following must be placed after exiting the context manager.
     if evaluator.is_master:
-        duration = time.time() - t1
+        duration = time.monotonic() - t1
         print(f"DEEPHYPER-OUTPUT: {duration}")
     evaluator.close()
 

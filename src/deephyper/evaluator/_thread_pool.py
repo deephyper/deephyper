@@ -17,17 +17,22 @@ class ThreadPoolEvaluator(Evaluator):
 
     Args:
         run_function (callable):
-            Functions to be executed by the ``Evaluator``.
+            function to be executed by the ``Evaluator``.
+
         num_workers (int, optional):
             Number of concurrent threads used to compute the ``run_function``.
-            Defaults to 1.
+            Defaults to ``1``.
+
         callbacks (list, optional):
             A list of callbacks to trigger custom actions at the creation or
-            completion of jobs. Defaults to None.
+            completion of jobs. Defaults to ``None``.
+
         run_function_kwargs (dict, optional):
             Static keyword arguments to pass to the ``run_function`` when executed.
+
         storage (Storage, optional):
             Storage used by the evaluator. Defaults to ``MemoryStorage``.
+
         search_id (Hashable, optional):
             The id of the search to use in the corresponding storage. If
             ``None`` it will create a new search identifier when initializing
@@ -55,13 +60,6 @@ class ThreadPoolEvaluator(Evaluator):
             max_workers=num_workers,
             thread_name_prefix="ThreadPoolEvaluator",
         )
-        self.sem = None
-
-    def set_event_loop(self):
-        super().set_event_loop()
-        # The semaphore should be created after getting the event loop to avoid
-        # binding it to a different event loop
-        self.sem = asyncio.Semaphore(self.num_workers)
 
     async def execute(self, job: Job) -> Job:
         async with self.sem:

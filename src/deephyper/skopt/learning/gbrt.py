@@ -13,28 +13,22 @@ def _parallel_fit(regressor, X, y):
 class GradientBoostingQuantileRegressor(BaseEstimator, RegressorMixin):
     """Predict several quantiles with one estimator.
 
-    This is a wrapper around `GradientBoostingRegressor`'s quantile
-    regression that allows you to predict several `quantiles` in
-    one go.
+    This is a wrapper around ``GradientBoostingRegressor``'s quantile regression
+    that allows you to predict several quantiles in one go.
 
-    Parameters
-    ----------
-    quantiles : array-like
-        Quantiles to predict. By default the 16, 50 and 84%
-        quantiles are predicted.
-
-    base_estimator : GradientBoostingRegressor instance or None (default)
-        Quantile regressor used to make predictions. Only instances
-        of `GradientBoostingRegressor` are supported. Use this to change
-        the hyper-parameters of the estimator.
-
-    n_jobs : int, default=1
-        The number of jobs to run in parallel for `fit`.
-        If -1, then the number of jobs is set to the number of cores.
-
-    random_state : int, RandomState instance, or None (default)
-        Set random state to something other than None for reproducible
-        results.
+    Args:
+        quantiles (array-like): Quantiles to predict. By default, the 16%, 50%,
+            and 84% quantiles are predicted.
+        base_estimator (GradientBoostingRegressor or None): Quantile regressor
+            used to make predictions. Only instances of
+            ``GradientBoostingRegressor`` are supported. Use this to change the
+            hyper-parameters of the estimator. Defaults to None.
+        n_jobs (int): Number of jobs to run in parallel for ``fit``.
+            If -1, then the number of jobs is set to the number of cores.
+            Defaults to 1.
+        random_state (int | RandomState | None): Controls the randomness of the
+            estimator. Set this to something other than ``None`` for reproducible
+            results. Defaults to None.
     """
 
     def __init__(

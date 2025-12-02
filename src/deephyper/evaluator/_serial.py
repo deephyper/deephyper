@@ -1,5 +1,6 @@
 import asyncio
 import functools
+from inspect import iscoroutinefunction
 from typing import Callable, Hashable
 
 from deephyper.evaluator import Evaluator, Job, JobStatus
@@ -7,20 +8,30 @@ from deephyper.evaluator.storage import Storage
 
 
 class SerialEvaluator(Evaluator):
-    """This evaluator run evaluations one after the other (not parallel).
+    """This evaluator uses Python AsyncIO as backend.
+
+    .. warning::
+
+       This evaluator is interesting with I/O intensive tasks, do not expect a
+       speed-up with compute intensive tasks.
 
     Args:
         run_function (callable):
-            Functions to be executed by the ``Evaluator``.
+            ``async`` function to be executed by the ``Evaluator``.
+
         num_workers (int, optional):
             Number of parallel Ray-workers used to compute the ``run_function``. Defaults to ``1``.
+
         callbacks (list, optional):
             A list of callbacks to trigger custom actions at the creation or
-            completion of jobs. Defaults to None.
+            completion of jobs. Defaults to ``None``.
+
         run_function_kwargs (dict, optional):
             Static keyword arguments to pass to the ``run_function`` when executed.
+
         storage (Storage, optional):
             Storage used by the evaluator. Defaults to ``MemoryStorage``.
+
         search_id (Hashable, optional):
             The id of the search to use in the corresponding storage. If
             ``None`` it will create a new search identifier when initializing
@@ -36,7 +47,7 @@ class SerialEvaluator(Evaluator):
         storage: Storage = None,
         search_id: Hashable = None,
     ):
-        if not asyncio.iscoroutinefunction(run_function):
+        if not iscoroutinefunction(run_function):
             raise ValueError(
                 f"The {run_function=} passed to {type(self).__name__} is not a coroutine "
                 "(e.g., with 'async def' in its definition) either make it a coroutine function "
@@ -51,13 +62,6 @@ class SerialEvaluator(Evaluator):
             storage=storage,
             search_id=search_id,
         )
-        self.sem = None
-
-    def set_event_loop(self):
-        super().set_event_loop()
-        # The semaphore should be created after getting the event loop to avoid
-        # binding it to a different event loop
-        self.sem = asyncio.Semaphore(self.num_workers)
 
     async def execute(self, job: Job) -> Job:
         async with self.sem:
