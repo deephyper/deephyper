@@ -40,7 +40,7 @@ pb.add((-10.0, 10.0), "y")
 
 
 def f(job):
-    """Objective function: minimize x^2 + y^2."""
+    """Objective function: maximize x^2 + y^2."""
     return job.parameters["x"] ** 2 + job.parameters["y"] ** 2
 
 

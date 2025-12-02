@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:33.221** total execution time for 16 files **from all galleries**:
+**02:08.613** total execution time for 17 files **from all galleries**:
 
 .. container::
 
@@ -32,13 +32,16 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization.py` (``../examples/examples_bbo/plot_constrained_black_box_optimization.py``)
-     - 00:33.221
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization_chained_sampler.py` (``../examples/examples_bbo/plot_constrained_black_box_optimization_chained_sampler.py``)
+     - 02:08.613
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization_noisy.py` (``../examples/examples_bbo/plot_black_box_optimization_noisy.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization.py` (``../examples/examples_bbo/plot_constrained_black_box_optimization.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_experimental_design.py` (``../examples/examples_bbo/plot_experimental_design.py``)

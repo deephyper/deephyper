@@ -234,8 +234,9 @@ def plot_search_trajectory_single_objective_hpo(
         x_label = "Time (sec.)"
 
     if results[column].dtype != np.float64:
-        mask_failed = np.where(results[column].str.startswith("F"))[0]
-        mask_success = np.where(~results[column].str.startswith("F"))[0]
+        mask = results[column].astype(str).str.startswith("F")
+        mask_failed = np.where(mask)[0]
+        mask_success = np.where(~mask)[0]
         x_success, x_failed = x[mask_success], x[mask_failed]
         y_success = results[column][mask_success].astype(float)
     else:
