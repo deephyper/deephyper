@@ -551,9 +551,9 @@ class Integer(Dimension):
                     low, high
                 )
             )
-        if prior not in ["uniform", "log-uniform"]:
+        if prior not in ["uniform", "log-uniform", "normal"]:
             raise ValueError(
-                "prior should be 'uniform' or 'log-uniform'" " got {}".format(prior)
+                "prior should be 'uniform' or 'log-uniform' or 'normal' " " got {}".format(prior)
             )
         self.low = low
         self.high = high
