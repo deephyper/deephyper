@@ -1,5 +1,7 @@
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
+import pandas as pd
+import numpy as np
 import pytest
 
 from deephyper.hpo import HpProblem
@@ -142,3 +144,116 @@ def test_forbidden():
 
     for s in pb.sample(10):
         assert s["l0"] < s["l1"] and s["l1"] < s["l2"]
+
+
+def test_sample():
+    pb = HpProblem()
+    pb.add((0.0, 10.0), "x")
+    pb.add((0.0, 10.0), "y")
+
+    size = 10
+    samples = pb.sample(size)
+    assert len(samples) == size
+
+    pb.add(cs.ForbiddenLessThanRelation(pb["y"], pb["x"]))
+    samples = pb.sample(size)
+    assert len(samples) == size
+    for s in samples:
+        assert s["y"] > s["x"]
+
+
+def test_rejection_sampling_basic():
+    # Test 1
+    pb = HpProblem()
+    pb.add((0.0, 10.0), "x")
+
+    def constraint_fn(df: pd.DataFrame) -> pd.Series:
+        accept = df["x"] >= 9
+        return accept
+
+    pb.set_constraint_fn(constraint_fn)
+
+    samples = pb.sample(size=100)
+    df = pd.DataFrame(samples)
+    assert all(df["x"] >= 9)
+
+    # Test 2
+    pb = HpProblem()
+    pb.add((0.0, 10.0), "x")
+    pb.add((0.0, 10.0), "y")
+
+    def constraint_fn(df: pd.DataFrame) -> pd.Series:
+        accept = df["x"] + df["y"] >= 10
+        return accept
+
+    pb.set_constraint_fn(constraint_fn)
+
+    samples = pb.sample(size=100)
+    df = pd.DataFrame(samples)
+    assert all(df["x"] + df["y"] >= 10)
+
+    # Test 3 - using sampling_fn for hard constraints
+    n = 10
+    m = 32
+    pb = HpProblem()
+    for i in range(n):
+        pb.add((0, m), f"x{i}")
+
+    def sampling_fn(size: int) -> list[dict]:
+        def sample_chain():
+            # Chain the sampling
+            vals = []
+            lo = 0
+            for k in range(n):
+                low = max(k, lo + 1 if k > 0 else 0)
+                high = m - n + k
+                v = np.random.randint(low, high - (n - 1 - k))  # keep room for future vars
+                vals.append(v)
+                lo = v
+            return {k: v for k, v in zip(pb.hyperparameter_names, vals)}
+
+        return [sample_chain() for _ in range(size)]
+
+    pb.set_sampling_fn(sampling_fn)
+
+    def constraint_fn(df: pd.DataFrame) -> pd.Series:
+        accept = pd.Series(np.ones((len(df)), dtype=bool))
+        for i in range(n - 1):
+            accept = accept & (df[f"x{i}"] < df[f"x{i + 1}"])
+        return accept
+
+    pb.set_constraint_fn(constraint_fn)
+
+    samples = pb.sample(size=100, max_trials=100)
+    df = pd.DataFrame(samples)
+
+    for i in range(n - 1):
+        assert all(df[f"x{i}"] < df[f"x{i + 1}"])
+
+
+def test_check_configuration():
+    # Test 1
+    pb = HpProblem()
+    pb.add((0.0, 10.0), "x")
+    assert pb.check_configuration({"x": 0.0})
+
+    with pytest.raises(ValueError):
+        pb.check_configuration({"x": -1.0})
+    assert not pb.check_configuration({"x": -1.0}, raise_if_not_valid=False)
+
+    # Test 2
+    pb = HpProblem()
+    pb.add((0.0, 10.0), "x")
+
+    def constraint_fn(df: pd.DataFrame) -> pd.Series:
+        accept = df["x"] > 5
+        return accept
+
+    pb.set_constraint_fn(constraint_fn)
+
+    assert pb.check_configuration({"x": 6.0})
+
+    with pytest.raises(ValueError):
+        pb.check_configuration({"x": 4.0})
+
+    assert not pb.check_configuration({"x": 4.0}, raise_if_not_valid=False)

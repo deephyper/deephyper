@@ -107,6 +107,23 @@ Black-box optimization
 
 .. only:: html
 
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_constrained_black_box_optimization_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Constrained Black-Box Optimization with Rejection Sampling</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
   .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_notify_failures_hpo_thumb.png
     :alt:
 

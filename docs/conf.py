@@ -38,9 +38,9 @@ version = about["__version__"]
 
 # The full version, including alpha/beta/rc tags
 if about["__version__"] == "":
-    release = f'v{about["__version__"]}'
+    release = f"v{about['__version__']}"
 else:
-    release = f'v{about["__version__"]}-{about["__version_suffix__"]}'
+    release = f"v{about['__version__']}-{about['__version_suffix__']}"
 
 # -- General configuration ---------------------------------------------------
 
@@ -185,9 +185,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, "deephyper.tex", "deephyper Documentation", "ArgonneMCS", "manual")
-]
+latex_documents = [(master_doc, "deephyper.tex", "deephyper Documentation", "ArgonneMCS", "manual")]
 
 
 # -- Options for manual page output ------------------------------------------
@@ -289,10 +287,12 @@ autosummary_mock_imports = autodoc_mock_imports + [
 # Remove <BLANKLINE>
 trim_doctest_flags = True
 
+
 # Add custom JS/CSS
 def setup(app):
     app.add_css_file("custom.css")
     app.add_js_file("custom.js")
+
 
 # Sphinx Gallery
 sphinx_gallery_conf = {
@@ -306,17 +306,17 @@ sphinx_gallery_conf = {
     "promote_jupyter_magic": True,
 }
 
+
 # Patch Sphinx Gallery
 def parse_dropdown(rst_text):
     pattern = re.compile(
         r"# \.\. dropdown::(.*?)\n"  # Match the title
         r"(?:    :(\w+):(?: (.*?))?\n)*",  # Match optional keys and values
-        re.DOTALL
+        re.DOTALL,
     )
 
     match = pattern.search(rst_text)
     if match:
-
         title = match.group(1).strip()
 
         # Extract options as key-value pairs
@@ -326,10 +326,10 @@ def parse_dropdown(rst_text):
         cleaned_rst_text = pattern.sub("", rst_text)
         for _ in options:
             i = cleaned_rst_text.index("\n")
-            cleaned_rst_text = cleaned_rst_text[i+1:]
+            cleaned_rst_text = cleaned_rst_text[i + 1 :]
 
         return {"title": title, "options": options}, cleaned_rst_text
-    
+
     return None, rst_text
 
 
@@ -375,6 +375,7 @@ def codestr2rst(codestr, lang="python", lineno=None):
         block = dropdown_directive + code_block
 
     return block
+
 
 # Apply the patch
 sphinx_gallery.gen_rst.codestr2rst = codestr2rst

@@ -65,11 +65,17 @@ def convert_space_to_pymoo_mixed(space):
 class PyMOOMixedVectorizedProblem(Problem):
     """Pymoo mixed-integer problem definition (vectorized)."""
 
-    def __init__(self, space, acq_func=None, **kwargs):
-        super().__init__(vars=convert_space_to_pymoo_mixed(space), n_obj=1, **kwargs)
+    def __init__(self, space, acq_func=None, constraint_fn=None, **kwargs):
+        super().__init__(
+            vars=convert_space_to_pymoo_mixed(space),
+            n_obj=1,
+            n_eq_constr=int(constraint_fn is not None),
+            **kwargs,
+        )
         self.space = space
         self.acq_func = acq_func
         self.vars_names = space.dimension_names
+        self.constraint_fn = constraint_fn
 
     def _evaluate(self, x, out, *args, **kwargs):
         if x.ndim == 2:
@@ -84,6 +90,9 @@ class PyMOOMixedVectorizedProblem(Problem):
         )
         y = self.acq_func(x).reshape(-1)
         out["F"] = y
+
+        if self.constraint_fn is not None:
+            out["H"] = self.constraint_fn(x)
 
 
 class PyMOOMixedElementWiseProblem(ElementwiseProblem):
@@ -197,6 +206,7 @@ class MixedGAPymooAcqOptimizer:
         pop_size: int = 100,
         random_state=None,
         termination_kwargs=None,
+        constraint_fn=None,
     ):
         self.space = space
         self.x_init = np.array(x_init)
@@ -213,12 +223,14 @@ class MixedGAPymooAcqOptimizer:
         }
         default_termination_kwargs.update(termination_kwargs)
         self.termination_kwargs = default_termination_kwargs
+        self.constraint_fn = constraint_fn
 
     def minimize(self, acq_func):
         """Minimize the acquisition function."""
         problem = PyMOOMixedVectorizedProblem(
             space=self.space,
             acq_func=lambda x: acq_func(self.space.transform(x)),
+            constraint_fn=self.constraint_fn,
         )
 
         init_pop = Population.new(

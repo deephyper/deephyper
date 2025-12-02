@@ -18,14 +18,24 @@ Config.warnings["not_compiled"] = False
 class PyMOORealProblem(Problem):
     """Pymoo continuous problem definition."""
 
-    def __init__(self, n_var, xl, xu, acq_func, **kwargs):
-        super().__init__(n_var=n_var, n_obj=1, xl=xl, xu=xu)
+    def __init__(self, n_var, xl, xu, acq_func, constraint_fn, **kwargs):
+        super().__init__(
+            n_var=n_var,
+            n_obj=1,
+            xl=xl,
+            xu=xu,
+            n_eq_constr=int(constraint_fn is not None),
+        )
         self.acq_func = acq_func
+        self.constraint_fn = constraint_fn
 
     def _evaluate(self, x, out, *args, **kwargs):
         y = self.acq_func(x).reshape(-1)
 
         out["F"] = y
+
+        if self.constraint_fn is not None:
+            out["H"] = self.constraint_fn(x)
 
 
 class GAPymooAcqOptimizer:
@@ -39,9 +49,10 @@ class GAPymooAcqOptimizer:
         pop_size: int = 100,
         random_state=None,
         termination_kwargs=None,
+        constraint_fn=None,
     ):
         self.space = space
-        
+
         # Bounds in the transformed/normalized space
         transformed_bounds = self.space.transformed_bounds
         xl, xu = list(zip(*transformed_bounds))
@@ -56,7 +67,7 @@ class GAPymooAcqOptimizer:
         self.y_init = np.array(y_init).reshape(-1)
         if len(y_init) != pop_size:
             raise ValueError("The initial x_init and y_init should have a size equal to pop_size.")
-        
+
         self.pop_size = pop_size
         self.random_state = check_random_state(random_state)
 
@@ -71,6 +82,8 @@ class GAPymooAcqOptimizer:
         default_termination_kwargs.update(termination_kwargs)
         self.termination_kwargs = default_termination_kwargs
 
+        self.constraint_fn = constraint_fn
+
     def minimize(self, acq_func):
         """Minimize the acquisition function."""
         problem = PyMOORealProblem(
@@ -78,6 +91,7 @@ class GAPymooAcqOptimizer:
             xl=self.xl,
             xu=self.xu,
             acq_func=acq_func,
+            constraint_fn=self.constraint_fn,
         )
 
         init_pop = Population.new(
