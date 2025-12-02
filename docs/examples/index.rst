@@ -152,6 +152,23 @@ Black-box optimization
     </div>
 
 
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Author(s): Romain Egele.">
+
+.. only:: html
+
+  .. image:: /examples/examples_bbo/images/thumb/sphx_glr_plot_constrained_black_box_optimization_chained_sampler_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization_chained_sampler.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Constrained Black-Box Optimization with Custom Chained Sampler</div>
+    </div>
+
+
 .. thumbnail-parent-div-close
 
 .. raw:: html
