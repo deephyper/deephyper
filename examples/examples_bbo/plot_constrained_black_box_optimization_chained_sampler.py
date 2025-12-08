@@ -90,11 +90,11 @@ from deephyper.hpo import HpProblem, CBO
 n = 10
 m = 32
 
-print("optimum:", sum([m - i for i in range(n)]))
+print("optimum:", sum([m - i - 1 for i in range(n)]))
 
 pb = HpProblem()
 for i in range(n):
-    pb.add((i, m - n + i), f"x{i}")
+    pb.add((i, m - n + i - 1), f"x{i}")
 
 
 def sampling_fn(size: int) -> list[dict]:
