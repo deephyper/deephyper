@@ -3,7 +3,7 @@
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "deephyper.hpo._solution",
+   "module": "deephyper.hpo.solution._solution",
    "module_short": "deephyper.hpo",
    "name": "ArgMaxEstSelection"
   },
@@ -24,7 +24,7 @@
   {
    "is_class": true,
    "is_explicit": false,
-   "module": "deephyper.hpo._solution",
+   "module": "deephyper.hpo.solution._solution",
    "module_short": "deephyper.hpo",
    "name": "SolutionSelection"
   },

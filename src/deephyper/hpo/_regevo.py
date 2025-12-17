@@ -6,7 +6,7 @@ import numpy as np
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 
 from deephyper.hpo._search import Search
-from deephyper.hpo._solution import SolutionSelection
+from deephyper.hpo.solution._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
 
 __all__ = ["RegularizedEvolution"]

@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from deephyper.hpo._cbo import CBO
-from deephyper.hpo._solution import SolutionSelection
+from deephyper.hpo.solution._solution import SolutionSelection
 
 __all__ = ["ExperimentalDesignSearch"]
 

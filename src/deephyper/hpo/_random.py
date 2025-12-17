@@ -3,7 +3,7 @@ from typing import Literal, Optional
 import numpy as np
 
 from deephyper.hpo._search import Search
-from deephyper.hpo._solution import SolutionSelection
+from deephyper.hpo.solution._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
 
 __all__ = ["RandomSearch"]

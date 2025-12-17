@@ -19,7 +19,7 @@ from deephyper.analysis.hpo import (
 from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached, JobStatus
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.hpo._problem import HpProblem
-from deephyper.hpo._solution import (
+from deephyper.hpo.solution._solution import (
     ArgMaxEstSelection,
     ArgMaxObsSelection,
     Solution,
