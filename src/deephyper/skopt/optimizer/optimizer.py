@@ -322,7 +322,7 @@ class Optimizer(object):
             )
 
         # check if regressor
-        if not is_regressor(base_estimator) and base_estimator is not None:
+        if base_estimator is not None and not is_regressor(base_estimator):
             raise ValueError("%s has to be a regressor." % base_estimator)
 
         # TODO: the following can be used to manage multi-output-regressor
