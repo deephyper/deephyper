@@ -215,6 +215,48 @@ def test_cbo_solution_selection_with_moo():
     assert "sol.objective" not in results.columns
 
 
+def test_prob_maximum_normal():
+    from deephyper.hpo.solution import prob_maximum_normal
+
+    # Test 1: equal loc/scale
+    # True p == [0.5, 0.5]
+    loc = [0, 0]
+    scale = [1, 1]
+    p, se = prob_maximum_normal(loc, scale)
+    assert abs(p[0] - 0.5) < 3 * se[0]
+    assert abs(p[1] - 0.5) < 3 * se[1]
+    assert abs(sum(p) - 1) < 1e-10
+
+    # Test fixed seed
+    p1, se1 = prob_maximum_normal(loc, scale, rng=42)
+    p2, se2 = prob_maximum_normal(loc, scale, rng=42)
+    assert all(p1 == p2) and all(se1 == se2)
+
+    # Test 2: one clearly better
+    loc = [0, 1]
+    scale = [1, 1]
+    p, se = prob_maximum_normal(loc, scale)
+    assert p[0] + 3 * (se[0] ** 2 + se[1] ** 2) ** 0.5 < p[1]
+    assert abs(sum(p) - 1) < 1e-10
+
+    # Test 3: one scale clearly worse
+    loc = [0, 1]
+    scale = [100, 100]
+    p, se = prob_maximum_normal(loc, scale)
+    assert abs(p[0] - 0.5) < 3 * se[0]
+    assert abs(p[1] - 0.5) < 3 * se[1]
+    assert abs(sum(p) - 1) < 1e-10
+
+    # Test 4: more than two
+    loc = [0, 1, 2, 3]
+    scale = [1, 1, 1, 1]
+    p, se = prob_maximum_normal(loc, scale)
+    assert all(
+        p[i] + 3 * (se[i] ** 2 + se[i + 1] ** 2) ** 0.5 < p[i + 1] for i in range(len(loc) - 1)
+    )
+    assert abs(sum(p) - 1) < 1e-10
+
+
 if __name__ == "__main__":
     test_cbo_solution_selection()
     # test_cbo_solution_selection_with_failures()
