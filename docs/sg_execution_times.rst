@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**02:08.613** total execution time for 17 files **from all galleries**:
+**01:54.009** total execution time for 17 files **from all galleries**:
 
 .. container::
 
@@ -33,7 +33,7 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization_chained_sampler.py` (``../examples/examples_bbo/plot_constrained_black_box_optimization_chained_sampler.py``)
-     - 02:08.613
+     - 01:54.009
      - 0.0
    * - :ref:`sphx_glr_examples_examples_bbo_plot_black_box_optimization.py` (``../examples/examples_bbo/plot_black_box_optimization.py``)
      - 00:00.000
