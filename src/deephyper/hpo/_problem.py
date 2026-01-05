@@ -219,7 +219,7 @@ class HpProblem:
             self._space.seed(seed)
         self.rng = check_random_state(seed)
 
-        self.skopt_dims = []
+        self.skopt_dims = {}
         self.references = []  # starting points
 
         self.constraint_fn = None
@@ -277,7 +277,8 @@ class HpProblem:
         self._space.add(csh_parameter)
 
         if isinstance(csh_parameter, csh.Hyperparameter):
-            self.skopt_dims.append(convert_to_skopt_dim(csh_parameter, surrogate_model="ET"))
+            skopt_dim = convert_to_skopt_dim(csh_parameter, surrogate_model="ET")
+            self.skopt_dims[skopt_dim.name] = skopt_dim
 
         return csh_parameter
 
@@ -350,7 +351,8 @@ class HpProblem:
             return
 
         if isinstance(value, csh.Hyperparameter):
-            self.skopt_dims.append(convert_to_skopt_dim(value, surrogate_model="ET"))
+            skopt_dim = convert_to_skopt_dim(value, surrogate_model="ET")
+            self.skopt_dims[skopt_dim.name] = skopt_dim
 
         self._space.add(value)
 
@@ -390,19 +392,22 @@ class HpProblem:
                     # Regular sampling without transfer learning from flat search space
                     # Joblib parallel optimization
                     # Draw
-                    columns = np.zeros((size, len(self.skopt_dims)), dtype="O")
+                    n_columns = len(self.hyperparameter_names)
+                    columns = np.zeros((size, n_columns), dtype="O")
                     random_states = self.rng.randint(
-                        low=0, high=np.iinfo(np.int32).max, size=len(self.skopt_dims)
+                        low=0,
+                        high=np.iinfo(np.int32).max,
+                        size=n_columns,
                     )
                     Parallel(n_jobs=n_jobs, verbose=0, require="sharedmem")(
                         delayed(_sample_dimension)(
-                            dim,
+                            self.skopt_dims[dim_name],
                             i,
                             size,
                             np.random.RandomState(random_states[i]),
                             [columns],
                         )
-                        for i, dim in enumerate(self.skopt_dims)
+                        for i, dim_name in enumerate(self.hyperparameter_names)
                     )
                     df = pd.DataFrame(
                         {k: columns[:, i] for i, k in enumerate(self.hyperparameter_names)}
@@ -434,7 +439,7 @@ class HpProblem:
             accepted.extend(df.to_dict(orient="records"))
 
             trials += 1
-            ratio_accept = accept_mask.sum() / batch_size
+            ratio_accept = float(accept_mask.sum() / batch_size)
             if ratio_accept <= 1e-3:
                 batch_size = 2 * batch_size
                 if batch_size > 100_000:
