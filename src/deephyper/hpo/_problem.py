@@ -439,7 +439,7 @@ class HpProblem:
             accepted.extend(df.to_dict(orient="records"))
 
             trials += 1
-            ratio_accept = accept_mask.sum() / batch_size
+            ratio_accept = float(accept_mask.sum() / batch_size)
             if ratio_accept <= 1e-3:
                 batch_size = 2 * batch_size
                 if batch_size > 100_000:
