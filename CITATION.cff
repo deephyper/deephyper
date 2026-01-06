@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: If you use this software, please cite both the article from preferred-citation and the software itself.
+authors:
+  - family-names: Romain Egele
+    given-names: Prasanna Balaprakash
+  - family-names: Gavin M. Wiggins
+    given-names: Brett Eiffert
+title: 'DeepHyper: A Python Package for Massively Parallel Hyperparameter Optimization in Machine Learning'
+version: 1.0.0
+url: https://doi.org/10.21105/joss.07975
+doi: 10.21105/joss.07975
+date-released: '2025-01-06'
+preferred-citation:
+  authors:
+    - family-names: Romain Egele
+      given-names: Prasanna Balaprakash
+    - family-names: Gavin M. Wiggins
+      given-names: Brett Eiffert
+  title: 'DeepHyper: A Python Package for Massively Parallel Hyperparameter Optimization in Machine Learning'
+  doi: 10.21105/joss.07975
+  url: https://doi.org/10.21105/joss.07975
+  type: article-journal
+  pages: '7975'
+  year: '2025'
+  conference: {}
+  publisher:
+    name: The Open Journal
