@@ -18,8 +18,8 @@
 .. _sphx_glr_examples_examples_bbo_plot_constrained_black_box_optimization_chained_sampler.py:
 
 
-Constrained Black-Box Optimization with Custom Chained Sampler
-==============================================================
+Constrained Black-Box Optimization with Custom Sampler
+======================================================
 
 **Author(s)**: Romain Egele.
 
@@ -64,7 +64,7 @@ respecting monotonicity, the theoretical optimum is:
 
 DeepHyper offers several ways to incorporate constraints:
 
-#. **Custom chained sampler** *(this tutorial)*: constraints are enforced
+#. **Custom sampler** *(this tutorial)*: constraints are enforced
    directly when generating new candidate points.
 
 #. **Rejection sampling**:
@@ -87,7 +87,7 @@ DeepHyper offers several ways to incorporate constraints:
     import matplotlib.colors as colors
     import numpy as np
     import pandas as pd
-
+    from numpy.random import Generator
     from deephyper.analysis.hpo import (
         plot_search_trajectory_single_objective_hpo,
         parameters_at_max,
@@ -102,23 +102,21 @@ DeepHyper offers several ways to incorporate constraints:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 76-89
+.. GENERATED FROM PYTHON SOURCE LINES 76-87
 
-Custom Chained Sampler
-----------------------
+Custom Sampler
+--------------
 
 Because every :math:`x_i` must be strictly larger than :math:`x_{i-1}`, the
 usual independent sampling over each variable would frequently violate the
 constraint.
 
-Instead, we implement a *chained* sampler:
-each :math:`x_k` is sampled conditionally so that enough "room" remains for
-future variables. This ensures that:
+Instead, we implement a custom sampler to ensure that:
 
 - all generated samples satisfy :math:`x_i < x_{i+1}` by construction;
 - the sampler focuses on the feasible region, avoiding wasted evaluations.
 
-.. GENERATED FROM PYTHON SOURCE LINES 89-118
+.. GENERATED FROM PYTHON SOURCE LINES 87-115
 
 .. code-block:: Python
 
@@ -130,23 +128,22 @@ future variables. This ensures that:
 
     pb = HpProblem()
     for i in range(n):
-        pb.add((i, m - n + i - 1), f"x{i}")
+        pb.add((i, m - n + i), f"x{i}")
+    print(pb)
 
 
     def sampling_fn(size: int) -> list[dict]:
-        def sample_chain():
-            # Chain the sampling
-            vals = []
-            lo = 0
-            for k in range(n):
-                low = max(k, lo + 1 if k > 0 else 0)
-                high = m - n + k
-                v = np.random.randint(low, high - (n - 1 - k))  # keep room for future vars
-                vals.append(v)
-                lo = v
-            return {k: v for k, v in zip(pb.hyperparameter_names, vals)}
+        if n > m:
+            raise ValueError(f"Cannot sample {n} items from {m} elements.")
 
-        return [sample_chain() for _ in range(size)]
+        rng = np.random.default_rng(None)
+        indexes = np.arange(m)
+
+        def sample_one():
+            vals = np.sort(rng.choice(indexes, size=n, replace=False)).tolist()
+            return {k: v for k, v in zip(pb.hyperparameter_names, vals)}
+    
+        return [sample_one() for _ in range(size)]
 
 
     pb.set_sampling_fn(sampling_fn)
@@ -160,11 +157,24 @@ future variables. This ensures that:
  .. code-block:: none
 
     optimum: 265
+    Configuration space object:
+      Hyperparameters:
+        x0, Type: UniformInteger, Range: [0, 22], Default: 11
+        x1, Type: UniformInteger, Range: [1, 23], Default: 12
+        x2, Type: UniformInteger, Range: [2, 24], Default: 13
+        x3, Type: UniformInteger, Range: [3, 25], Default: 14
+        x4, Type: UniformInteger, Range: [4, 26], Default: 15
+        x5, Type: UniformInteger, Range: [5, 27], Default: 16
+        x6, Type: UniformInteger, Range: [6, 28], Default: 17
+        x7, Type: UniformInteger, Range: [7, 29], Default: 18
+        x8, Type: UniformInteger, Range: [8, 30], Default: 19
+        x9, Type: UniformInteger, Range: [9, 31], Default: 20
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 119-128
+
+.. GENERATED FROM PYTHON SOURCE LINES 116-125
 
 Constraint Function
 -------------------
@@ -176,7 +186,7 @@ optimizers).
 Not only that, this will help report non-feasible points using ``"F_constraint"``
 in the objective function so that CBO learns to avoid them.
 
-.. GENERATED FROM PYTHON SOURCE LINES 128-150
+.. GENERATED FROM PYTHON SOURCE LINES 125-147
 
 .. code-block:: Python
 
@@ -209,7 +219,7 @@ in the objective function so that CBO learns to avoid them.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 151-164
+.. GENERATED FROM PYTHON SOURCE LINES 148-161
 
 Bayesian Optimization with Mixed-GA Acquisition Optimization
 ------------------------------------------------------------
@@ -225,7 +235,7 @@ This setup is well suited for discrete, irregularly constrained spaces.
 
 The search runs for ``max_evals=300`` iterations.
 
-.. GENERATED FROM PYTHON SOURCE LINES 164-188
+.. GENERATED FROM PYTHON SOURCE LINES 161-185
 
 .. code-block:: Python
 
@@ -261,52 +271,79 @@ The search runs for ``max_evals=300`` iterations.
 
  .. code-block:: none
 
-      0%|          | 0/300 [00:00<?, ?it/s]      0%|          | 1/300 [00:00<00:00, 7002.18it/s, failures=0, objective=191]      1%|          | 2/300 [00:00<00:02, 125.11it/s, failures=0, objective=191]       1%|          | 3/300 [00:00<00:02, 99.83it/s, failures=0, objective=198]       1%|▏         | 4/300 [00:00<00:03, 90.11it/s, failures=0, objective=198]      2%|▏         | 5/300 [00:00<00:03, 86.22it/s, failures=0, objective=198]      2%|▏         | 6/300 [00:00<00:03, 83.64it/s, failures=0, objective=201]      2%|▏         | 7/300 [00:00<00:03, 82.16it/s, failures=0, objective=201]      3%|▎         | 8/300 [00:00<00:03, 80.89it/s, failures=0, objective=201]      3%|▎         | 9/300 [00:00<00:03, 79.96it/s, failures=0, objective=201]      3%|▎         | 9/300 [00:00<00:03, 79.96it/s, failures=0, objective=202]      3%|▎         | 10/300 [00:00<00:03, 79.96it/s, failures=0, objective=202]      4%|▎         | 11/300 [00:00<00:03, 79.96it/s, failures=0, objective=202]      4%|▍         | 12/300 [00:00<00:03, 79.96it/s, failures=0, objective=202]      4%|▍         | 13/300 [00:00<00:03, 79.96it/s, failures=0, objective=202]      5%|▍         | 14/300 [00:00<00:03, 79.96it/s, failures=0, objective=202]      5%|▌         | 15/300 [00:00<00:03, 79.96it/s, failures=0, objective=202]      5%|▌         | 16/300 [00:00<00:03, 79.96it/s, failures=0, objective=202]      6%|▌         | 17/300 [00:00<00:03, 75.88it/s, failures=0, objective=202]      6%|▌         | 17/300 [00:00<00:03, 75.88it/s, failures=0, objective=205]      6%|▌         | 18/300 [00:00<00:03, 75.88it/s, failures=0, objective=205]      6%|▋         | 19/300 [00:00<00:03, 75.88it/s, failures=0, objective=205]      7%|▋         | 20/300 [00:00<00:03, 75.88it/s, failures=0, objective=205]      7%|▋         | 21/300 [00:00<00:03, 75.88it/s, failures=0, objective=205]      7%|▋         | 22/300 [00:00<00:03, 75.88it/s, failures=0, objective=205]      8%|▊         | 23/300 [00:00<00:03, 75.88it/s, failures=0, objective=205]      8%|▊         | 24/300 [00:01<00:03, 75.88it/s, failures=0, objective=205]      8%|▊         | 25/300 [00:01<00:16, 16.22it/s, failures=0, objective=205]      8%|▊         | 25/300 [00:01<00:16, 16.22it/s, failures=0, objective=205]      9%|▊         | 26/300 [00:01<00:16, 16.22it/s, failures=0, objective=205]      9%|▉         | 27/300 [00:01<00:16, 16.22it/s, failures=0, objective=205]      9%|▉         | 28/300 [00:01<00:16, 16.22it/s, failures=0, objective=205]     10%|▉         | 29/300 [00:01<00:16, 16.22it/s, failures=0, objective=205]     10%|█         | 30/300 [00:02<00:26, 10.07it/s, failures=0, objective=205]     10%|█         | 30/300 [00:02<00:26, 10.07it/s, failures=0, objective=205]     10%|█         | 31/300 [00:02<00:26, 10.07it/s, failures=0, objective=205]     11%|█         | 32/300 [00:02<00:26, 10.07it/s, failures=0, objective=205]     11%|█         | 33/300 [00:02<00:26, 10.16it/s, failures=0, objective=205]     11%|█         | 33/300 [00:02<00:26, 10.16it/s, failures=0, objective=205]     11%|█▏        | 34/300 [00:02<00:26, 10.16it/s, failures=0, objective=205]     12%|█▏        | 35/300 [00:02<00:26, 10.16it/s, failures=0, objective=206]     12%|█▏        | 36/300 [00:02<00:30,  8.61it/s, failures=0, objective=206]     12%|█▏        | 36/300 [00:02<00:30,  8.61it/s, failures=0, objective=207]     12%|█▏        | 37/300 [00:03<00:30,  8.61it/s, failures=0, objective=207]     13%|█▎        | 38/300 [00:03<00:32,  7.97it/s, failures=0, objective=207]     13%|█▎        | 38/300 [00:03<00:32,  7.97it/s, failures=0, objective=207]     13%|█▎        | 39/300 [00:03<00:32,  7.97it/s, failures=0, objective=208]     13%|█▎        | 40/300 [00:03<00:33,  7.77it/s, failures=0, objective=208]     13%|█▎        | 40/300 [00:03<00:33,  7.77it/s, failures=0, objective=208]     14%|█▎        | 41/300 [00:03<00:33,  7.77it/s, failures=0, objective=208]     14%|█▍        | 42/300 [00:03<00:33,  7.61it/s, failures=0, objective=208]     14%|█▍        | 42/300 [00:03<00:33,  7.61it/s, failures=0, objective=208]     14%|█▍        | 43/300 [00:03<00:33,  7.61it/s, failures=0, objective=208]     15%|█▍        | 44/300 [00:04<00:34,  7.34it/s, failures=0, objective=208]     15%|█▍        | 44/300 [00:04<00:34,  7.34it/s, failures=0, objective=208]     15%|█▌        | 45/300 [00:04<00:34,  7.34it/s, failures=0, objective=208]     15%|█▌        | 46/300 [00:04<00:36,  6.93it/s, failures=0, objective=208]     15%|█▌        | 46/300 [00:04<00:36,  6.93it/s, failures=0, objective=208]     16%|█▌        | 47/300 [00:04<00:36,  6.93it/s, failures=0, objective=208]     16%|█▌        | 48/300 [00:04<00:38,  6.63it/s, failures=0, objective=208]     16%|█▌        | 48/300 [00:04<00:38,  6.63it/s, failures=0, objective=208]     16%|█▋        | 49/300 [00:04<00:37,  6.63it/s, failures=0, objective=208]     17%|█▋        | 50/300 [00:05<00:43,  5.73it/s, failures=0, objective=208]     17%|█▋        | 50/300 [00:05<00:43,  5.73it/s, failures=0, objective=208]     17%|█▋        | 51/300 [00:05<00:43,  5.73it/s, failures=0, objective=208]     17%|█▋        | 52/300 [00:05<00:44,  5.59it/s, failures=0, objective=208]     17%|█▋        | 52/300 [00:05<00:44,  5.59it/s, failures=0, objective=208]     18%|█▊        | 53/300 [00:05<00:44,  5.59it/s, failures=0, objective=208]     18%|█▊        | 54/300 [00:06<00:46,  5.30it/s, failures=0, objective=208]     18%|█▊        | 54/300 [00:06<00:46,  5.30it/s, failures=0, objective=208]     18%|█▊        | 55/300 [00:06<00:46,  5.30it/s, failures=0, objective=208]     19%|█▊        | 56/300 [00:06<00:46,  5.27it/s, failures=0, objective=208]     19%|█▊        | 56/300 [00:06<00:46,  5.27it/s, failures=0, objective=209]     19%|█▉        | 57/300 [00:06<00:46,  5.27it/s, failures=0, objective=209]     19%|█▉        | 58/300 [00:06<00:45,  5.36it/s, failures=0, objective=209]     19%|█▉        | 58/300 [00:06<00:45,  5.36it/s, failures=0, objective=211]     20%|█▉        | 59/300 [00:06<00:44,  5.36it/s, failures=0, objective=211]     20%|██        | 60/300 [00:07<00:49,  4.84it/s, failures=0, objective=211]     20%|██        | 60/300 [00:07<00:49,  4.84it/s, failures=0, objective=211]     20%|██        | 61/300 [00:07<00:49,  4.84it/s, failures=0, objective=211]     21%|██        | 62/300 [00:07<00:49,  4.76it/s, failures=0, objective=211]     21%|██        | 62/300 [00:07<00:49,  4.76it/s, failures=0, objective=211]     21%|██        | 63/300 [00:07<00:49,  4.76it/s, failures=0, objective=211]     21%|██▏       | 64/300 [00:08<00:50,  4.65it/s, failures=0, objective=211]     21%|██▏       | 64/300 [00:08<00:50,  4.65it/s, failures=0, objective=211]     22%|██▏       | 65/300 [00:08<00:50,  4.65it/s, failures=0, objective=211]     22%|██▏       | 66/300 [00:08<00:51,  4.51it/s, failures=0, objective=211]     22%|██▏       | 66/300 [00:08<00:51,  4.51it/s, failures=0, objective=211]     22%|██▏       | 67/300 [00:08<00:51,  4.51it/s, failures=0, objective=211]     23%|██▎       | 68/300 [00:09<01:04,  3.57it/s, failures=0, objective=211]     23%|██▎       | 68/300 [00:09<01:04,  3.57it/s, failures=0, objective=211]     23%|██▎       | 69/300 [00:09<01:04,  3.57it/s, failures=0, objective=211]     23%|██▎       | 70/300 [00:10<01:17,  2.96it/s, failures=0, objective=211]     23%|██▎       | 70/300 [00:10<01:17,  2.96it/s, failures=0, objective=211]     24%|██▎       | 71/300 [00:10<01:17,  2.96it/s, failures=0, objective=211]     24%|██▍       | 72/300 [00:11<01:12,  3.16it/s, failures=0, objective=211]     24%|██▍       | 72/300 [00:11<01:12,  3.16it/s, failures=0, objective=212]     24%|██▍       | 73/300 [00:11<01:11,  3.16it/s, failures=0, objective=212]     25%|██▍       | 74/300 [00:11<01:06,  3.39it/s, failures=0, objective=212]     25%|██▍       | 74/300 [00:11<01:06,  3.39it/s, failures=0, objective=215]     25%|██▌       | 75/300 [00:11<01:06,  3.39it/s, failures=0, objective=215]     25%|██▌       | 76/300 [00:12<01:04,  3.48it/s, failures=0, objective=215]     25%|██▌       | 76/300 [00:12<01:04,  3.48it/s, failures=0, objective=216]     26%|██▌       | 77/300 [00:12<01:04,  3.48it/s, failures=0, objective=216]     26%|██▌       | 78/300 [00:12<01:04,  3.47it/s, failures=0, objective=216]     26%|██▌       | 78/300 [00:12<01:04,  3.47it/s, failures=0, objective=220]     26%|██▋       | 79/300 [00:12<01:03,  3.47it/s, failures=0, objective=220]     27%|██▋       | 80/300 [00:13<01:02,  3.54it/s, failures=0, objective=220]     27%|██▋       | 80/300 [00:13<01:02,  3.54it/s, failures=0, objective=223]     27%|██▋       | 81/300 [00:13<01:01,  3.54it/s, failures=0, objective=223]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+    Results file already exists, it will be renamed to /Users/rp5/Documents/DeepHyper/deephyper/examples/examples_bbo/results_20260112-103739.csv
+      0%|          | 0/300 [00:00<?, ?it/s]      0%|          | 1/300 [00:00<00:00, 8208.03it/s, failures=0, objective=177]      1%|          | 2/300 [00:00<00:01, 170.85it/s, failures=0, objective=177]       1%|          | 3/300 [00:00<00:02, 141.79it/s, failures=0, objective=177]      1%|▏         | 4/300 [00:00<00:02, 131.18it/s, failures=0, objective=177]      2%|▏         | 5/300 [00:00<00:02, 125.53it/s, failures=0, objective=177]      2%|▏         | 6/300 [00:00<00:02, 122.13it/s, failures=0, objective=197]      2%|▏         | 7/300 [00:00<00:02, 119.48it/s, failures=0, objective=215]      3%|▎         | 8/300 [00:00<00:02, 117.92it/s, failures=0, objective=215]      3%|▎         | 9/300 [00:00<00:02, 116.96it/s, failures=0, objective=215]      3%|▎         | 10/300 [00:00<00:02, 116.30it/s, failures=0, objective=215]      4%|▎         | 11/300 [00:00<00:02, 115.75it/s, failures=0, objective=215]      4%|▍         | 12/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      4%|▍         | 12/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      4%|▍         | 13/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      5%|▍         | 14/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      5%|▌         | 15/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      5%|▌         | 16/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      6%|▌         | 17/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      6%|▌         | 18/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      6%|▋         | 19/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      7%|▋         | 20/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      7%|▋         | 21/300 [00:00<00:02, 115.30it/s, failures=0, objective=215]      7%|▋         | 22/300 [00:00<00:02, 115.30it/s, failures=0, objective=228]      8%|▊         | 23/300 [00:00<00:02, 115.30it/s, failures=0, objective=228]      8%|▊         | 24/300 [00:00<00:10, 25.71it/s, failures=0, objective=228]       8%|▊         | 24/300 [00:00<00:10, 25.71it/s, failures=0, objective=228]      8%|▊         | 25/300 [00:00<00:10, 25.71it/s, failures=0, objective=228]      9%|▊         | 26/300 [00:01<00:10, 25.71it/s, failures=0, objective=228]      9%|▉         | 27/300 [00:01<00:10, 25.71it/s, failures=0, objective=228]      9%|▉         | 28/300 [00:01<00:10, 25.71it/s, failures=0, objective=228]     10%|▉         | 29/300 [00:01<00:10, 25.71it/s, failures=0, objective=228]     10%|█         | 30/300 [00:02<00:25, 10.47it/s, failures=0, objective=228]     10%|█         | 30/300 [00:02<00:25, 10.47it/s, failures=0, objective=228]     10%|█         | 31/300 [00:02<00:25, 10.47it/s, failures=0, objective=228]     11%|█         | 32/300 [00:02<00:25, 10.47it/s, failures=0, objective=228]     11%|█         | 33/300 [00:02<00:25, 10.47it/s, failures=0, objective=228]     11%|█▏        | 34/300 [00:02<00:30,  8.67it/s, failures=0, objective=228]     11%|█▏        | 34/300 [00:02<00:30,  8.67it/s, failures=0, objective=228]     12%|█▏        | 35/300 [00:02<00:30,  8.67it/s, failures=0, objective=228]     12%|█▏        | 36/300 [00:03<00:30,  8.67it/s, failures=0, objective=228]     12%|█▏        | 37/300 [00:03<00:29,  8.89it/s, failures=0, objective=228]     12%|█▏        | 37/300 [00:03<00:29,  8.89it/s, failures=0, objective=228]     13%|█▎        | 38/300 [00:03<00:29,  8.89it/s, failures=0, objective=238]     13%|█▎        | 39/300 [00:03<00:30,  8.58it/s, failures=0, objective=238]     13%|█▎        | 39/300 [00:03<00:30,  8.58it/s, failures=0, objective=238]     13%|█▎        | 40/300 [00:03<00:30,  8.58it/s, failures=0, objective=238]     14%|█▎        | 41/300 [00:03<00:31,  8.18it/s, failures=0, objective=238]     14%|█▎        | 41/300 [00:03<00:31,  8.18it/s, failures=0, objective=238]     14%|█▍        | 42/300 [00:04<00:31,  8.18it/s, failures=0, objective=238]     14%|█▍        | 43/300 [00:04<00:32,  7.82it/s, failures=0, objective=238]     14%|█▍        | 43/300 [00:04<00:32,  7.82it/s, failures=0, objective=238]     15%|█▍        | 44/300 [00:04<00:32,  7.82it/s, failures=0, objective=238]     15%|█▌        | 45/300 [00:04<00:37,  6.85it/s, failures=0, objective=238]     15%|█▌        | 45/300 [00:04<00:37,  6.85it/s, failures=0, objective=238]     15%|█▌        | 46/300 [00:04<00:44,  5.65it/s, failures=0, objective=238]     15%|█▌        | 46/300 [00:04<00:44,  5.65it/s, failures=0, objective=238]     16%|█▌        | 47/300 [00:04<00:44,  5.65it/s, failures=0, objective=238]     16%|█▌        | 48/300 [00:05<00:49,  5.07it/s, failures=0, objective=238]     16%|█▌        | 48/300 [00:05<00:49,  5.07it/s, failures=0, objective=238]     16%|█▋        | 49/300 [00:05<00:49,  5.07it/s, failures=0, objective=238]     17%|█▋        | 50/300 [00:06<01:02,  3.97it/s, failures=0, objective=238]     17%|█▋        | 50/300 [00:06<01:02,  3.97it/s, failures=0, objective=238]     17%|█▋        | 51/300 [00:06<01:02,  3.97it/s, failures=0, objective=238]     17%|█▋        | 52/300 [00:06<01:02,  4.00it/s, failures=0, objective=238]     17%|█▋        | 52/300 [00:06<01:02,  4.00it/s, failures=0, objective=238]     18%|█▊        | 53/300 [00:06<01:01,  4.00it/s, failures=0, objective=238]     18%|█▊        | 54/300 [00:07<01:01,  4.03it/s, failures=0, objective=238]     18%|█▊        | 54/300 [00:07<01:01,  4.03it/s, failures=0, objective=238]     18%|█▊        | 55/300 [00:07<01:00,  4.03it/s, failures=0, objective=238]     19%|█▊        | 56/300 [00:07<00:53,  4.53it/s, failures=0, objective=238]     19%|█▊        | 56/300 [00:07<00:53,  4.53it/s, failures=0, objective=243]     19%|█▉        | 57/300 [00:07<00:53,  4.53it/s, failures=0, objective=243]     19%|█▉        | 58/300 [00:07<00:50,  4.75it/s, failures=0, objective=243]     19%|█▉        | 58/300 [00:07<00:50,  4.75it/s, failures=0, objective=243]     20%|█▉        | 59/300 [00:07<00:50,  4.75it/s, failures=0, objective=243]     20%|██        | 60/300 [00:08<00:44,  5.37it/s, failures=0, objective=243]     20%|██        | 60/300 [00:08<00:44,  5.37it/s, failures=0, objective=243]     20%|██        | 61/300 [00:08<00:44,  5.37it/s, failures=0, objective=243]     21%|██        | 62/300 [00:08<00:44,  5.39it/s, failures=0, objective=243]     21%|██        | 62/300 [00:08<00:44,  5.39it/s, failures=0, objective=243]     21%|██        | 63/300 [00:08<00:43,  5.39it/s, failures=0, objective=243]     21%|██▏       | 64/300 [00:09<00:55,  4.22it/s, failures=0, objective=243]     21%|██▏       | 64/300 [00:09<00:55,  4.22it/s, failures=0, objective=243]     22%|██▏       | 65/300 [00:09<00:55,  4.22it/s, failures=0, objective=243]     22%|██▏       | 66/300 [00:09<01:02,  3.74it/s, failures=0, objective=243]     22%|██▏       | 66/300 [00:09<01:02,  3.74it/s, failures=0, objective=243]     22%|██▏       | 67/300 [00:09<01:02,  3.74it/s, failures=0, objective=243]     23%|██▎       | 68/300 [00:10<01:01,  3.79it/s, failures=0, objective=243]     23%|██▎       | 68/300 [00:10<01:01,  3.79it/s, failures=0, objective=243]     23%|██▎       | 69/300 [00:10<01:00,  3.79it/s, failures=0, objective=243]     23%|██▎       | 70/300 [00:11<01:20,  2.85it/s, failures=0, objective=243]     23%|██▎       | 70/300 [00:11<01:20,  2.85it/s, failures=0, objective=243]     24%|██▎       | 71/300 [00:11<01:20,  2.85it/s, failures=0, objective=243]     24%|██▍       | 72/300 [00:12<01:37,  2.33it/s, failures=0, objective=243]     24%|██▍       | 72/300 [00:12<01:37,  2.33it/s, failures=0, objective=243]     24%|██▍       | 73/300 [00:12<01:37,  2.33it/s, failures=0, objective=243]     25%|██▍       | 74/300 [00:13<01:26,  2.62it/s, failures=0, objective=243]     25%|██▍       | 74/300 [00:13<01:26,  2.62it/s, failures=0, objective=243]     25%|██▌       | 75/300 [00:13<01:26,  2.62it/s, failures=0, objective=243]     25%|██▌       | 76/300 [00:14<01:34,  2.38it/s, failures=0, objective=243]     25%|██▌       | 76/300 [00:14<01:34,  2.38it/s, failures=0, objective=243]     26%|██▌       | 77/300 [00:14<01:33,  2.38it/s, failures=0, objective=243]     26%|██▌       | 78/300 [00:15<01:34,  2.34it/s, failures=0, objective=243]     26%|██▌       | 78/300 [00:15<01:34,  2.34it/s, failures=0, objective=243]     26%|██▋       | 79/300 [00:15<01:34,  2.34it/s, failures=0, objective=243]     27%|██▋       | 80/300 [00:15<01:26,  2.54it/s, failures=0, objective=243]     27%|██▋       | 80/300 [00:15<01:26,  2.54it/s, failures=0, objective=243]     27%|██▋       | 81/300 [00:15<01:26,  2.54it/s, failures=0, objective=243]     27%|██▋       | 82/300 [00:16<01:31,  2.37it/s, failures=0, objective=243]     27%|██▋       | 82/300 [00:16<01:31,  2.37it/s, failures=0, objective=243]     28%|██▊       | 83/300 [00:16<01:31,  2.37it/s, failures=0, objective=243]     28%|██▊       | 84/300 [00:17<01:20,  2.68it/s, failures=0, objective=243]     28%|██▊       | 84/300 [00:17<01:20,  2.68it/s, failures=0, objective=243]     28%|██▊       | 85/300 [00:17<01:20,  2.68it/s, failures=0, objective=243]     29%|██▊       | 86/300 [00:17<01:16,  2.81it/s, failures=0, objective=243]     29%|██▊       | 86/300 [00:17<01:16,  2.81it/s, failures=0, objective=243]     29%|██▉       | 87/300 [00:17<01:15,  2.81it/s, failures=0, objective=243]     29%|██▉       | 88/300 [00:18<01:23,  2.54it/s, failures=0, objective=243]     29%|██▉       | 88/300 [00:18<01:23,  2.54it/s, failures=0, objective=243]     30%|██▉       | 89/300 [00:18<01:22,  2.54it/s, failures=0, objective=243]     30%|███       | 90/300 [00:19<01:28,  2.37it/s, failures=0, objective=243]     30%|███       | 90/300 [00:19<01:28,  2.37it/s, failures=0, objective=243]     30%|███       | 91/300 [00:19<01:28,  2.37it/s, failures=0, objective=243]     31%|███       | 92/300 [00:20<01:24,  2.46it/s, failures=0, objective=243]     31%|███       | 92/300 [00:20<01:24,  2.46it/s, failures=0, objective=243]     31%|███       | 93/300 [00:20<01:24,  2.46it/s, failures=0, objective=243]     31%|███▏      | 94/300 [00:21<01:27,  2.36it/s, failures=0, objective=243]     31%|███▏      | 94/300 [00:21<01:27,  2.36it/s, failures=0, objective=243]     32%|███▏      | 95/300 [00:21<01:26,  2.36it/s, failures=0, objective=244]     32%|███▏      | 96/300 [00:22<01:23,  2.45it/s, failures=0, objective=244]     32%|███▏      | 96/300 [00:22<01:23,  2.45it/s, failures=0, objective=244]     32%|███▏      | 97/300 [00:22<01:22,  2.45it/s, failures=0, objective=244]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     27%|██▋       | 82/300 [00:13<01:01,  3.52it/s, failures=0, objective=223]     27%|██▋       | 82/300 [00:13<01:01,  3.52it/s, failures=0, objective=223]     28%|██▊       | 83/300 [00:13<01:01,  3.52it/s, failures=0, objective=223]     28%|██▊       | 84/300 [00:14<00:58,  3.71it/s, failures=0, objective=223]     28%|██▊       | 84/300 [00:14<00:58,  3.71it/s, failures=0, objective=223]     28%|██▊       | 85/300 [00:14<00:58,  3.71it/s, failures=0, objective=223]     29%|██▊       | 86/300 [00:15<01:13,  2.92it/s, failures=0, objective=223]     29%|██▊       | 86/300 [00:15<01:13,  2.92it/s, failures=0, objective=223]     29%|██▉       | 87/300 [00:15<01:12,  2.92it/s, failures=0, objective=223]     29%|██▉       | 88/300 [00:15<01:09,  3.06it/s, failures=0, objective=223]     29%|██▉       | 88/300 [00:15<01:09,  3.06it/s, failures=0, objective=223]     30%|██▉       | 89/300 [00:15<01:08,  3.06it/s, failures=0, objective=223]     30%|███       | 90/300 [00:16<01:06,  3.14it/s, failures=0, objective=223]     30%|███       | 90/300 [00:16<01:06,  3.14it/s, failures=0, objective=223]     30%|███       | 91/300 [00:16<01:06,  3.14it/s, failures=0, objective=223]     31%|███       | 92/300 [00:17<01:05,  3.18it/s, failures=0, objective=223]     31%|███       | 92/300 [00:17<01:05,  3.18it/s, failures=0, objective=225]     31%|███       | 93/300 [00:17<01:05,  3.18it/s, failures=0, objective=225]     31%|███▏      | 94/300 [00:17<01:07,  3.06it/s, failures=0, objective=225]     31%|███▏      | 94/300 [00:17<01:07,  3.06it/s, failures=0, objective=225]     32%|███▏      | 95/300 [00:17<01:07,  3.06it/s, failures=0, objective=225]     32%|███▏      | 96/300 [00:18<01:04,  3.14it/s, failures=0, objective=225]     32%|███▏      | 96/300 [00:18<01:04,  3.14it/s, failures=0, objective=225]     32%|███▏      | 97/300 [00:18<01:04,  3.14it/s, failures=0, objective=225]     33%|███▎      | 98/300 [00:19<01:03,  3.20it/s, failures=0, objective=225]     33%|███▎      | 98/300 [00:19<01:03,  3.20it/s, failures=0, objective=225]     33%|███▎      | 99/300 [00:19<01:02,  3.20it/s, failures=0, objective=225]     33%|███▎      | 100/300 [00:19<01:02,  3.20it/s, failures=0, objective=225]     33%|███▎      | 100/300 [00:19<01:02,  3.20it/s, failures=0, objective=226]     34%|███▎      | 101/300 [00:19<01:02,  3.20it/s, failures=0, objective=226]     34%|███▍      | 102/300 [00:20<01:02,  3.18it/s, failures=0, objective=226]     34%|███▍      | 102/300 [00:20<01:02,  3.18it/s, failures=0, objective=226]     34%|███▍      | 103/300 [00:20<01:01,  3.18it/s, failures=0, objective=226]     35%|███▍      | 104/300 [00:20<01:00,  3.23it/s, failures=0, objective=226]     35%|███▍      | 104/300 [00:20<01:00,  3.23it/s, failures=0, objective=226]     35%|███▌      | 105/300 [00:20<01:00,  3.23it/s, failures=0, objective=226]     35%|███▌      | 106/300 [00:21<01:07,  2.89it/s, failures=0, objective=226]     35%|███▌      | 106/300 [00:21<01:07,  2.89it/s, failures=0, objective=226]     36%|███▌      | 107/300 [00:21<01:06,  2.89it/s, failures=0, objective=226]     36%|███▌      | 108/300 [00:22<01:02,  3.06it/s, failures=0, objective=226]     36%|███▌      | 108/300 [00:22<01:02,  3.06it/s, failures=0, objective=226]     36%|███▋      | 109/300 [00:22<01:02,  3.06it/s, failures=0, objective=226]     37%|███▋      | 110/300 [00:22<01:00,  3.15it/s, failures=0, objective=226]     37%|███▋      | 110/300 [00:22<01:00,  3.15it/s, failures=0, objective=226]     37%|███▋      | 111/300 [00:22<00:59,  3.15it/s, failures=0, objective=226]     37%|███▋      | 112/300 [00:23<01:01,  3.05it/s, failures=0, objective=226]     37%|███▋      | 112/300 [00:23<01:01,  3.05it/s, failures=0, objective=226]     38%|███▊      | 113/300 [00:23<01:01,  3.05it/s, failures=0, objective=226]     38%|███▊      | 114/300 [00:24<01:02,  2.96it/s, failures=0, objective=226]     38%|███▊      | 114/300 [00:24<01:02,  2.96it/s, failures=0, objective=227]     38%|███▊      | 115/300 [00:24<01:02,  2.96it/s, failures=0, objective=227]     39%|███▊      | 116/300 [00:25<01:03,  2.91it/s, failures=0, objective=227]     39%|███▊      | 116/300 [00:25<01:03,  2.91it/s, failures=0, objective=227]     39%|███▉      | 117/300 [00:25<01:02,  2.91it/s, failures=0, objective=227]     39%|███▉      | 118/300 [00:25<01:03,  2.86it/s, failures=0, objective=227]     39%|███▉      | 118/300 [00:25<01:03,  2.86it/s, failures=0, objective=228]     40%|███▉      | 119/300 [00:25<01:03,  2.86it/s, failures=0, objective=228]     40%|████      | 120/300 [00:26<01:03,  2.85it/s, failures=0, objective=228]     40%|████      | 120/300 [00:26<01:03,  2.85it/s, failures=0, objective=228]     40%|████      | 121/300 [00:26<01:02,  2.85it/s, failures=0, objective=228]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     33%|███▎      | 98/300 [00:23<01:23,  2.42it/s, failures=0, objective=244]     33%|███▎      | 98/300 [00:23<01:23,  2.42it/s, failures=0, objective=244]     33%|███▎      | 99/300 [00:23<01:23,  2.42it/s, failures=0, objective=244]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     41%|████      | 122/300 [00:27<01:02,  2.87it/s, failures=0, objective=228]     41%|████      | 122/300 [00:27<01:02,  2.87it/s, failures=0, objective=228]     41%|████      | 123/300 [00:27<01:01,  2.87it/s, failures=0, objective=228]     41%|████▏     | 124/300 [00:27<01:02,  2.84it/s, failures=0, objective=228]     41%|████▏     | 124/300 [00:27<01:02,  2.84it/s, failures=0, objective=228]     42%|████▏     | 125/300 [00:27<01:01,  2.84it/s, failures=0, objective=228]     42%|████▏     | 126/300 [00:28<01:05,  2.67it/s, failures=0, objective=228]     42%|████▏     | 126/300 [00:28<01:05,  2.67it/s, failures=0, objective=228]     42%|████▏     | 127/300 [00:28<01:04,  2.67it/s, failures=0, objective=228]     43%|████▎     | 128/300 [00:29<01:04,  2.67it/s, failures=0, objective=228]     43%|████▎     | 128/300 [00:29<01:04,  2.67it/s, failures=0, objective=228]     43%|████▎     | 129/300 [00:29<01:03,  2.67it/s, failures=0, objective=228]     43%|████▎     | 130/300 [00:30<01:13,  2.31it/s, failures=0, objective=228]     43%|████▎     | 130/300 [00:30<01:13,  2.31it/s, failures=0, objective=228]     44%|████▎     | 131/300 [00:30<01:13,  2.31it/s, failures=0, objective=228]     44%|████▍     | 132/300 [00:31<01:08,  2.45it/s, failures=0, objective=228]     44%|████▍     | 132/300 [00:31<01:08,  2.45it/s, failures=0, objective=228]     44%|████▍     | 133/300 [00:31<01:08,  2.45it/s, failures=0, objective=228]     45%|████▍     | 134/300 [00:32<01:06,  2.49it/s, failures=0, objective=228]     45%|████▍     | 134/300 [00:32<01:06,  2.49it/s, failures=0, objective=228]     45%|████▌     | 135/300 [00:32<01:06,  2.49it/s, failures=0, objective=228]     45%|████▌     | 136/300 [00:32<01:04,  2.54it/s, failures=0, objective=228]     45%|████▌     | 136/300 [00:32<01:04,  2.54it/s, failures=0, objective=229]     46%|████▌     | 137/300 [00:32<01:04,  2.54it/s, failures=0, objective=229]     46%|████▌     | 138/300 [00:33<01:04,  2.52it/s, failures=0, objective=229]     46%|████▌     | 138/300 [00:33<01:04,  2.52it/s, failures=0, objective=229]     46%|████▋     | 139/300 [00:33<01:03,  2.52it/s, failures=0, objective=229]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     33%|███▎      | 100/300 [00:23<01:22,  2.43it/s, failures=0, objective=244]     33%|███▎      | 100/300 [00:23<01:22,  2.43it/s, failures=0, objective=244]     34%|███▎      | 101/300 [00:23<01:21,  2.43it/s, failures=0, objective=244]     34%|███▍      | 102/300 [00:24<01:19,  2.49it/s, failures=0, objective=244]     34%|███▍      | 102/300 [00:24<01:19,  2.49it/s, failures=0, objective=246]     34%|███▍      | 103/300 [00:24<01:19,  2.49it/s, failures=0, objective=246]     35%|███▍      | 104/300 [00:25<01:13,  2.65it/s, failures=0, objective=246]     35%|███▍      | 104/300 [00:25<01:13,  2.65it/s, failures=0, objective=246]     35%|███▌      | 105/300 [00:25<01:13,  2.65it/s, failures=0, objective=246]     35%|███▌      | 106/300 [00:26<01:11,  2.71it/s, failures=0, objective=246]     35%|███▌      | 106/300 [00:26<01:11,  2.71it/s, failures=0, objective=246]     36%|███▌      | 107/300 [00:26<01:11,  2.71it/s, failures=0, objective=246]     36%|███▌      | 108/300 [00:26<01:10,  2.71it/s, failures=0, objective=246]     36%|███▌      | 108/300 [00:26<01:10,  2.71it/s, failures=0, objective=246]     36%|███▋      | 109/300 [00:26<01:10,  2.71it/s, failures=0, objective=246]     37%|███▋      | 110/300 [00:27<01:09,  2.72it/s, failures=0, objective=246]     37%|███▋      | 110/300 [00:27<01:09,  2.72it/s, failures=0, objective=246]     37%|███▋      | 111/300 [00:27<01:09,  2.72it/s, failures=0, objective=246]     37%|███▋      | 112/300 [00:28<01:15,  2.47it/s, failures=0, objective=246]     37%|███▋      | 112/300 [00:28<01:15,  2.47it/s, failures=0, objective=249]     38%|███▊      | 113/300 [00:28<01:15,  2.47it/s, failures=0, objective=249]     38%|███▊      | 114/300 [00:29<01:19,  2.34it/s, failures=0, objective=249]     38%|███▊      | 114/300 [00:29<01:19,  2.34it/s, failures=0, objective=249]     38%|███▊      | 115/300 [00:29<01:18,  2.34it/s, failures=0, objective=249]     39%|███▊      | 116/300 [00:30<01:22,  2.23it/s, failures=0, objective=249]     39%|███▊      | 116/300 [00:30<01:22,  2.23it/s, failures=0, objective=249]     39%|███▉      | 117/300 [00:30<01:21,  2.23it/s, failures=0, objective=249]     39%|███▉      | 118/300 [00:31<01:19,  2.28it/s, failures=0, objective=249]     39%|███▉      | 118/300 [00:31<01:19,  2.28it/s, failures=0, objective=249]     40%|███▉      | 119/300 [00:31<01:19,  2.28it/s, failures=0, objective=249]     40%|████      | 120/300 [00:32<01:22,  2.18it/s, failures=0, objective=249]     40%|████      | 120/300 [00:32<01:22,  2.18it/s, failures=0, objective=250]     40%|████      | 121/300 [00:32<01:22,  2.18it/s, failures=0, objective=250]     41%|████      | 122/300 [00:33<01:20,  2.20it/s, failures=0, objective=250]     41%|████      | 122/300 [00:33<01:20,  2.20it/s, failures=0, objective=252]     41%|████      | 123/300 [00:33<01:20,  2.20it/s, failures=0, objective=252]     41%|████▏     | 124/300 [00:33<01:14,  2.36it/s, failures=0, objective=252]     41%|████▏     | 124/300 [00:33<01:14,  2.36it/s, failures=0, objective=252]     42%|████▏     | 125/300 [00:33<01:14,  2.36it/s, failures=0, objective=252]     42%|████▏     | 126/300 [00:34<01:08,  2.54it/s, failures=0, objective=252]     42%|████▏     | 126/300 [00:34<01:08,  2.54it/s, failures=0, objective=252]     42%|████▏     | 127/300 [00:34<01:08,  2.54it/s, failures=0, objective=252]     43%|████▎     | 128/300 [00:35<01:01,  2.79it/s, failures=0, objective=252]     43%|████▎     | 128/300 [00:35<01:01,  2.79it/s, failures=0, objective=252]     43%|████▎     | 129/300 [00:35<01:01,  2.79it/s, failures=0, objective=252]     43%|████▎     | 130/300 [00:35<01:04,  2.62it/s, failures=0, objective=252]     43%|████▎     | 130/300 [00:35<01:04,  2.62it/s, failures=0, objective=252]     44%|████▎     | 131/300 [00:35<01:04,  2.62it/s, failures=0, objective=252]     44%|████▍     | 132/300 [00:36<01:06,  2.52it/s, failures=0, objective=252]     44%|████▍     | 132/300 [00:36<01:06,  2.52it/s, failures=0, objective=252]     44%|████▍     | 133/300 [00:36<01:06,  2.52it/s, failures=0, objective=252]     45%|████▍     | 134/300 [00:37<01:07,  2.47it/s, failures=0, objective=252]     45%|████▍     | 134/300 [00:37<01:07,  2.47it/s, failures=0, objective=253]     45%|████▌     | 135/300 [00:37<01:06,  2.47it/s, failures=0, objective=253]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     47%|████▋     | 140/300 [00:34<01:02,  2.56it/s, failures=0, objective=229]     47%|████▋     | 140/300 [00:34<01:02,  2.56it/s, failures=0, objective=229]     47%|████▋     | 141/300 [00:34<01:02,  2.56it/s, failures=0, objective=229]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     45%|████▌     | 136/300 [00:38<01:07,  2.44it/s, failures=0, objective=253]     45%|████▌     | 136/300 [00:38<01:07,  2.44it/s, failures=0, objective=253]     46%|████▌     | 137/300 [00:38<01:06,  2.44it/s, failures=0, objective=253]     46%|████▌     | 138/300 [00:39<01:12,  2.22it/s, failures=0, objective=253]     46%|████▌     | 138/300 [00:39<01:12,  2.22it/s, failures=0, objective=255]     46%|████▋     | 139/300 [00:39<01:12,  2.22it/s, failures=0, objective=255]     47%|████▋     | 140/300 [00:40<01:10,  2.27it/s, failures=0, objective=255]     47%|████▋     | 140/300 [00:40<01:10,  2.27it/s, failures=0, objective=257]     47%|████▋     | 141/300 [00:40<01:10,  2.27it/s, failures=0, objective=257]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     47%|████▋     | 142/300 [00:35<01:01,  2.57it/s, failures=0, objective=229]     47%|████▋     | 142/300 [00:35<01:01,  2.57it/s, failures=0, objective=229]     48%|████▊     | 143/300 [00:35<01:01,  2.57it/s, failures=0, objective=229]     48%|████▊     | 144/300 [00:35<00:57,  2.71it/s, failures=0, objective=229]     48%|████▊     | 144/300 [00:35<00:57,  2.71it/s, failures=0, objective=229]     48%|████▊     | 145/300 [00:35<00:57,  2.71it/s, failures=0, objective=229]     49%|████▊     | 146/300 [00:37<01:12,  2.13it/s, failures=0, objective=229]     49%|████▊     | 146/300 [00:37<01:12,  2.13it/s, failures=0, objective=229]     49%|████▉     | 147/300 [00:37<01:11,  2.13it/s, failures=0, objective=229]     49%|████▉     | 148/300 [00:37<01:05,  2.32it/s, failures=0, objective=229]     49%|████▉     | 148/300 [00:37<01:05,  2.32it/s, failures=0, objective=229]     50%|████▉     | 149/300 [00:37<01:05,  2.32it/s, failures=0, objective=229]     50%|█████     | 150/300 [00:38<01:06,  2.25it/s, failures=0, objective=229]     50%|█████     | 150/300 [00:38<01:06,  2.25it/s, failures=0, objective=229]     50%|█████     | 151/300 [00:38<01:06,  2.25it/s, failures=0, objective=229]     51%|█████     | 152/300 [00:39<01:03,  2.35it/s, failures=0, objective=229]     51%|█████     | 152/300 [00:39<01:03,  2.35it/s, failures=0, objective=229]     51%|█████     | 153/300 [00:39<01:02,  2.35it/s, failures=0, objective=229]     51%|█████▏    | 154/300 [00:40<01:01,  2.38it/s, failures=0, objective=229]     51%|█████▏    | 154/300 [00:40<01:01,  2.38it/s, failures=0, objective=229]     52%|█████▏    | 155/300 [00:40<01:00,  2.38it/s, failures=0, objective=229]     52%|█████▏    | 156/300 [00:41<00:58,  2.45it/s, failures=0, objective=229]     52%|█████▏    | 156/300 [00:41<00:58,  2.45it/s, failures=0, objective=230]     52%|█████▏    | 157/300 [00:41<00:58,  2.45it/s, failures=0, objective=230]     53%|█████▎    | 158/300 [00:41<00:57,  2.49it/s, failures=0, objective=230]     53%|█████▎    | 158/300 [00:41<00:57,  2.49it/s, failures=0, objective=231]     53%|█████▎    | 159/300 [00:41<00:56,  2.49it/s, failures=0, objective=231]     53%|█████▎    | 160/300 [00:42<01:00,  2.32it/s, failures=0, objective=231]     53%|█████▎    | 160/300 [00:42<01:00,  2.32it/s, failures=0, objective=232]     54%|█████▎    | 161/300 [00:42<01:00,  2.32it/s, failures=0, objective=232]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     47%|████▋     | 142/300 [00:41<01:13,  2.14it/s, failures=0, objective=257]     47%|████▋     | 142/300 [00:41<01:13,  2.14it/s, failures=0, objective=257]     48%|████▊     | 143/300 [00:41<01:13,  2.14it/s, failures=0, objective=257]     48%|████▊     | 144/300 [00:42<01:08,  2.28it/s, failures=0, objective=257]     48%|████▊     | 144/300 [00:42<01:08,  2.28it/s, failures=0, objective=257]     48%|████▊     | 145/300 [00:42<01:07,  2.28it/s, failures=0, objective=257]     49%|████▊     | 146/300 [00:42<01:03,  2.43it/s, failures=0, objective=257]     49%|████▊     | 146/300 [00:42<01:03,  2.43it/s, failures=0, objective=257]     49%|████▉     | 147/300 [00:42<01:03,  2.43it/s, failures=0, objective=257]     49%|████▉     | 148/300 [00:43<01:04,  2.34it/s, failures=0, objective=257]     49%|████▉     | 148/300 [00:43<01:04,  2.34it/s, failures=0, objective=257]     50%|████▉     | 149/300 [00:43<01:04,  2.34it/s, failures=0, objective=257]     50%|█████     | 150/300 [00:45<01:12,  2.07it/s, failures=0, objective=257]     50%|█████     | 150/300 [00:45<01:12,  2.07it/s, failures=0, objective=257]     50%|█████     | 151/300 [00:45<01:11,  2.07it/s, failures=0, objective=257]     51%|█████     | 152/300 [00:45<01:10,  2.11it/s, failures=0, objective=257]     51%|█████     | 152/300 [00:45<01:10,  2.11it/s, failures=0, objective=258]     51%|█████     | 153/300 [00:45<01:09,  2.11it/s, failures=0, objective=258]     51%|█████▏    | 154/300 [00:46<01:09,  2.10it/s, failures=0, objective=258]     51%|█████▏    | 154/300 [00:46<01:09,  2.10it/s, failures=0, objective=258]     52%|█████▏    | 155/300 [00:46<01:09,  2.10it/s, failures=0, objective=258]     52%|█████▏    | 156/300 [00:47<01:08,  2.11it/s, failures=0, objective=258]     52%|█████▏    | 156/300 [00:47<01:08,  2.11it/s, failures=0, objective=259]     52%|█████▏    | 157/300 [00:47<01:07,  2.11it/s, failures=0, objective=259]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     54%|█████▍    | 162/300 [00:43<01:00,  2.28it/s, failures=0, objective=232]     54%|█████▍    | 162/300 [00:43<01:00,  2.28it/s, failures=0, objective=232]     54%|█████▍    | 163/300 [00:43<01:00,  2.28it/s, failures=0, objective=232]     55%|█████▍    | 164/300 [00:44<00:52,  2.59it/s, failures=0, objective=232]     55%|█████▍    | 164/300 [00:44<00:52,  2.59it/s, failures=0, objective=232]     55%|█████▌    | 165/300 [00:44<00:52,  2.59it/s, failures=0, objective=232]     55%|█████▌    | 166/300 [00:45<00:48,  2.76it/s, failures=0, objective=232]     55%|█████▌    | 166/300 [00:45<00:48,  2.76it/s, failures=0, objective=232]     56%|█████▌    | 167/300 [00:45<00:48,  2.76it/s, failures=0, objective=232]     56%|█████▌    | 168/300 [00:46<00:58,  2.26it/s, failures=0, objective=232]     56%|█████▌    | 168/300 [00:46<00:58,  2.26it/s, failures=0, objective=232]     56%|█████▋    | 169/300 [00:46<00:57,  2.26it/s, failures=0, objective=232]     57%|█████▋    | 170/300 [00:47<00:57,  2.27it/s, failures=0, objective=232]     57%|█████▋    | 170/300 [00:47<00:57,  2.27it/s, failures=0, objective=232]     57%|█████▋    | 171/300 [00:47<00:56,  2.27it/s, failures=0, objective=232]     57%|█████▋    | 172/300 [00:48<01:00,  2.10it/s, failures=0, objective=232]     57%|█████▋    | 172/300 [00:48<01:00,  2.10it/s, failures=0, objective=232]     58%|█████▊    | 173/300 [00:48<01:00,  2.10it/s, failures=0, objective=232]     58%|█████▊    | 174/300 [00:49<01:00,  2.07it/s, failures=0, objective=232]     58%|█████▊    | 174/300 [00:49<01:00,  2.07it/s, failures=0, objective=232]     58%|█████▊    | 175/300 [00:49<01:00,  2.07it/s, failures=0, objective=232]     59%|█████▊    | 176/300 [00:50<00:58,  2.10it/s, failures=0, objective=232]     59%|█████▊    | 176/300 [00:50<00:58,  2.10it/s, failures=0, objective=235]     59%|█████▉    | 177/300 [00:50<00:58,  2.10it/s, failures=0, objective=235]     59%|█████▉    | 178/300 [00:51<00:58,  2.08it/s, failures=0, objective=235]     59%|█████▉    | 178/300 [00:51<00:58,  2.08it/s, failures=0, objective=239]     60%|█████▉    | 179/300 [00:51<00:58,  2.08it/s, failures=0, objective=239]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     53%|█████▎    | 158/300 [00:48<01:09,  2.04it/s, failures=0, objective=259]     53%|█████▎    | 158/300 [00:48<01:09,  2.04it/s, failures=0, objective=259]     53%|█████▎    | 159/300 [00:48<01:09,  2.04it/s, failures=0, objective=259]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     60%|██████    | 180/300 [00:52<00:58,  2.04it/s, failures=0, objective=239]     60%|██████    | 180/300 [00:52<00:58,  2.04it/s, failures=0, objective=239]     60%|██████    | 181/300 [00:52<00:58,  2.04it/s, failures=0, objective=239]     61%|██████    | 182/300 [00:53<00:56,  2.08it/s, failures=0, objective=239]     61%|██████    | 182/300 [00:53<00:56,  2.08it/s, failures=0, objective=240]     61%|██████    | 183/300 [00:53<00:56,  2.08it/s, failures=0, objective=240]     61%|██████▏   | 184/300 [00:53<00:49,  2.35it/s, failures=0, objective=240]     61%|██████▏   | 184/300 [00:53<00:49,  2.35it/s, failures=0, objective=240]     62%|██████▏   | 185/300 [00:53<00:48,  2.35it/s, failures=0, objective=240]     62%|██████▏   | 186/300 [00:54<00:49,  2.29it/s, failures=0, objective=240]     62%|██████▏   | 186/300 [00:54<00:49,  2.29it/s, failures=0, objective=240]     62%|██████▏   | 187/300 [00:54<00:49,  2.29it/s, failures=0, objective=240]     63%|██████▎   | 188/300 [00:55<00:50,  2.23it/s, failures=0, objective=240]     63%|██████▎   | 188/300 [00:55<00:50,  2.23it/s, failures=0, objective=240]     63%|██████▎   | 189/300 [00:55<00:49,  2.23it/s, failures=0, objective=240]     63%|██████▎   | 190/300 [00:56<00:54,  2.03it/s, failures=0, objective=240]     63%|██████▎   | 190/300 [00:56<00:54,  2.03it/s, failures=0, objective=240]     64%|██████▎   | 191/300 [00:56<00:53,  2.03it/s, failures=0, objective=240]     64%|██████▍   | 192/300 [00:57<00:51,  2.09it/s, failures=0, objective=240]     64%|██████▍   | 192/300 [00:57<00:51,  2.09it/s, failures=0, objective=240]     64%|██████▍   | 193/300 [00:57<00:51,  2.09it/s, failures=0, objective=240]     65%|██████▍   | 194/300 [00:58<00:50,  2.11it/s, failures=0, objective=240]     65%|██████▍   | 194/300 [00:58<00:50,  2.11it/s, failures=0, objective=240]     65%|██████▌   | 195/300 [00:58<00:49,  2.11it/s, failures=0, objective=240]     65%|██████▌   | 196/300 [00:59<00:49,  2.08it/s, failures=0, objective=240]     65%|██████▌   | 196/300 [00:59<00:49,  2.08it/s, failures=0, objective=241]     66%|██████▌   | 197/300 [00:59<00:49,  2.08it/s, failures=0, objective=241]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     53%|█████▎    | 160/300 [00:49<01:10,  1.99it/s, failures=0, objective=259]     53%|█████▎    | 160/300 [00:49<01:10,  1.99it/s, failures=0, objective=259]     54%|█████▎    | 161/300 [00:50<01:09,  1.99it/s, failures=0, objective=259]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     66%|██████▌   | 198/300 [01:00<00:49,  2.05it/s, failures=0, objective=241]     66%|██████▌   | 198/300 [01:00<00:49,  2.05it/s, failures=0, objective=241]     66%|██████▋   | 199/300 [01:00<00:49,  2.05it/s, failures=0, objective=241]     67%|██████▋   | 200/300 [01:01<00:47,  2.10it/s, failures=0, objective=241]     67%|██████▋   | 200/300 [01:01<00:47,  2.10it/s, failures=0, objective=242]     67%|██████▋   | 201/300 [01:01<00:47,  2.10it/s, failures=0, objective=242]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     54%|█████▍    | 162/300 [00:50<01:08,  2.00it/s, failures=0, objective=259]     54%|█████▍    | 162/300 [00:50<01:08,  2.00it/s, failures=0, objective=259]     54%|█████▍    | 163/300 [00:50<01:08,  2.00it/s, failures=0, objective=259]     55%|█████▍    | 164/300 [00:51<01:03,  2.13it/s, failures=0, objective=259]     55%|█████▍    | 164/300 [00:51<01:03,  2.13it/s, failures=0, objective=259]     55%|█████▌    | 165/300 [00:51<01:03,  2.13it/s, failures=0, objective=259]     55%|█████▌    | 166/300 [00:52<00:57,  2.35it/s, failures=0, objective=259]     55%|█████▌    | 166/300 [00:52<00:57,  2.35it/s, failures=0, objective=259]     56%|█████▌    | 167/300 [00:52<00:56,  2.35it/s, failures=0, objective=259]     56%|█████▌    | 168/300 [00:53<00:58,  2.27it/s, failures=0, objective=259]     56%|█████▌    | 168/300 [00:53<00:58,  2.27it/s, failures=0, objective=259]     56%|█████▋    | 169/300 [00:53<00:57,  2.27it/s, failures=0, objective=259]     57%|█████▋    | 170/300 [00:53<00:46,  2.82it/s, failures=0, objective=259]     57%|█████▋    | 170/300 [00:53<00:46,  2.82it/s, failures=0, objective=259]     57%|█████▋    | 171/300 [00:53<00:45,  2.82it/s, failures=0, objective=259]     57%|█████▋    | 172/300 [00:54<00:50,  2.52it/s, failures=0, objective=259]     57%|█████▋    | 172/300 [00:54<00:50,  2.52it/s, failures=0, objective=259]     58%|█████▊    | 173/300 [00:54<00:50,  2.52it/s, failures=0, objective=259]     58%|█████▊    | 174/300 [00:55<00:54,  2.29it/s, failures=0, objective=259]     58%|█████▊    | 174/300 [00:55<00:54,  2.29it/s, failures=0, objective=259]     58%|█████▊    | 175/300 [00:55<00:54,  2.29it/s, failures=0, objective=259]     59%|█████▊    | 176/300 [00:56<00:56,  2.20it/s, failures=0, objective=259]     59%|█████▊    | 176/300 [00:56<00:56,  2.20it/s, failures=0, objective=259]     59%|█████▉    | 177/300 [00:56<00:55,  2.20it/s, failures=0, objective=259]     59%|█████▉    | 178/300 [00:57<00:56,  2.14it/s, failures=0, objective=259]     59%|█████▉    | 178/300 [00:57<00:56,  2.14it/s, failures=0, objective=260]     60%|█████▉    | 179/300 [00:57<00:56,  2.14it/s, failures=0, objective=260]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     67%|██████▋   | 202/300 [01:02<00:50,  1.96it/s, failures=0, objective=242]     67%|██████▋   | 202/300 [01:02<00:50,  1.96it/s, failures=0, objective=242]     68%|██████▊   | 203/300 [01:02<00:49,  1.96it/s, failures=0, objective=242]     68%|██████▊   | 204/300 [01:03<00:48,  1.97it/s, failures=0, objective=242]     68%|██████▊   | 204/300 [01:03<00:48,  1.97it/s, failures=0, objective=242]     68%|██████▊   | 205/300 [01:03<00:48,  1.97it/s, failures=0, objective=242]     69%|██████▊   | 206/300 [01:04<00:49,  1.91it/s, failures=0, objective=242]     69%|██████▊   | 206/300 [01:04<00:49,  1.91it/s, failures=0, objective=242]     69%|██████▉   | 207/300 [01:04<00:48,  1.91it/s, failures=0, objective=242]     69%|██████▉   | 208/300 [01:05<00:47,  1.93it/s, failures=0, objective=242]     69%|██████▉   | 208/300 [01:05<00:47,  1.93it/s, failures=0, objective=242]     70%|██████▉   | 209/300 [01:05<00:47,  1.93it/s, failures=0, objective=242]     70%|███████   | 210/300 [01:06<00:44,  2.03it/s, failures=0, objective=242]     70%|███████   | 210/300 [01:06<00:44,  2.03it/s, failures=0, objective=242]     70%|███████   | 211/300 [01:06<00:43,  2.03it/s, failures=0, objective=242]     71%|███████   | 212/300 [01:07<00:44,  2.00it/s, failures=0, objective=242]     71%|███████   | 212/300 [01:07<00:44,  2.00it/s, failures=0, objective=244]     71%|███████   | 213/300 [01:07<00:43,  2.00it/s, failures=0, objective=244]     71%|███████▏  | 214/300 [01:08<00:43,  1.96it/s, failures=0, objective=244]     71%|███████▏  | 214/300 [01:08<00:43,  1.96it/s, failures=0, objective=244]     72%|███████▏  | 215/300 [01:08<00:43,  1.96it/s, failures=0, objective=244]     72%|███████▏  | 216/300 [01:09<00:42,  2.00it/s, failures=0, objective=244]     72%|███████▏  | 216/300 [01:09<00:42,  2.00it/s, failures=0, objective=244]     72%|███████▏  | 217/300 [01:09<00:41,  2.00it/s, failures=0, objective=244]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     60%|██████    | 180/300 [00:58<00:58,  2.04it/s, failures=0, objective=260]     60%|██████    | 180/300 [00:58<00:58,  2.04it/s, failures=0, objective=260]     60%|██████    | 181/300 [00:58<00:58,  2.04it/s, failures=0, objective=260]     61%|██████    | 182/300 [00:59<00:59,  1.98it/s, failures=0, objective=260]     61%|██████    | 182/300 [00:59<00:59,  1.98it/s, failures=0, objective=261]     61%|██████    | 183/300 [00:59<00:59,  1.98it/s, failures=0, objective=261]     61%|██████▏   | 184/300 [01:00<00:56,  2.04it/s, failures=0, objective=261]     61%|██████▏   | 184/300 [01:00<00:56,  2.04it/s, failures=0, objective=261]     62%|██████▏   | 185/300 [01:00<00:56,  2.04it/s, failures=0, objective=261]     62%|██████▏   | 186/300 [01:01<00:50,  2.27it/s, failures=0, objective=261]     62%|██████▏   | 186/300 [01:01<00:50,  2.27it/s, failures=0, objective=261]     62%|██████▏   | 187/300 [01:01<00:49,  2.27it/s, failures=0, objective=261]     63%|██████▎   | 188/300 [01:02<00:52,  2.13it/s, failures=0, objective=261]     63%|██████▎   | 188/300 [01:02<00:52,  2.13it/s, failures=0, objective=261]     63%|██████▎   | 189/300 [01:02<00:52,  2.13it/s, failures=0, objective=261]     63%|██████▎   | 190/300 [01:03<00:48,  2.28it/s, failures=0, objective=261]     63%|██████▎   | 190/300 [01:03<00:48,  2.28it/s, failures=0, objective=261]     64%|██████▎   | 191/300 [01:03<00:47,  2.28it/s, failures=0, objective=261]     64%|██████▍   | 192/300 [01:04<00:51,  2.10it/s, failures=0, objective=261]     64%|██████▍   | 192/300 [01:04<00:51,  2.10it/s, failures=0, objective=261]     64%|██████▍   | 193/300 [01:04<00:51,  2.10it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     73%|███████▎  | 218/300 [01:10<00:40,  2.00it/s, failures=0, objective=244]     73%|███████▎  | 218/300 [01:10<00:40,  2.00it/s, failures=0, objective=244]     73%|███████▎  | 219/300 [01:10<00:40,  2.00it/s, failures=0, objective=244]     73%|███████▎  | 220/300 [01:11<00:40,  1.99it/s, failures=0, objective=244]     73%|███████▎  | 220/300 [01:11<00:40,  1.99it/s, failures=0, objective=245]     74%|███████▎  | 221/300 [01:11<00:39,  1.99it/s, failures=0, objective=245]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     65%|██████▍   | 194/300 [01:05<00:52,  2.00it/s, failures=0, objective=261]     65%|██████▍   | 194/300 [01:05<00:52,  2.00it/s, failures=0, objective=261]     65%|██████▌   | 195/300 [01:05<00:52,  2.00it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     74%|███████▍  | 222/300 [01:12<00:39,  1.96it/s, failures=0, objective=245]     74%|███████▍  | 222/300 [01:12<00:39,  1.96it/s, failures=0, objective=245]     74%|███████▍  | 223/300 [01:12<00:39,  1.96it/s, failures=0, objective=245]     75%|███████▍  | 224/300 [01:13<00:36,  2.08it/s, failures=0, objective=245]     75%|███████▍  | 224/300 [01:13<00:36,  2.08it/s, failures=0, objective=245]     75%|███████▌  | 225/300 [01:13<00:36,  2.08it/s, failures=0, objective=245]     75%|███████▌  | 226/300 [01:14<00:38,  1.93it/s, failures=0, objective=245]     75%|███████▌  | 226/300 [01:14<00:38,  1.93it/s, failures=0, objective=245]     76%|███████▌  | 227/300 [01:14<00:37,  1.93it/s, failures=0, objective=245]     76%|███████▌  | 228/300 [01:15<00:34,  2.08it/s, failures=0, objective=245]     76%|███████▌  | 228/300 [01:15<00:34,  2.08it/s, failures=0, objective=245]     76%|███████▋  | 229/300 [01:15<00:34,  2.08it/s, failures=0, objective=245]     77%|███████▋  | 230/300 [01:16<00:31,  2.24it/s, failures=0, objective=245]     77%|███████▋  | 230/300 [01:16<00:31,  2.24it/s, failures=0, objective=245]     77%|███████▋  | 231/300 [01:16<00:30,  2.24it/s, failures=0, objective=245]     77%|███████▋  | 232/300 [01:17<00:34,  1.97it/s, failures=0, objective=245]     77%|███████▋  | 232/300 [01:17<00:34,  1.97it/s, failures=0, objective=245]     78%|███████▊  | 233/300 [01:17<00:34,  1.97it/s, failures=0, objective=245]     78%|███████▊  | 234/300 [01:18<00:34,  1.93it/s, failures=0, objective=245]     78%|███████▊  | 234/300 [01:18<00:34,  1.93it/s, failures=0, objective=245]     78%|███████▊  | 235/300 [01:18<00:33,  1.93it/s, failures=0, objective=245]     79%|███████▊  | 236/300 [01:19<00:34,  1.87it/s, failures=0, objective=245]     79%|███████▊  | 236/300 [01:19<00:34,  1.87it/s, failures=0, objective=245]     79%|███████▉  | 237/300 [01:19<00:33,  1.87it/s, failures=0, objective=245]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     65%|██████▌   | 196/300 [01:06<00:53,  1.93it/s, failures=0, objective=261]     65%|██████▌   | 196/300 [01:06<00:53,  1.93it/s, failures=0, objective=261]     66%|██████▌   | 197/300 [01:06<00:53,  1.93it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     79%|███████▉  | 238/300 [01:21<00:33,  1.83it/s, failures=0, objective=245]     79%|███████▉  | 238/300 [01:21<00:33,  1.83it/s, failures=0, objective=245]     80%|███████▉  | 239/300 [01:21<00:33,  1.83it/s, failures=0, objective=245]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     66%|██████▌   | 198/300 [01:07<00:53,  1.92it/s, failures=0, objective=261]     66%|██████▌   | 198/300 [01:07<00:53,  1.92it/s, failures=0, objective=261]     66%|██████▋   | 199/300 [01:07<00:52,  1.92it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     80%|████████  | 240/300 [01:22<00:32,  1.87it/s, failures=0, objective=245]     80%|████████  | 240/300 [01:22<00:32,  1.87it/s, failures=0, objective=245]     80%|████████  | 241/300 [01:22<00:31,  1.87it/s, failures=0, objective=245]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     67%|██████▋   | 200/300 [01:08<00:52,  1.90it/s, failures=0, objective=261]     67%|██████▋   | 200/300 [01:08<00:52,  1.90it/s, failures=0, objective=261]     67%|██████▋   | 201/300 [01:08<00:52,  1.90it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     81%|████████  | 242/300 [01:23<00:30,  1.87it/s, failures=0, objective=245]     81%|████████  | 242/300 [01:23<00:30,  1.87it/s, failures=0, objective=245]     81%|████████  | 243/300 [01:23<00:30,  1.87it/s, failures=0, objective=245]     81%|████████▏ | 244/300 [01:23<00:27,  2.02it/s, failures=0, objective=245]     81%|████████▏ | 244/300 [01:23<00:27,  2.02it/s, failures=0, objective=245]     82%|████████▏ | 245/300 [01:23<00:27,  2.02it/s, failures=0, objective=245]     82%|████████▏ | 246/300 [01:24<00:23,  2.29it/s, failures=0, objective=245]     82%|████████▏ | 246/300 [01:24<00:23,  2.29it/s, failures=0, objective=245]     82%|████████▏ | 247/300 [01:24<00:23,  2.29it/s, failures=0, objective=245]     83%|████████▎ | 248/300 [01:25<00:21,  2.42it/s, failures=0, objective=245]     83%|████████▎ | 248/300 [01:25<00:21,  2.42it/s, failures=0, objective=245]     83%|████████▎ | 249/300 [01:25<00:21,  2.42it/s, failures=0, objective=245]     83%|████████▎ | 250/300 [01:26<00:23,  2.09it/s, failures=0, objective=245]     83%|████████▎ | 250/300 [01:26<00:23,  2.09it/s, failures=0, objective=245]     84%|████████▎ | 251/300 [01:26<00:23,  2.09it/s, failures=0, objective=245]     84%|████████▍ | 252/300 [01:27<00:24,  1.97it/s, failures=0, objective=245]     84%|████████▍ | 252/300 [01:27<00:24,  1.97it/s, failures=0, objective=245]     84%|████████▍ | 253/300 [01:27<00:23,  1.97it/s, failures=0, objective=245]     85%|████████▍ | 254/300 [01:28<00:22,  2.01it/s, failures=0, objective=245]     85%|████████▍ | 254/300 [01:28<00:22,  2.01it/s, failures=0, objective=245]     85%|████████▌ | 255/300 [01:28<00:22,  2.01it/s, failures=0, objective=245]     85%|████████▌ | 256/300 [01:29<00:21,  2.04it/s, failures=0, objective=245]     85%|████████▌ | 256/300 [01:29<00:21,  2.04it/s, failures=0, objective=246]     86%|████████▌ | 257/300 [01:29<00:21,  2.04it/s, failures=0, objective=246]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     67%|██████▋   | 202/300 [01:09<00:52,  1.88it/s, failures=0, objective=261]     67%|██████▋   | 202/300 [01:09<00:52,  1.88it/s, failures=0, objective=261]     68%|██████▊   | 203/300 [01:09<00:51,  1.88it/s, failures=0, objective=261]     68%|██████▊   | 204/300 [01:11<00:56,  1.71it/s, failures=0, objective=261]     68%|██████▊   | 204/300 [01:11<00:56,  1.71it/s, failures=0, objective=261]     68%|██████▊   | 205/300 [01:11<00:55,  1.71it/s, failures=0, objective=261]     69%|██████▊   | 206/300 [01:11<00:46,  2.02it/s, failures=0, objective=261]     69%|██████▊   | 206/300 [01:11<00:46,  2.02it/s, failures=0, objective=261]     69%|██████▉   | 207/300 [01:11<00:46,  2.02it/s, failures=0, objective=261]     69%|██████▉   | 208/300 [01:12<00:37,  2.44it/s, failures=0, objective=261]     69%|██████▉   | 208/300 [01:12<00:37,  2.44it/s, failures=0, objective=261]     70%|██████▉   | 209/300 [01:12<00:37,  2.44it/s, failures=0, objective=261]     70%|███████   | 210/300 [01:13<00:42,  2.10it/s, failures=0, objective=261]     70%|███████   | 210/300 [01:13<00:42,  2.10it/s, failures=0, objective=261]     70%|███████   | 211/300 [01:13<00:42,  2.10it/s, failures=0, objective=261]     71%|███████   | 212/300 [01:14<00:41,  2.11it/s, failures=0, objective=261]     71%|███████   | 212/300 [01:14<00:41,  2.11it/s, failures=0, objective=261]     71%|███████   | 213/300 [01:14<00:41,  2.11it/s, failures=0, objective=261]     71%|███████▏  | 214/300 [01:14<00:32,  2.62it/s, failures=0, objective=261]     71%|███████▏  | 214/300 [01:14<00:32,  2.62it/s, failures=0, objective=261]     72%|███████▏  | 215/300 [01:14<00:32,  2.62it/s, failures=0, objective=261]     72%|███████▏  | 216/300 [01:15<00:25,  3.23it/s, failures=0, objective=261]     72%|███████▏  | 216/300 [01:15<00:25,  3.23it/s, failures=0, objective=261]     72%|███████▏  | 217/300 [01:15<00:25,  3.23it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     86%|████████▌ | 258/300 [01:30<00:21,  1.98it/s, failures=0, objective=246]     86%|████████▌ | 258/300 [01:30<00:21,  1.98it/s, failures=0, objective=246]     86%|████████▋ | 259/300 [01:30<00:20,  1.98it/s, failures=0, objective=246]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     73%|███████▎  | 218/300 [01:16<00:30,  2.66it/s, failures=0, objective=261]     73%|███████▎  | 218/300 [01:16<00:30,  2.66it/s, failures=0, objective=261]     73%|███████▎  | 219/300 [01:16<00:30,  2.66it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     87%|████████▋ | 260/300 [01:31<00:20,  1.98it/s, failures=0, objective=246]     87%|████████▋ | 260/300 [01:31<00:20,  1.98it/s, failures=0, objective=246]     87%|████████▋ | 261/300 [01:31<00:19,  1.98it/s, failures=0, objective=246]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     73%|███████▎  | 220/300 [01:17<00:32,  2.49it/s, failures=0, objective=261]     73%|███████▎  | 220/300 [01:17<00:32,  2.49it/s, failures=0, objective=261]     74%|███████▎  | 221/300 [01:17<00:31,  2.49it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     87%|████████▋ | 262/300 [01:32<00:19,  1.96it/s, failures=0, objective=246]     87%|████████▋ | 262/300 [01:32<00:19,  1.96it/s, failures=0, objective=246]     88%|████████▊ | 263/300 [01:32<00:18,  1.96it/s, failures=0, objective=246]     88%|████████▊ | 264/300 [01:33<00:17,  2.08it/s, failures=0, objective=246]     88%|████████▊ | 264/300 [01:33<00:17,  2.08it/s, failures=0, objective=246]     88%|████████▊ | 265/300 [01:33<00:16,  2.08it/s, failures=0, objective=246]     89%|████████▊ | 266/300 [01:34<00:17,  1.99it/s, failures=0, objective=246]     89%|████████▊ | 266/300 [01:34<00:17,  1.99it/s, failures=0, objective=246]     89%|████████▉ | 267/300 [01:34<00:16,  1.99it/s, failures=0, objective=246]     89%|████████▉ | 268/300 [01:35<00:16,  1.95it/s, failures=0, objective=246]     89%|████████▉ | 268/300 [01:35<00:16,  1.95it/s, failures=0, objective=246]     90%|████████▉ | 269/300 [01:35<00:15,  1.95it/s, failures=0, objective=246]     90%|█████████ | 270/300 [01:36<00:16,  1.80it/s, failures=0, objective=246]     90%|█████████ | 270/300 [01:36<00:16,  1.80it/s, failures=0, objective=246]     90%|█████████ | 271/300 [01:37<00:16,  1.80it/s, failures=0, objective=246]     91%|█████████ | 272/300 [01:38<00:15,  1.82it/s, failures=0, objective=246]     91%|█████████ | 272/300 [01:38<00:15,  1.82it/s, failures=0, objective=246]     91%|█████████ | 273/300 [01:38<00:14,  1.82it/s, failures=0, objective=246]     91%|█████████▏| 274/300 [01:39<00:14,  1.79it/s, failures=0, objective=246]     91%|█████████▏| 274/300 [01:39<00:14,  1.79it/s, failures=0, objective=247]     92%|█████████▏| 275/300 [01:39<00:13,  1.79it/s, failures=0, objective=247]     92%|█████████▏| 276/300 [01:40<00:13,  1.83it/s, failures=0, objective=247]     92%|█████████▏| 276/300 [01:40<00:13,  1.83it/s, failures=0, objective=248]     92%|█████████▏| 277/300 [01:40<00:12,  1.83it/s, failures=0, objective=248]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     74%|███████▍  | 222/300 [01:17<00:32,  2.43it/s, failures=0, objective=261]     74%|███████▍  | 222/300 [01:17<00:32,  2.43it/s, failures=0, objective=261]     74%|███████▍  | 223/300 [01:17<00:31,  2.43it/s, failures=0, objective=261]     75%|███████▍  | 224/300 [01:18<00:27,  2.76it/s, failures=0, objective=261]     75%|███████▍  | 224/300 [01:18<00:27,  2.76it/s, failures=0, objective=261]     75%|███████▌  | 225/300 [01:18<00:27,  2.76it/s, failures=0, objective=261]     75%|███████▌  | 226/300 [01:19<00:32,  2.31it/s, failures=0, objective=261]     75%|███████▌  | 226/300 [01:19<00:32,  2.31it/s, failures=0, objective=261]     76%|███████▌  | 227/300 [01:19<00:31,  2.31it/s, failures=0, objective=261]     76%|███████▌  | 228/300 [01:20<00:32,  2.23it/s, failures=0, objective=261]     76%|███████▌  | 228/300 [01:20<00:32,  2.23it/s, failures=0, objective=261]     76%|███████▋  | 229/300 [01:20<00:31,  2.23it/s, failures=0, objective=261]     77%|███████▋  | 230/300 [01:21<00:29,  2.34it/s, failures=0, objective=261]     77%|███████▋  | 230/300 [01:21<00:29,  2.34it/s, failures=0, objective=261]     77%|███████▋  | 231/300 [01:21<00:29,  2.34it/s, failures=0, objective=261]     77%|███████▋  | 232/300 [01:22<00:28,  2.37it/s, failures=0, objective=261]     77%|███████▋  | 232/300 [01:22<00:28,  2.37it/s, failures=0, objective=261]     78%|███████▊  | 233/300 [01:22<00:28,  2.37it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     93%|█████████▎| 278/300 [01:41<00:12,  1.77it/s, failures=0, objective=248]     93%|█████████▎| 278/300 [01:41<00:12,  1.77it/s, failures=0, objective=248]     93%|█████████▎| 279/300 [01:41<00:11,  1.77it/s, failures=0, objective=248]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     78%|███████▊  | 234/300 [01:23<00:30,  2.13it/s, failures=0, objective=261]     78%|███████▊  | 234/300 [01:23<00:30,  2.13it/s, failures=0, objective=261]     78%|███████▊  | 235/300 [01:23<00:30,  2.13it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     93%|█████████▎| 280/300 [01:42<00:12,  1.66it/s, failures=0, objective=248]     93%|█████████▎| 280/300 [01:42<00:12,  1.66it/s, failures=0, objective=248]     94%|█████████▎| 281/300 [01:42<00:11,  1.66it/s, failures=0, objective=248]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     79%|███████▊  | 236/300 [01:24<00:30,  2.07it/s, failures=0, objective=261]     79%|███████▊  | 236/300 [01:24<00:30,  2.07it/s, failures=0, objective=261]     79%|███████▉  | 237/300 [01:24<00:30,  2.07it/s, failures=0, objective=261]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-     94%|█████████▍| 282/300 [01:44<00:10,  1.64it/s, failures=0, objective=248]     94%|█████████▍| 282/300 [01:44<00:10,  1.64it/s, failures=0, objective=248]     94%|█████████▍| 283/300 [01:44<00:10,  1.64it/s, failures=0, objective=248]     95%|█████████▍| 284/300 [01:44<00:08,  1.96it/s, failures=0, objective=248]     95%|█████████▍| 284/300 [01:44<00:08,  1.96it/s, failures=0, objective=248]     95%|█████████▌| 285/300 [01:44<00:07,  1.96it/s, failures=0, objective=248]     95%|█████████▌| 286/300 [01:45<00:06,  2.29it/s, failures=0, objective=248]     95%|█████████▌| 286/300 [01:45<00:06,  2.29it/s, failures=0, objective=248]     96%|█████████▌| 287/300 [01:45<00:05,  2.29it/s, failures=0, objective=248]     96%|█████████▌| 288/300 [01:46<00:05,  2.24it/s, failures=0, objective=248]     96%|█████████▌| 288/300 [01:46<00:05,  2.24it/s, failures=0, objective=248]     96%|█████████▋| 289/300 [01:46<00:04,  2.24it/s, failures=0, objective=248]     97%|█████████▋| 290/300 [01:47<00:04,  2.09it/s, failures=0, objective=248]     97%|█████████▋| 290/300 [01:47<00:04,  2.09it/s, failures=0, objective=248]     97%|█████████▋| 291/300 [01:47<00:04,  2.09it/s, failures=0, objective=248]     97%|█████████▋| 292/300 [01:48<00:03,  2.04it/s, failures=0, objective=248]     97%|█████████▋| 292/300 [01:48<00:03,  2.04it/s, failures=0, objective=248]     98%|█████████▊| 293/300 [01:48<00:03,  2.04it/s, failures=0, objective=248]     98%|█████████▊| 294/300 [01:49<00:02,  2.06it/s, failures=0, objective=248]     98%|█████████▊| 294/300 [01:49<00:02,  2.06it/s, failures=0, objective=248]     98%|█████████▊| 295/300 [01:49<00:02,  2.06it/s, failures=0, objective=248]     99%|█████████▊| 296/300 [01:50<00:02,  1.92it/s, failures=0, objective=248]     99%|█████████▊| 296/300 [01:50<00:02,  1.92it/s, failures=0, objective=252]     99%|█████████▉| 297/300 [01:50<00:01,  1.92it/s, failures=0, objective=252]     99%|█████████▉| 298/300 [01:51<00:01,  1.88it/s, failures=0, objective=252]     99%|█████████▉| 298/300 [01:51<00:01,  1.88it/s, failures=0, objective=253]    100%|█████████▉| 299/300 [01:51<00:00,  1.88it/s, failures=0, objective=253]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+     79%|███████▉  | 238/300 [01:25<00:31,  1.96it/s, failures=0, objective=261]     79%|███████▉  | 238/300 [01:25<00:31,  1.96it/s, failures=0, objective=261]     80%|███████▉  | 239/300 [01:25<00:31,  1.96it/s, failures=0, objective=261]     80%|████████  | 240/300 [01:26<00:30,  2.00it/s, failures=0, objective=261]     80%|████████  | 240/300 [01:26<00:30,  2.00it/s, failures=0, objective=262]     80%|████████  | 241/300 [01:26<00:29,  2.00it/s, failures=0, objective=262]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
       warnings.warn("The objective has been evaluated at this point before.")
-    100%|██████████| 300/300 [01:52<00:00,  1.75it/s, failures=0, objective=253]    100%|██████████| 300/300 [01:52<00:00,  1.75it/s, failures=0, objective=253]    100%|██████████| 300/300 [01:52<00:00,  2.66it/s, failures=0, objective=253]
+     81%|████████  | 242/300 [01:27<00:28,  2.01it/s, failures=0, objective=262]     81%|████████  | 242/300 [01:27<00:28,  2.01it/s, failures=0, objective=262]     81%|████████  | 243/300 [01:27<00:28,  2.01it/s, failures=0, objective=262]     81%|████████▏ | 244/300 [01:28<00:27,  2.03it/s, failures=0, objective=262]     81%|████████▏ | 244/300 [01:28<00:27,  2.03it/s, failures=0, objective=262]     82%|████████▏ | 245/300 [01:28<00:27,  2.03it/s, failures=0, objective=262]     82%|████████▏ | 246/300 [01:29<00:24,  2.20it/s, failures=0, objective=262]     82%|████████▏ | 246/300 [01:29<00:24,  2.20it/s, failures=0, objective=262]     82%|████████▏ | 247/300 [01:29<00:24,  2.20it/s, failures=0, objective=262]     83%|████████▎ | 248/300 [01:30<00:23,  2.22it/s, failures=0, objective=262]     83%|████████▎ | 248/300 [01:30<00:23,  2.22it/s, failures=0, objective=262]     83%|████████▎ | 249/300 [01:30<00:23,  2.22it/s, failures=0, objective=262]     83%|████████▎ | 250/300 [01:30<00:22,  2.20it/s, failures=0, objective=262]     83%|████████▎ | 250/300 [01:30<00:22,  2.20it/s, failures=0, objective=262]     84%|████████▎ | 251/300 [01:30<00:22,  2.20it/s, failures=0, objective=262]     84%|████████▍ | 252/300 [01:31<00:22,  2.13it/s, failures=0, objective=262]     84%|████████▍ | 252/300 [01:31<00:22,  2.13it/s, failures=0, objective=262]     84%|████████▍ | 253/300 [01:31<00:22,  2.13it/s, failures=0, objective=262]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     85%|████████▍ | 254/300 [01:32<00:21,  2.11it/s, failures=0, objective=262]     85%|████████▍ | 254/300 [01:32<00:21,  2.11it/s, failures=0, objective=262]     85%|████████▌ | 255/300 [01:32<00:21,  2.11it/s, failures=0, objective=262]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     85%|████████▌ | 256/300 [01:34<00:24,  1.82it/s, failures=0, objective=262]     85%|████████▌ | 256/300 [01:34<00:24,  1.82it/s, failures=0, objective=262]     86%|████████▌ | 257/300 [01:34<00:23,  1.82it/s, failures=0, objective=262]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     86%|████████▌ | 258/300 [01:35<00:21,  1.96it/s, failures=0, objective=262]     86%|████████▌ | 258/300 [01:35<00:21,  1.96it/s, failures=0, objective=262]     86%|████████▋ | 259/300 [01:35<00:20,  1.96it/s, failures=0, objective=262]     87%|████████▋ | 260/300 [01:36<00:21,  1.85it/s, failures=0, objective=262]     87%|████████▋ | 260/300 [01:36<00:21,  1.85it/s, failures=0, objective=263]     87%|████████▋ | 261/300 [01:36<00:21,  1.85it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     87%|████████▋ | 262/300 [01:37<00:20,  1.83it/s, failures=0, objective=263]     87%|████████▋ | 262/300 [01:37<00:20,  1.83it/s, failures=0, objective=263]     88%|████████▊ | 263/300 [01:37<00:20,  1.83it/s, failures=0, objective=263]     88%|████████▊ | 264/300 [01:38<00:17,  2.02it/s, failures=0, objective=263]     88%|████████▊ | 264/300 [01:38<00:17,  2.02it/s, failures=0, objective=263]     88%|████████▊ | 265/300 [01:38<00:17,  2.02it/s, failures=0, objective=263]     89%|████████▊ | 266/300 [01:39<00:15,  2.19it/s, failures=0, objective=263]     89%|████████▊ | 266/300 [01:39<00:15,  2.19it/s, failures=0, objective=263]     89%|████████▉ | 267/300 [01:39<00:15,  2.19it/s, failures=0, objective=263]     89%|████████▉ | 268/300 [01:39<00:13,  2.38it/s, failures=0, objective=263]     89%|████████▉ | 268/300 [01:39<00:13,  2.38it/s, failures=0, objective=263]     90%|████████▉ | 269/300 [01:39<00:13,  2.38it/s, failures=0, objective=263]     90%|█████████ | 270/300 [01:40<00:12,  2.46it/s, failures=0, objective=263]     90%|█████████ | 270/300 [01:40<00:12,  2.46it/s, failures=0, objective=263]     90%|█████████ | 271/300 [01:40<00:11,  2.46it/s, failures=0, objective=263]     91%|█████████ | 272/300 [01:41<00:12,  2.28it/s, failures=0, objective=263]     91%|█████████ | 272/300 [01:41<00:12,  2.28it/s, failures=0, objective=263]     91%|█████████ | 273/300 [01:41<00:11,  2.28it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     91%|█████████▏| 274/300 [01:42<00:12,  2.04it/s, failures=0, objective=263]     91%|█████████▏| 274/300 [01:42<00:12,  2.04it/s, failures=0, objective=263]     92%|█████████▏| 275/300 [01:42<00:12,  2.04it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     92%|█████████▏| 276/300 [01:43<00:12,  1.88it/s, failures=0, objective=263]     92%|█████████▏| 276/300 [01:43<00:12,  1.88it/s, failures=0, objective=263]     92%|█████████▏| 277/300 [01:43<00:12,  1.88it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     93%|█████████▎| 278/300 [01:45<00:13,  1.68it/s, failures=0, objective=263]     93%|█████████▎| 278/300 [01:45<00:13,  1.68it/s, failures=0, objective=263]     93%|█████████▎| 279/300 [01:45<00:12,  1.68it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     93%|█████████▎| 280/300 [01:46<00:11,  1.76it/s, failures=0, objective=263]     93%|█████████▎| 280/300 [01:46<00:11,  1.76it/s, failures=0, objective=263]     94%|█████████▎| 281/300 [01:46<00:10,  1.76it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     94%|█████████▍| 282/300 [01:48<00:11,  1.53it/s, failures=0, objective=263]     94%|█████████▍| 282/300 [01:48<00:11,  1.53it/s, failures=0, objective=263]     94%|█████████▍| 283/300 [01:48<00:11,  1.53it/s, failures=0, objective=263]     95%|█████████▍| 284/300 [01:49<00:09,  1.67it/s, failures=0, objective=263]     95%|█████████▍| 284/300 [01:49<00:09,  1.67it/s, failures=0, objective=263]     95%|█████████▌| 285/300 [01:49<00:09,  1.67it/s, failures=0, objective=263]     95%|█████████▌| 286/300 [01:49<00:07,  1.84it/s, failures=0, objective=263]     95%|█████████▌| 286/300 [01:49<00:07,  1.84it/s, failures=0, objective=263]     96%|█████████▌| 287/300 [01:49<00:07,  1.84it/s, failures=0, objective=263]     96%|█████████▌| 288/300 [01:51<00:06,  1.84it/s, failures=0, objective=263]     96%|█████████▌| 288/300 [01:51<00:06,  1.84it/s, failures=0, objective=263]     96%|█████████▋| 289/300 [01:51<00:05,  1.84it/s, failures=0, objective=263]     97%|█████████▋| 290/300 [01:51<00:05,  1.95it/s, failures=0, objective=263]     97%|█████████▋| 290/300 [01:51<00:05,  1.95it/s, failures=0, objective=263]     97%|█████████▋| 291/300 [01:51<00:04,  1.95it/s, failures=0, objective=263]     97%|█████████▋| 292/300 [01:53<00:04,  1.81it/s, failures=0, objective=263]     97%|█████████▋| 292/300 [01:53<00:04,  1.81it/s, failures=0, objective=263]     98%|█████████▊| 293/300 [01:53<00:03,  1.81it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     98%|█████████▊| 294/300 [01:54<00:03,  1.71it/s, failures=0, objective=263]     98%|█████████▊| 294/300 [01:54<00:03,  1.71it/s, failures=0, objective=263]     98%|█████████▊| 295/300 [01:54<00:02,  1.71it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     99%|█████████▊| 296/300 [01:56<00:02,  1.58it/s, failures=0, objective=263]     99%|█████████▊| 296/300 [01:56<00:02,  1.58it/s, failures=0, objective=263]     99%|█████████▉| 297/300 [01:56<00:01,  1.58it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+     99%|█████████▉| 298/300 [01:57<00:01,  1.63it/s, failures=0, objective=263]     99%|█████████▉| 298/300 [01:57<00:01,  1.63it/s, failures=0, objective=263]    100%|█████████▉| 299/300 [01:57<00:00,  1.63it/s, failures=0, objective=263]/Users/rp5/Documents/DeepHyper/deephyper/src/deephyper/skopt/optimizer/optimizer.py:820: UserWarning: The objective has been evaluated at this point before.
+      warnings.warn("The objective has been evaluated at this point before.")
+    100%|██████████| 300/300 [01:58<00:00,  1.67it/s, failures=0, objective=263]    100%|██████████| 300/300 [01:58<00:00,  1.67it/s, failures=0, objective=263]    100%|██████████| 300/300 [01:58<00:00,  2.54it/s, failures=0, objective=263]
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 189-191
+.. GENERATED FROM PYTHON SOURCE LINES 186-188
 
 .. code-block:: Python
 
@@ -358,93 +395,93 @@ The search runs for ``max_evals=300`` iterations.
       <tbody>
         <tr>
           <th>0</th>
+          <td>3</td>
           <td>6</td>
           <td>12</td>
-          <td>15</td>
+          <td>16</td>
           <td>17</td>
-          <td>19</td>
-          <td>20</td>
-          <td>24</td>
-          <td>25</td>
+          <td>18</td>
+          <td>21</td>
           <td>26</td>
           <td>27</td>
-          <td>191.0</td>
+          <td>31</td>
+          <td>177.0</td>
           <td>0</td>
           <td>DONE</td>
-          <td>0.015556</td>
-          <td>0.016203</td>
+          <td>0.013970</td>
+          <td>0.014726</td>
         </tr>
         <tr>
           <th>1</th>
-          <td>1</td>
+          <td>2</td>
+          <td>4</td>
+          <td>5</td>
           <td>7</td>
           <td>13</td>
-          <td>16</td>
           <td>19</td>
-          <td>21</td>
-          <td>23</td>
-          <td>24</td>
-          <td>27</td>
+          <td>22</td>
+          <td>25</td>
+          <td>28</td>
           <td>30</td>
-          <td>181.0</td>
+          <td>155.0</td>
           <td>1</td>
           <td>DONE</td>
-          <td>0.035443</td>
-          <td>0.036249</td>
+          <td>0.030732</td>
+          <td>0.031577</td>
         </tr>
         <tr>
           <th>2</th>
-          <td>10</td>
+          <td>3</td>
+          <td>4</td>
+          <td>6</td>
+          <td>7</td>
+          <td>8</td>
+          <td>12</td>
           <td>14</td>
-          <td>15</td>
-          <td>17</td>
-          <td>18</td>
+          <td>19</td>
           <td>20</td>
-          <td>24</td>
-          <td>25</td>
-          <td>27</td>
-          <td>28</td>
-          <td>198.0</td>
+          <td>26</td>
+          <td>119.0</td>
           <td>2</td>
           <td>DONE</td>
-          <td>0.049745</td>
-          <td>0.050325</td>
+          <td>0.040470</td>
+          <td>0.041046</td>
         </tr>
         <tr>
           <th>3</th>
-          <td>11</td>
-          <td>13</td>
-          <td>14</td>
+          <td>5</td>
+          <td>6</td>
+          <td>7</td>
+          <td>9</td>
+          <td>10</td>
           <td>16</td>
           <td>18</td>
           <td>19</td>
-          <td>24</td>
-          <td>26</td>
-          <td>28</td>
-          <td>29</td>
-          <td>198.0</td>
+          <td>21</td>
+          <td>25</td>
+          <td>136.0</td>
           <td>3</td>
           <td>DONE</td>
-          <td>0.064089</td>
-          <td>0.064661</td>
+          <td>0.049747</td>
+          <td>0.050385</td>
         </tr>
         <tr>
           <th>4</th>
-          <td>1</td>
-          <td>14</td>
+          <td>3</td>
+          <td>5</td>
+          <td>6</td>
+          <td>11</td>
+          <td>13</td>
           <td>16</td>
           <td>18</td>
-          <td>20</td>
-          <td>22</td>
           <td>23</td>
           <td>25</td>
-          <td>26</td>
-          <td>27</td>
-          <td>192.0</td>
+          <td>30</td>
+          <td>150.0</td>
           <td>4</td>
           <td>DONE</td>
-          <td>0.077750</td>
-          <td>0.078269</td>
+          <td>0.059143</td>
+          <td>0.059724</td>
         </tr>
         <tr>
           <th>...</th>
@@ -466,8 +503,7 @@ The search runs for ``max_evals=300`` iterations.
         </tr>
         <tr>
           <th>295</th>
-          <td>19</td>
-          <td>21</td>
+          <td>20</td>
           <td>23</td>
           <td>24</td>
           <td>25</td>
@@ -476,34 +512,34 @@ The search runs for ``max_evals=300`` iterations.
           <td>28</td>
           <td>29</td>
           <td>30</td>
-          <td>252.0</td>
+          <td>31</td>
+          <td>263.0</td>
           <td>295</td>
           <td>DONE</td>
-          <td>110.451081</td>
-          <td>110.451661</td>
+          <td>116.029499</td>
+          <td>116.030171</td>
         </tr>
         <tr>
           <th>296</th>
-          <td>12</td>
-          <td>14</td>
+          <td>11</td>
           <td>16</td>
-          <td>17</td>
-          <td>20</td>
+          <td>19</td>
           <td>22</td>
+          <td>23</td>
           <td>24</td>
-          <td>26</td>
+          <td>25</td>
+          <td>27</td>
           <td>28</td>
           <td>30</td>
-          <td>209.0</td>
+          <td>225.0</td>
           <td>296</td>
           <td>DONE</td>
-          <td>110.473861</td>
-          <td>110.474404</td>
+          <td>116.052359</td>
+          <td>116.053000</td>
         </tr>
         <tr>
           <th>297</th>
           <td>20</td>
-          <td>21</td>
           <td>23</td>
           <td>24</td>
           <td>25</td>
@@ -512,34 +548,34 @@ The search runs for ``max_evals=300`` iterations.
           <td>28</td>
           <td>29</td>
           <td>30</td>
-          <td>253.0</td>
+          <td>31</td>
+          <td>263.0</td>
           <td>297</td>
           <td>DONE</td>
-          <td>111.577984</td>
-          <td>111.578579</td>
+          <td>117.169291</td>
+          <td>117.169883</td>
         </tr>
         <tr>
           <th>298</th>
           <td>12</td>
-          <td>14</td>
-          <td>16</td>
+          <td>17</td>
           <td>18</td>
           <td>19</td>
-          <td>22</td>
-          <td>24</td>
+          <td>23</td>
           <td>26</td>
           <td>27</td>
           <td>29</td>
-          <td>207.0</td>
+          <td>30</td>
+          <td>31</td>
+          <td>232.0</td>
           <td>298</td>
           <td>DONE</td>
-          <td>111.600968</td>
-          <td>111.601481</td>
+          <td>117.188699</td>
+          <td>117.189303</td>
         </tr>
         <tr>
           <th>299</th>
           <td>20</td>
-          <td>21</td>
           <td>23</td>
           <td>24</td>
           <td>25</td>
@@ -548,11 +584,12 @@ The search runs for ``max_evals=300`` iterations.
           <td>28</td>
           <td>29</td>
           <td>30</td>
-          <td>253.0</td>
+          <td>31</td>
+          <td>263.0</td>
           <td>299</td>
           <td>DONE</td>
-          <td>112.907730</td>
-          <td>112.908327</td>
+          <td>118.302572</td>
+          <td>118.303206</td>
         </tr>
       </tbody>
     </table>
@@ -562,14 +599,14 @@ The search runs for ``max_evals=300`` iterations.
     <br />
     <br />
 
-.. GENERATED FROM PYTHON SOURCE LINES 192-196
+.. GENERATED FROM PYTHON SOURCE LINES 189-193
 
 Extracting the Best Parameters
 ------------------------------
 To recover the parameters corresponding to the best observed objective value,
 we can use :func:`deephyper.analysis.hpo.parameters_at_max`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 196-203
+.. GENERATED FROM PYTHON SOURCE LINES 193-200
 
 .. code-block:: Python
 
@@ -591,21 +628,21 @@ we can use :func:`deephyper.analysis.hpo.parameters_at_max`.
 
     Optimum values
     x0: 20.000
-    x1: 21.000
-    x2: 23.000
-    x3: 24.000
-    x4: 25.000
-    x5: 26.000
-    x6: 27.000
-    x7: 28.000
-    x8: 29.000
-    x9: 30.000
-    objective: 253.0
+    x1: 23.000
+    x2: 24.000
+    x3: 25.000
+    x4: 26.000
+    x5: 27.000
+    x6: 28.000
+    x7: 29.000
+    x8: 30.000
+    x9: 31.000
+    objective: 263.0
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 204-217
+.. GENERATED FROM PYTHON SOURCE LINES 201-214
 
 Visualization
 ---------------
@@ -621,7 +658,7 @@ We conclude with:
 These visualizations confirm that the optimizer progressively learns the
 structure of the monotonic constraint and approaches the theoretical optimum.
 
-.. GENERATED FROM PYTHON SOURCE LINES 217-225
+.. GENERATED FROM PYTHON SOURCE LINES 214-222
 
 .. code-block:: Python
 
@@ -645,14 +682,14 @@ structure of the monotonic constraint and approaches the theoretical optimum.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 226-230
+.. GENERATED FROM PYTHON SOURCE LINES 223-227
 
 Visualizing the Feasible Region and Evaluations
 -----------------------------------------------
 We now plot all evaluated points in the (x, y) plane, color-coded by
 objective value, along with the constraint boundary ``x + y = 10``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 230-266
+.. GENERATED FROM PYTHON SOURCE LINES 227-264
 
 .. code-block:: Python
 
@@ -692,6 +729,7 @@ objective value, along with the constraint boundary ``x + y = 10``.
     ax.set_xlabel(r"$x_i$")
     ax.set_yticks(list(range(n)), [str(i) for i in range(n)])
     ax.set_xticks(list(range(0, m, 2)), [str(i) for i in range(0, m, 2)])
+    plt.show()
 
 
 
@@ -701,19 +739,13 @@ objective value, along with the constraint boundary ``x + y = 10``.
    :class: sphx-glr-single-img
 
 
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-
-    [<matplotlib.axis.XTick object at 0x12c978a50>, <matplotlib.axis.XTick object at 0x12c9782d0>, <matplotlib.axis.XTick object at 0x14a26ec10>, <matplotlib.axis.XTick object at 0x14a26efd0>, <matplotlib.axis.XTick object at 0x14a26f390>, <matplotlib.axis.XTick object at 0x14a26f750>, <matplotlib.axis.XTick object at 0x14a26fb10>, <matplotlib.axis.XTick object at 0x14a26fed0>, <matplotlib.axis.XTick object at 0x14a2bc2d0>, <matplotlib.axis.XTick object at 0x14a2bc690>, <matplotlib.axis.XTick object at 0x14a2bca50>, <matplotlib.axis.XTick object at 0x14a2bce10>, <matplotlib.axis.XTick object at 0x14a2bd1d0>, <matplotlib.axis.XTick object at 0x14a2bd590>, <matplotlib.axis.XTick object at 0x14a2bd950>, <matplotlib.axis.XTick object at 0x14a2bdd10>]
 
 
 
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (1 minutes 54.009 seconds)
+   **Total running time of the script:** (2 minutes 0.512 seconds)
 
 
 .. _sphx_glr_download_examples_examples_bbo_plot_constrained_black_box_optimization_chained_sampler.py:

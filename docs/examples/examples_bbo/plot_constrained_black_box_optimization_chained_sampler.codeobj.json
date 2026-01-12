@@ -910,20 +910,36 @@
    "name": "ones"
   }
  ],
- "np.random.randint": [
+ "np.random.default_rng": [
   {
    "is_class": false,
    "is_explicit": false,
-   "module": "builtins",
-   "module_short": "builtins",
-   "name": "module.randint"
+   "module": "_cython_3_2_1",
+   "module_short": "_cython_3_2_1",
+   "name": "cython_function_or_method"
   },
   {
    "is_class": false,
    "is_explicit": false,
    "module": "numpy.random",
    "module_short": "numpy.random",
-   "name": "randint"
+   "name": "default_rng"
+  }
+ ],
+ "np.sort": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "sort"
   }
  ],
  "obj_vals": [
@@ -1735,6 +1751,22 @@
    "module": "matplotlib.pyplot",
    "module_short": "matplotlib.pyplot",
    "name": "get_cmap"
+  }
+ ],
+ "plt.show": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "matplotlib.pyplot",
+   "module_short": "matplotlib.pyplot",
+   "name": "show"
   }
  ],
  "plt.subplots": [

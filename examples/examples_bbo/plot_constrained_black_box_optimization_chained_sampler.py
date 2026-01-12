@@ -1,6 +1,6 @@
 r"""
-Constrained Black-Box Optimization with Custom Chained Sampler
-==============================================================
+Constrained Black-Box Optimization with Custom Sampler
+======================================================
 
 **Author(s)**: Romain Egele.
 
@@ -45,7 +45,7 @@ respecting monotonicity, the theoretical optimum is:
 
 DeepHyper offers several ways to incorporate constraints:
 
-#. **Custom chained sampler** *(this tutorial)*: constraints are enforced
+#. **Custom sampler** *(this tutorial)*: constraints are enforced
    directly when generating new candidate points.
 
 #. **Rejection sampling**:
@@ -64,7 +64,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as colors
 import numpy as np
 import pandas as pd
-
+from numpy.random import Generator
 from deephyper.analysis.hpo import (
     plot_search_trajectory_single_objective_hpo,
     parameters_at_max,
@@ -73,16 +73,14 @@ from deephyper.analysis.hpo import (
 from deephyper.hpo import HpProblem, CBO
 
 # %%
-# Custom Chained Sampler
-# ----------------------
+# Custom Sampler
+# --------------
 #
 # Because every :math:`x_i` must be strictly larger than :math:`x_{i-1}`, the
 # usual independent sampling over each variable would frequently violate the
 # constraint.
 #
-# Instead, we implement a *chained* sampler:
-# each :math:`x_k` is sampled conditionally so that enough "room" remains for
-# future variables. This ensures that:
+# Instead, we implement a custom sampler to ensure that:
 #
 # - all generated samples satisfy :math:`x_i < x_{i+1}` by construction;
 # - the sampler focuses on the feasible region, avoiding wasted evaluations.
@@ -94,23 +92,22 @@ print("optimum:", sum([m - i - 1 for i in range(n)]))
 
 pb = HpProblem()
 for i in range(n):
-    pb.add((i, m - n + i - 1), f"x{i}")
+    pb.add((i, m - n + i), f"x{i}")
+print(pb)
 
 
 def sampling_fn(size: int) -> list[dict]:
-    def sample_chain():
-        # Chain the sampling
-        vals = []
-        lo = 0
-        for k in range(n):
-            low = max(k, lo + 1 if k > 0 else 0)
-            high = m - n + k
-            v = np.random.randint(low, high - (n - 1 - k))  # keep room for future vars
-            vals.append(v)
-            lo = v
-        return {k: v for k, v in zip(pb.hyperparameter_names, vals)}
+    if n > m:
+        raise ValueError(f"Cannot sample {n} items from {m} elements.")
 
-    return [sample_chain() for _ in range(size)]
+    rng = np.random.default_rng(None)
+    indexes = np.arange(m)
+
+    def sample_one():
+        vals = np.sort(rng.choice(indexes, size=n, replace=False)).tolist()
+        return {k: v for k, v in zip(pb.hyperparameter_names, vals)}
+    
+    return [sample_one() for _ in range(size)]
 
 
 pb.set_sampling_fn(sampling_fn)
@@ -264,3 +261,4 @@ ax.set_ylabel(r"$i$")
 ax.set_xlabel(r"$x_i$")
 ax.set_yticks(list(range(n)), [str(i) for i in range(n)])
 ax.set_xticks(list(range(0, m, 2)), [str(i) for i in range(0, m, 2)])
+plt.show()

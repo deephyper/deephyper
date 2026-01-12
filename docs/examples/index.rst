@@ -165,7 +165,7 @@ Black-box optimization
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Constrained Black-Box Optimization with Custom Chained Sampler</div>
+      <div class="sphx-glr-thumbnail-title">Constrained Black-Box Optimization with Custom Sampler</div>
     </div>
 
 
