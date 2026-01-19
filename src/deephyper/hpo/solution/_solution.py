@@ -4,6 +4,7 @@ from typing import Any, Literal, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numpy import ndarray
+from numpy.typing import ArrayLike
 from pydantic import BaseModel, ConfigDict, Field
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import (
@@ -18,6 +19,47 @@ from deephyper.skopt.optimizer.acq_optimizer.pymoo_ga import GAPymooAcqOptimizer
 from deephyper.skopt.utils import cook_estimator
 
 logger = logging.getLogger(__name__)
+
+
+def prob_maximum_normal(
+    loc: ArrayLike,
+    scale: ArrayLike,
+    n_samples: int = 1000,
+    rng: int | None = None,
+):
+    r"""Estimates the probability of each Gaussian random variable to be the maximum.
+
+    For each input Gaussian random variable among C such random variables represented by their
+    mean and standard deviation, it estimate their probability of being the maximum along with
+    the standard error of this estimated probability.
+
+    .. math::
+
+        p_i \approx \mathbb{P}\!\left( i = \arg\min_{j\in[1,C]} f(x_j) \right)
+
+    where :math:`f(x_j) \sim \mathcal{N}(\mu_j, \sigma_j)`.
+
+    Args:
+        loc (ArrayLike):
+            an array of mean values of the gaussian random variables.
+        scale (ArrayLike):
+            an array of standard deviation values of the gaussian random variables.
+        n_samples (int):
+            the number of Monte-Carlo samples drawn for each candidate random variable.
+        rng (int, optional):
+            the random number generator.
+
+    Returns:
+        probs (np.ndarray), probs_se (np.ndarray): the estimated probability and the standard error
+        of this estimated probability respectively.
+    """
+    rng = np.random.default_rng(rng)
+    n_candidates = len(loc)
+    samples = rng.normal(loc[:], scale[:], size=(n_samples, n_candidates))
+    best_counts = np.argmax(samples, axis=1)
+    probs = np.bincount(best_counts.T) / n_samples
+    probs_se = np.sqrt(probs * (1 - probs) / n_samples)
+    return probs, probs_se
 
 
 class Solution(BaseModel):
