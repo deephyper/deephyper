@@ -1,13 +1,15 @@
 from collections import deque
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 
+from deephyper.hpo._problem import HpProblem
 from deephyper.hpo._search import Search
 from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
+from deephyper.stopper._stopper import Stopper
 
 __all__ = ["RegularizedEvolution"]
 
@@ -59,21 +61,25 @@ class RegularizedEvolution(Search):
 
         sample_size (int, optional):
             The number of samples to draw from the population. Defaults to ``10``.
+
+        max_trials_rejection_sampling (int):
+            The maximum number of trials for rejection sampling with resolving contraints. Defaults
+            to ``-1``.
     """
 
     def __init__(
         self,
-        problem,
-        random_state=None,
-        log_dir=".",
-        verbose=0,
-        stopper=None,
+        problem: HpProblem,
+        random_state: int | np.random.RandomState | None = None,
+        log_dir: str = ".",
+        verbose: int = 0,
+        stopper: Stopper | None = None,
         checkpoint_history_to_csv: bool = True,
-        solution_selection: Optional[
-            Literal["argmax_obs", "argmax_est"] | SolutionSelection
-        ] = None,
+        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection | None = None,
         population_size: int = 100,
         sample_size: int = 10,
+        max_trials_rejection_sampling: int = -1,
+        init_population: list[tuple[dict, Any]] | None = None,
     ):
         super().__init__(
             problem,
@@ -88,9 +94,14 @@ class RegularizedEvolution(Search):
         assert population_size > sample_size, "population_size must be greater than sample_size"
         self.population_size = population_size
         self.sample_size = sample_size
-        self._population = deque(maxlen=self.population_size)
+        if init_population is None:
+            init_population = []
+        self._population: deque[tuple[dict, Any]] = deque(
+            init_population, maxlen=self.population_size
+        )
+        self._max_trials_rejection_sampling = max_trials_rejection_sampling
 
-    def _ask(self, n: int = 1) -> List[Dict]:
+    def _ask(self, n: int = 1) -> list[dict[str, Any]]:
         """Ask the search for new configurations to evaluate.
 
         Args:
@@ -99,8 +110,6 @@ class RegularizedEvolution(Search):
         Returns:
             List[Dict]: a list of hyperparameter configurations to evaluate.
         """
-        space = self._problem.space
-
         # Random sampling
         if len(self._population) < self.population_size:
             import warnings
@@ -108,22 +117,15 @@ class RegularizedEvolution(Search):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-                new_samples = space.sample_configuration(size=n)
+                new_samples = self._problem.sample(size=n)
 
             if not (isinstance(new_samples, list)):
                 new_samples = [new_samples]
 
             for i, sample in enumerate(new_samples):
                 sample = dict(sample)
-                for hp_name in self._problem.hyperparameter_names:
-                    # If the parameter is inactive due to some conditions then we attribute the
-                    # lower bound value to break symmetries and enforce the same representation.
-                    if hp_name not in sample:
-                        sample[hp_name] = get_inactive_value_of_hyperparameter(space[hp_name])
 
-                    # Make sure to have JSON serializable values
-                    if type(sample[hp_name]).__module__ == np.__name__:
-                        sample[hp_name] = sample[hp_name].tolist()
+                self._set_inactive(sample)
 
                 new_samples[i] = sample
 
@@ -131,40 +133,41 @@ class RegularizedEvolution(Search):
         else:
             new_samples = []
             for i in range(n):
+                # Get a sample of parents from the population
                 samples_idxs = self._random_state.choice(
                     self.population_size, size=self.sample_size, replace=False
                 )
 
                 samples = [self._population[i] for i in samples_idxs]
 
+                # Select the parent
                 parent_sample = max(samples, key=lambda x: x[1])[0]
 
-                child_sample = parent_sample.copy()
-                active_hyperparameter_names = list(
-                    space.get_active_hyperparameters(
-                        deactivate_inactive_hyperparameters(child_sample, space)
+                # Produce the child
+                n_trials = 0
+                child_sample = self._mutate(parent_sample)
+
+                def is_not_max_trials():
+                    return (
+                        self._max_trials_rejection_sampling < 0
+                        or n_trials < self._max_trials_rejection_sampling
                     )
-                )
-                hp_name = self._random_state.choice(active_hyperparameter_names)
-                hp = space[hp_name]
-                hp_value = hp.rvs(size=None, random_state=space.random)
 
-                child_sample[hp_name] = hp_value
-                child_sample = dict(deactivate_inactive_hyperparameters(child_sample, space))
+                while is_not_max_trials() and not self._problem.is_feasible(child_sample):
+                    child_sample = self._mutate(parent_sample)
+                    n_trials += 1
 
-                for hp_name in self._problem.hyperparameter_names:
-                    # If the parameter is inactive due to some conditions then we attribute the
-                    # lower bound value to break symmetries and enforce the same representation.
-                    if hp_name not in child_sample:
-                        child_sample[hp_name] = get_inactive_value_of_hyperparameter(
-                            self._problem.space[hp_name]
+                # If we can't produce a feasible child for _max_trials_rejection_sampling
+                # Then we resample a new fresh child
+                if is_not_max_trials():
+                    new_samples.append(child_sample)
+                else:
+                    try:
+                        child_sample = self._problem.sample(size=1, strict=True)[0]
+                    except RuntimeError:
+                        raise RuntimeError(
+                            "Could not resolve constraints through rejection sampling!"
                         )
-
-                    # Make sure to have JSON serializable values
-                    if type(child_sample[hp_name]).__module__ == np.__name__:
-                        child_sample[hp_name] = child_sample[hp_name].tolist()
-
-                new_samples.append(child_sample)
 
         return new_samples
 
@@ -182,3 +185,34 @@ class RegularizedEvolution(Search):
             if isinstance(obj, str):
                 continue
             self._population.append((config, obj))
+
+    def _mutate(self, parent_sample: dict) -> dict:
+        space = self._problem.space
+        child_sample = parent_sample.copy()
+        active_hyperparameter_names = list(
+            space.get_active_hyperparameters(
+                deactivate_inactive_hyperparameters(child_sample, space)
+            )
+        )
+        hp_name = self._random_state.choice(active_hyperparameter_names)
+        hp = space[hp_name]
+        hp_value = hp.rvs(size=None, random_state=space.random)
+
+        child_sample[hp_name] = hp_value
+        child_sample = dict(deactivate_inactive_hyperparameters(child_sample, space))
+
+        self._set_inactive(child_sample)
+
+        return child_sample
+
+    def _set_inactive(self, sample: dict):
+        space = self._problem.space
+        for hp_name in self._problem.hyperparameter_names:
+            # If the parameter is inactive due to some conditions then we attribute the
+            # lower bound value to break symmetries and enforce the same repsresentation.
+            if hp_name not in sample:
+                sample[hp_name] = get_inactive_value_of_hyperparameter(space[hp_name])
+
+            # Make sure to have JSON serializable values
+            if type(sample[hp_name]).__module__ == np.__name__:
+                sample[hp_name] = sample[hp_name].tolist()
