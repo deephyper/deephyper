@@ -1,10 +1,13 @@
 import copy
 import warnings
 
+from numbers import Number
+
 import ConfigSpace as cs
 import ConfigSpace.hyperparameters as csh
 import numpy as np
 import pandas as pd
+
 from sklearn.utils import check_random_state
 
 import deephyper.skopt
@@ -224,6 +227,7 @@ class HpProblem:
 
         self.constraint_fn = None
         self.sampling_fn = None
+        self.repair_fn = None
 
     def __str__(self):
         return repr(self)
@@ -359,7 +363,7 @@ class HpProblem:
     def sample(
         self,
         size: int = 1,
-        strict: bool = False,
+        strict: bool = True,
         max_trials: int = 5,
         n_jobs: int = 1,
     ) -> list[dict]:
@@ -432,8 +436,12 @@ class HpProblem:
             # Convert batch into DataFrame only once
             df = pd.DataFrame(batch)
 
-            # Apply constraint ---
+            # Apply constraint
             accept_mask = self.constraint_fn(df)
+
+            # If constraint value is defined numerically to leverage "constraint domination"
+            if isinstance(accept_mask[0], Number):
+                accept_mask = ~(accept_mask > 0)
 
             df = df[accept_mask]
             accepted.extend(df.to_dict(orient="records"))
@@ -457,7 +465,7 @@ class HpProblem:
             accepted = accepted[:size]
 
             if len(accepted) < size:
-                return RuntimeError(f"The number of samples is less than {size=}!")
+                raise RuntimeError(f"The number of samples is less than {size=}!")
 
         return accepted
 
@@ -556,3 +564,43 @@ class HpProblem:
     def set_sampling_fn(self, fn: callable):
         """Set the sampling function."""
         self.sampling_fn = fn
+
+    def is_feasible(self, x: pd.DataFrame | dict) -> pd.Series | bool:
+        """Check if a configuration or set of configurations are feasible w.r.t. constraints."""
+        if isinstance(x, dict):
+            df = pd.DataFrame([x])
+        else:
+            df = x
+
+        # If a constraint function was defined it has priority
+        if self.constraint_fn is not None:
+            accept = self.constraint_fn(df)
+
+        # If there are forbidden or conditions defined through ConfigSpace
+        elif len(self._space.forbidden_clauses) > 0 or len(self._space.conditions) > 0:
+            accept = []
+            for conf in df.to_dict(orient="records"):
+                cs_conf = cs.Configuration(self._space, conf)
+                try:
+                    cs_conf.check_valid_configuration()
+                except ValueError:
+                    accept.append(False)
+                else:
+                    accept.append(True)
+            accept = pd.Series(accept)
+
+        # Finally case if there is no constraints
+        else:
+            accept = pd.Series(np.ones(len(df)))
+
+        if isinstance(x, dict):
+            return accept.values.tolist()[0]
+        else:
+            return accept
+
+    def set_repair_fn(self, fn: callable):
+        """Set the repair function."""
+        self.repair_fn = fn
+
+    def repair(self, x: pd.DataFrame | dict) -> pd.DataFrame | dict:
+        raise NotImplementedError
