@@ -2,9 +2,11 @@ from typing import Literal, Optional
 
 import numpy as np
 
+from deephyper.hpo._problem import HpProblem
 from deephyper.hpo._search import Search
 from deephyper.hpo._solution import SolutionSelection
 from deephyper.hpo.utils import get_inactive_value_of_hyperparameter
+from deephyper.stopper._stopper import Stopper
 
 __all__ = ["RandomSearch"]
 
@@ -52,15 +54,13 @@ class RandomSearch(Search):
 
     def __init__(
         self,
-        problem,
-        random_state=None,
-        log_dir=".",
-        verbose=0,
-        stopper=None,
+        problem: HpProblem,
+        random_state: int | np.random.RandomState | None = None,
+        log_dir: str = ".",
+        verbose: int = 0,
+        stopper: Stopper | None = None,
         checkpoint_history_to_csv: bool = True,
-        solution_selection: Optional[
-            Literal["argmax_obs", "argmax_est"] | SolutionSelection
-        ] = None,
+        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection | None = None,
     ):
         super().__init__(
             problem,
@@ -86,7 +86,7 @@ class RandomSearch(Search):
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            new_samples = self._problem.space.sample_configuration(size=n)
+            new_samples = self._problem.sample(size=n)
 
         if not (isinstance(new_samples, list)):
             new_samples = [new_samples]
