@@ -1,4 +1,5 @@
 import copy
+from typing import Callable
 import warnings
 
 from numbers import Number
@@ -614,7 +615,7 @@ class HpProblem:
         else:
             return accept
 
-    def set_repair_fn(self, fn: callable):
+    def set_repair_fn(self, fn: Callable):
         """Set the repair function."""
         # x: pd.DataFrame | dict -> pd.DataFrame | dict
         self.repair_fn = fn

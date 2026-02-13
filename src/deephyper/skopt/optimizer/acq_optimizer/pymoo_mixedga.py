@@ -1,6 +1,7 @@
 """Mixed-Integer genetic-algorithm optimization for the acquisition function."""
 
 from collections import OrderedDict
+from typing import Callable
 
 import numpy as np
 from ConfigSpace.forbidden import ForbiddenClause, ForbiddenConjunction, ForbiddenRelation
@@ -22,8 +23,8 @@ from pymoo.termination.max_eval import MaximumFunctionCallTermination
 from pymoo.termination.max_gen import MaximumGenerationTermination
 from pymoo.termination.robust import RobustTermination
 from sklearn.utils import check_random_state
-
 import deephyper.skopt.space as skopt_space
+from deephyper.skopt.space.space import Space
 
 Config.warnings["not_compiled"] = False
 
@@ -31,10 +32,7 @@ Config.warnings["not_compiled"] = False
 # https://pymoo.org/interface/problem.html
 
 
-Config.warnings["not_compiled"] = False
-
-
-def convert_space_to_pymoo_mixed(space):
+def convert_space_to_pymoo_mixed(space: Space) -> OrderedDict[str, Real | Integer | Choice]:
     """Convert a DeepHyper space to a pymoo space.
 
     Optimizing in the source input space.
@@ -43,7 +41,7 @@ def convert_space_to_pymoo_mixed(space):
         space (Space): from deephyper.skopt.space.
 
     Returns:
-        dict: a pymoo space.
+        OrderedDict[str, Real | Integer | Choice]: a pymoo space.
     """
     pymoo_space = OrderedDict()
     for dim in space.dimensions:
@@ -69,7 +67,8 @@ class PyMOOMixedVectorizedProblem(Problem):
         super().__init__(
             vars=convert_space_to_pymoo_mixed(space),
             n_obj=1,
-            n_eq_constr=int(constraint_fn is not None),
+            n_eq_constr=int(constraint_fn is not None), # H
+            # n_ieq_constr=int(constraint_fn is not None), # G
             **kwargs,
         )
         self.space = space
@@ -92,7 +91,12 @@ class PyMOOMixedVectorizedProblem(Problem):
         out["F"] = y
 
         if self.constraint_fn is not None:
+            # Equality Constraints
             out["H"] = self.constraint_fn(x)
+
+            # Inequality Constraints
+            # out["G"] = self.constraint_fn(x)
+            # print(np.asarray(x[0]).tolist(), out["F"][0], out["G"][0])
 
 
 class PyMOOMixedElementWiseProblem(ElementwiseProblem):
@@ -140,10 +144,11 @@ class DefaultSingleObjectiveMixedTermination(DefaultMixedTermination):
 class ConfigSpaceRepair(Repair):
     """Pymoo repair operator for ConfigSpace conditions/forbiddens."""
 
-    def __init__(self, space):
+    def __init__(self, space: Space, repair_fn: Callable | None=None):
         super().__init__()
         self.space = space
         self.config_space = self.space.config_space
+        self.repair_fn = repair_fn
 
     def _do(self, problem, x, **kwargs):
         def deactivate_inactive_dimensions(x: dict):
@@ -192,6 +197,10 @@ class ConfigSpaceRepair(Repair):
                 )
             )
 
+        # Custom repair function defined in the HpProblem
+        if self.repair_fn:
+            x = self.repair_fn(x)
+
         return x
 
 
@@ -200,13 +209,14 @@ class MixedGAPymooAcqOptimizer:
 
     def __init__(
         self,
-        space,
-        x_init,
-        y_init,
+        space: Space,
+        x_init: np.ndarray | list[list],
+        y_init: np.ndarray | list,
         pop_size: int = 100,
-        random_state=None,
-        termination_kwargs=None,
-        constraint_fn=None,
+        random_state: int | np.random.RandomState | None=None,
+        termination_kwargs: dict | None=None,
+        constraint_fn: Callable | None=None,
+        repair_fn = Callable | None,
     ):
         self.space = space
         self.x_init = np.array(x_init)
@@ -224,6 +234,7 @@ class MixedGAPymooAcqOptimizer:
         default_termination_kwargs.update(termination_kwargs)
         self.termination_kwargs = default_termination_kwargs
         self.constraint_fn = constraint_fn
+        self.repair_fn = repair_fn
 
     def minimize(self, acq_func):
         """Minimize the acquisition function."""
@@ -240,7 +251,7 @@ class MixedGAPymooAcqOptimizer:
             self.y_init,
         )
 
-        repair = ConfigSpaceRepair(self.space)
+        repair = ConfigSpaceRepair(self.space, self.repair_fn)
         eliminate_duplicates = MixedVariableDuplicateElimination()
         algorithm = MixedVariableGA(
             pop_size=self.pop_size,

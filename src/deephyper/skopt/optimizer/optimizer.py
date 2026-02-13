@@ -1044,7 +1044,7 @@ class Optimizer(object):
                     )
 
                     pop_size = self._pymoo_pop_size
-
+                    
                     idx_sorted = np.argsort(values)
                     x_init = [Xsample[i] for i in idx_sorted[:pop_size]]
                     x_init = list(
@@ -1057,21 +1057,29 @@ class Optimizer(object):
 
                     # Constraint handling
                     constraint_fn = None
-                    if (
-                        self.space.custom_sampler is not None
-                        and hasattr(self.space.custom_sampler, "constraint_fn")
-                        and self.space.custom_sampler.constraint_fn
-                    ):
-                        inner_fn = self.space.custom_sampler.constraint_fn
-                        dim_names = self.space.dimension_names
+                    repair_fn = None
+                    if self.space.custom_sampler is not None:
+                        if hasattr(self.space.custom_sampler, "constraint_fn") and self.space.custom_sampler.constraint_fn:
+                            inner_fn = self.space.custom_sampler.constraint_fn
+                            dim_names = self.space.dimension_names
 
-                        def constraint_fn(x):
-                            df = pd.DataFrame(x, columns=dim_names)
-                            accept = inner_fn(df)
-                            G = (~accept.values).astype(float).reshape(-1)
-                            return G
+                            def constraint_fn(x):
+                                df = pd.DataFrame(x, columns=dim_names)
+                                accept = inner_fn(df)
+                                if isinstance(accept[0], numbers.Number):
+                                    G = accept.values.astype(float).reshape(-1)
+                                else:
+                                    G = (~accept.values).astype(float).reshape(-1)
+                                return G
 
-                        constraint_fn = constraint_fn
+                            constraint_fn = constraint_fn
+
+                        if hasattr(self.space.custom_sampler, "repair_fn") and self.space.custom_sampler.repair_fn:
+                            def repair_fn(x):
+                                df = pd.DataFrame(map(lambda xi: xi, x), columns=dim_names)
+                                df = self.space.custom_sampler.repair_fn(df)
+                                df = np.asarray(df.to_dict(orient="records"))
+                                return df
 
                     acq_opt = MixedGAPymooAcqOptimizer(
                         space=self.space,
@@ -1082,6 +1090,7 @@ class Optimizer(object):
                         random_state=self.rng.randint(0, np.iinfo(np.int32).max),
                         termination_kwargs=self._pymoo_termination_kwargs,
                         constraint_fn=constraint_fn,
+                        repair_fn=repair_fn,
                     )
 
                     args = (est, np.min(yi), cand_acq_func, False, self.acq_func_kwargs)
@@ -1109,7 +1118,14 @@ class Optimizer(object):
                         def constraint_fn(x):
                             df = pd.DataFrame(x, columns=dim_names)
                             accept = inner_fn(df)
-                            G = (~accept.values).astype(float).reshape(-1)
+                            # Check if we directly have constraints function values or just booleans
+                            if isinstance(accept[0], numbers.Number):
+                                G = accept.values.astype(float).reshape(-1)
+                            else:
+                                # The user defined a function returning a boolean
+                                # True: The constraint is valid
+                                # False: The constraint is invalid
+                                G = (~accept.values).astype(float).reshape(-1)
                             return G
 
                         constraint_fn = constraint_fn
