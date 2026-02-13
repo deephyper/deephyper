@@ -1,8 +1,8 @@
 from collections import deque
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 import numpy as np
-
+import pandas as pd
 from ConfigSpace.util import deactivate_inactive_hyperparameters
 
 from deephyper.hpo._problem import HpProblem
@@ -125,7 +125,7 @@ class RegularizedEvolution(Search):
             for i, sample in enumerate(new_samples):
                 sample = dict(sample)
 
-                self._set_inactive(sample)
+                sample = self._set_inactive(sample)
 
                 new_samples[i] = sample
 
@@ -201,11 +201,14 @@ class RegularizedEvolution(Search):
         child_sample[hp_name] = hp_value
         child_sample = dict(deactivate_inactive_hyperparameters(child_sample, space))
 
-        self._set_inactive(child_sample)
+        child_sample = self._set_inactive(child_sample)
+
+        child_sample = self._repair(child_sample)
 
         return child_sample
 
     def _set_inactive(self, sample: dict):
+        sample = sample.copy()
         space = self._problem.space
         for hp_name in self._problem.hyperparameter_names:
             # If the parameter is inactive due to some conditions then we attribute the
@@ -216,3 +219,13 @@ class RegularizedEvolution(Search):
             # Make sure to have JSON serializable values
             if type(sample[hp_name]).__module__ == np.__name__:
                 sample[hp_name] = sample[hp_name].tolist()
+        return sample
+
+    def _repair(self, sample: dict):
+        sample = sample.copy()
+        if self._problem.repair_fn is None:
+            return sample
+
+        df = pd.DataFrame([sample])
+        df = self._problem.repair_fn(df)
+        return df.to_dict(orient="records")[0]
