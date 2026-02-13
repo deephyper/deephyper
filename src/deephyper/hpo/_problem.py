@@ -459,6 +459,18 @@ class HpProblem:
             else:
                 batch_size = int((size - len(accepted)) / ratio_accept + 0.5)
 
+        # Apply repair if available
+        if self.repair_fn:
+            if len(accepted) < size:
+                # Sample a batch
+                batch = sample_fn(size - len(accepted))
+
+                # Convert batch into DataFrame only once
+                df = pd.DataFrame(batch)
+
+                df = self.repair_fn(df)
+                accepted.extend(df.to_dict(orient="records"))
+
         # If constraints are too strict, return what we have (or raise)
         # You can choose to raise if you need strictly size samples
         if strict:
@@ -600,7 +612,5 @@ class HpProblem:
 
     def set_repair_fn(self, fn: callable):
         """Set the repair function."""
+        # x: pd.DataFrame | dict -> pd.DataFrame | dict
         self.repair_fn = fn
-
-    def repair(self, x: pd.DataFrame | dict) -> pd.DataFrame | dict:
-        raise NotImplementedError
