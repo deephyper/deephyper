@@ -6,8 +6,8 @@ import logging
 import os
 import pathlib
 import time
-from typing import Any, Dict, List, Literal, Optional
 from inspect import iscoroutinefunction
+from typing import Any, Dict, List, Literal, Optional
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ from deephyper.analysis.hpo import (
     get_mask_of_rows_without_failures,
     read_results_from_csv,
 )
-from deephyper.evaluator import Evaluator, HPOJob, MaximumJobsSpawnReached, JobStatus
+from deephyper.evaluator import Evaluator, HPOJob, JobStatus, MaximumJobsSpawnReached
 from deephyper.evaluator.callback import TqdmCallback
 from deephyper.hpo._problem import HpProblem
 from deephyper.hpo._solution import (
@@ -25,8 +25,8 @@ from deephyper.hpo._solution import (
     Solution,
     SolutionSelection,
 )
-from deephyper.stopper import Stopper
 from deephyper.skopt.moo import non_dominated_set
+from deephyper.stopper import Stopper
 
 __all__ = ["Search", "SearchHistory"]
 
@@ -239,6 +239,37 @@ class SearchHistory:
             for job, pf in zip(self.jobs, self.pareto_efficient):
                 job.pareto_efficient = pf
 
+    def check_objective_convergence(self, objective_tol: float | None, window: int = 20):
+        """Check if an optimization has converged based on objective tolerance.
+
+        It will evaluate the average positive improvement over a window of most recent objectives.
+
+        Args:
+            objectives (list[float]):
+                Sequence of objective values.
+
+            objective_tol (float, optional):
+                Minimum significant improvement. If the absolute improvement
+                stays below this threshold over the last `window` steps, we
+                declare convergence.
+
+            window (int):
+                Number of recent improvements to examine.
+
+        Return:
+            bool: True if converged, False otherwise.
+        """
+        if objective_tol is None or len(self.jobs) <= window:
+            return False
+
+        recent = [j.objective for j in self.jobs[-window:] if not isinstance(j.objective, str)]
+        if len(recent) < window:
+            return False
+
+        improvements = [max(recent[i] - recent[i - 1], 0) for i in range(1, window)]
+        has_converged = sum(improvements) / (window - 1) < objective_tol
+        return has_converged
+
 
 class Search(abc.ABC):
     """Base class search/optimization algorithms.
@@ -274,15 +305,13 @@ class Search(abc.ABC):
 
     def __init__(
         self,
-        problem,
-        random_state=None,
+        problem: HpProblem,
+        random_state: int | np.random.RandomState | None = None,
         log_dir: str = ".",
         verbose: int = 0,
-        stopper: Optional[Stopper] = None,
+        stopper: Stopper | None = None,
         checkpoint_history_to_csv: bool = True,
-        solution_selection: Optional[
-            Literal["argmax_obs", "argmax_est"] | SolutionSelection
-        ] = None,
+        solution_selection: Literal["argmax_obs", "argmax_est"] | SolutionSelection | None = None,
         checkpoint_restart: bool = False,
     ):
         # get the __init__ parameters
@@ -441,6 +470,7 @@ class Search(abc.ABC):
         max_evals: int = -1,
         timeout: Optional[int | float] = None,
         max_evals_strict: bool = False,
+        objective_tol: float | None = None,
     ) -> pd.DataFrame:
         """Execute the search algorithm.
 
@@ -457,6 +487,8 @@ class Search(abc.ABC):
             max_evals_strict (bool, optional): If ``True`` the search will not spawn more than
                 ``max_evals`` jobs. Defaults to ``False``.
 
+            objective_tol (float, optional): ...
+
         Returns:
             pd.DataFrame: A pandas DataFrame containing the evaluations performed or ``None`` if the
                 search could not evaluate any configuration.
@@ -472,6 +504,8 @@ class Search(abc.ABC):
                     timestamps of the submission and gathering of the job.
         """
         logger.info(f"Starting search with {type(self).__name__}")
+
+        self._objective_tol = objective_tol
 
         # Configure evaluator
         # if a callable is directly passed wrap it around the serial evaluator
@@ -605,9 +639,19 @@ class Search(abc.ABC):
         # Update the number of evals in case the `search.search(...)` was previously called
         max_evals = max_evals if max_evals < 0 else max_evals + num_evals()
 
+        # Stopping criteria
+        objective_tol = self._objective_tol
+
+        def stopping_criteria() -> bool:
+            return (
+                not self.stopped
+                and (max_evals < 0 or num_evals() < max_evals)
+                and not self.history.check_objective_convergence(objective_tol, window=20)
+            )
+
         n_ask = self._evaluator.num_workers
 
-        while not self.stopped and (max_evals < 0 or num_evals() < max_evals):
+        while stopping_criteria():
             new_batch = self.ask(n_ask)
 
             logger.info(f"Submitting {len(new_batch)} configurations...")
