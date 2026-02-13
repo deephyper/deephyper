@@ -173,7 +173,7 @@ def test_rejection_sampling_basic():
 
     pb.set_constraint_fn(constraint_fn)
 
-    samples = pb.sample(size=100)
+    samples = pb.sample(size=100, strict=False)
     df = pd.DataFrame(samples)
     assert all(df["x"] >= 9)
 

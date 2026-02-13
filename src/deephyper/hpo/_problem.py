@@ -379,6 +379,8 @@ class HpProblem:
         Returns:
             list[dict]: the list of sampled configurations.
         """
+        if size < 1:
+            raise ValueError(f"{size=} should be > 0")
 
         def _sample_dimension(dim, i, n_samples, random_state, out):
             """Wrapper to sample dimension for joblib parallelization."""
@@ -391,6 +393,8 @@ class HpProblem:
                 )
                 if sample_with_config_space:
                     samples = self._space.sample_configuration(size=size)
+                    if size == 1:
+                        samples = [samples]
                     samples = [dict(s) for s in samples]
                 else:
                     # Regular sampling without transfer learning from flat search space
@@ -592,7 +596,7 @@ class HpProblem:
         elif len(self._space.forbidden_clauses) > 0 or len(self._space.conditions) > 0:
             accept = []
             for conf in df.to_dict(orient="records"):
-                cs_conf = cs.Configuration(self._space, conf)
+                cs_conf = cs.Configuration(self._space, conf, allow_inactive_with_values=True)
                 try:
                     cs_conf.check_valid_configuration()
                 except ValueError:
