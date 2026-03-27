@@ -10,6 +10,7 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.utils import check_random_state
 from sklearn.compose import TransformedTargetRegressor
+from sklearn.neural_network import MLPRegressor
 
 from deephyper.ensemble.aggregator._aggregator import Aggregator
 from deephyper.ensemble.selector._selector import Selector
@@ -70,25 +71,24 @@ class ERMGreedySelector(Selector):
         self.random_state = check_random_state(random_state)
         self.verbose = verbose
 
-        self.erm_model = ExtraTreesRegressor(min_samples_leaf=4)
-
+        # self.erm_model = ExtraTreesRegressor(min_samples_leaf=4)
         # self.erm_model = LinearRegression()
         # self.erm_model = Pipeline(
         #     [
-        #         # ("poly", PolynomialFeatures(degree=2)),
-        #         (
-        #             "linear",
-        #             # TransformedTargetRegressor(Ridge(), func=np.log1p, inverse_func=np.expm1),
-        #             TransformedTargetRegressor(
-        #                 RandomForestRegressor(),
-        #                 # Ridge(),
-        #                 # transformer=QuantileTransformer(
-        #                 #     n_quantiles=1000, output_distribution="uniform"
-        #                 # ),
-        #             ),
-        #         ),
+        #         ("poly", PolynomialFeatures(degree=2)),
+        #         ("linear", Ridge(fit_intercept=False)),
         #     ]
         # )
+        self.erm_model = MLPRegressor(
+            hidden_layer_sizes=(100, 100,),
+            learning_rate_init=0.001,
+            max_iter=10_000,
+            verbose=True,
+            n_iter_no_change=100,
+        )
+        self.erm_model = TransformedTargetRegressor(
+            regressor=self.erm_model, transformer=QuantileTransformer(output_distribution="uniform")
+        )
 
     def _aggregate(self, y_predictors: np.ndarray, weights: List = None):
         return self.aggregator.aggregate(y_predictors, weights)
