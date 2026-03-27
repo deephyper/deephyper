@@ -35,6 +35,7 @@ class PyMOORealProblem(Problem):
         out["F"] = y
 
         if self.constraint_fn is not None:
+            # "H" are equality constraints
             out["H"] = self.constraint_fn(x)
 
 

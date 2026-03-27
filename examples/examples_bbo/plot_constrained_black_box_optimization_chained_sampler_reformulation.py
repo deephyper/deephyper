@@ -96,8 +96,9 @@ else:
 print("optimum:", optimum_value)
 
 pb = HpProblem()
-for i in range(n):
-    pb.add((i, m - n + i), f"x{i}")
+pb.add((0, m-n), "g0")
+for i in range(1, n):
+    pb.add((1, m - n + 1), f"g{i}")
 print(pb)
 
 
@@ -109,8 +110,10 @@ def sampling_fn(size: int) -> list[dict]:
     indexes = np.arange(m)
 
     def sample_one():
-        vals = np.sort(rng.choice(indexes, size=n, replace=False)).tolist()
-        return {f"x{i}": v for i, v in zip(range(n), vals)}
+        # Sample in x_i space then map to g_i space
+        vals = np.sort(rng.choice(indexes, size=n, replace=False))
+        vals[1:] = vals[1:] - vals[:-1]
+        return {f"g{i}": v for i, v in zip(range(n), vals.tolist())}
 
     return [sample_one() for _ in range(size)]
 
@@ -131,8 +134,9 @@ pb.set_sampling_fn(sampling_fn)
 
 def constraint_fn1(df: pd.DataFrame) -> pd.Series:
     """Returns booleans for equality constraint."""
-    x = df[[f"x{i}" for i in range(n)]].to_numpy()
-    violations = (x[:, :-1] < x[:, 1:]).all(axis=1)
+    g = df[[f"g{i}" for i in range(n)]].to_numpy()
+    x = np.cumsum(g, axis=1)
+    violations = (x < m).all(axis=1) & (x[:, :-1] < x[:, 1:]).all(axis=1)
     return pd.Series(violations, index=df.index)
 
 
@@ -145,6 +149,18 @@ def constraint_fn2(df: pd.DataFrame) -> pd.Series:
 
 pb.set_constraint_fn(constraint_fn1)
 
+def repair_fn(df: pd.DataFrame | dict) -> pd.DataFrame | dict:
+    g_columns = [f"g{i}" for i in range(n)]
+    g = df[g_columns].to_numpy()
+    x = np.cumsum(g, axis=1)
+    x = np.clip(x, np.arange(n), m-n+np.arange(n))
+    x[:, 1:] = x[:, 1:] - x[:, :-1]
+    g = x
+    df[g_columns] = g
+    return df
+
+pb.set_repair_fn(repair_fn)
+
 
 def f(job):
     """Objective function: maximize sum(x_i)."""
@@ -152,9 +168,9 @@ def f(job):
     accept = constraint_fn1(df)
     if all(accept):
         if MAX_SUM:
-            return sum([job.parameters[f"x{i}"] for i in range(n)])
+            return sum(np.cumsum([job.parameters[f"g{i}"] for i in range(n)]))
         else:
-            return -sum([job.parameters[f"x{i}"] for i in range(n)])
+            return -sum(np.cumsum([job.parameters[f"g{i}"] for i in range(n)]))
     else:
         return "F_constraint"
 
@@ -180,10 +196,10 @@ def make_search():
         pb,
         surrogate_model="ET",
         surrogate_model_kwargs={
-            "max_features": "sqrt",
+            # "max_features": "sqrt",
             # "min_samples_split": 2,
             # "min_samples_leaf": 1,
-            "bootstrap": True,
+            # "bootstrap": True,
         },
         acq_optimizer="mixedga",
         acq_optimizer_kwargs={
@@ -194,15 +210,14 @@ def make_search():
         },
         acq_func_kwargs={
             # Exploration/Exploitation mechanism
-            "kappa": 1.96,
-            # "scheduler": {
-            #     "type": "periodic-exp-decay",
-            #     "period": 20,
-            #     "kappa_final": 0.01,
-            # },
+            "kappa": 10.96,
+            "scheduler": {
+                "type": "periodic-exp-decay",
+                "period": 20,
+                "kappa_final": 0.01,
+            },
         },
         n_initial_points=10,
-        initial_points=[pb.default_configuration],
         objective_scaler="identity",
         verbose=1,
     )
@@ -234,6 +249,13 @@ results
 # ------------------------------
 # To recover the parameters corresponding to the best observed objective value,
 # we can use :func:`deephyper.analysis.hpo.parameters_at_max`.
+
+g_columns = [f"p:g{i}" for i in range(n)]
+x_columns = [f"p:x{i}" for i in range(n)]
+
+g = results[g_columns].to_numpy()
+results[x_columns] = np.cumsum(g, axis=1)
+results.drop(columns=g_columns, inplace=True)
 
 parameters, objective = parameters_at_max(results)
 print("\nOptimum values")

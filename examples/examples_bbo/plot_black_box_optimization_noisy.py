@@ -7,7 +7,7 @@ Noisy Black-Box Optimization
 In this tutorial, we show you how to manage **noisy** `black-box optimization (Wikipedia) <https://en.wikipedia.org/wiki/Derivative-free_optimization>`_ (a.k.a., derivative-free optimization) with DeepHyper.
 
 Black-box optimization is a field of optimization research where an objective function :math:`f(x) = y \in \mathbb{R}` is optimized only based on input-output observations :math:`\{ (x_1,y_1), \ldots, (x_n, y_n) \}`.
- 
+
 Let's start by installing DeepHyper!
 """
 
@@ -59,6 +59,7 @@ def f(job):
     obs = np.random.binomial(n=1, p=p)
     return obs
 
+
 # %%
 # Search Space of Input Variables
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -79,7 +80,7 @@ problem
 # %%
 # Evaluator Interface
 # -------------------
-# 
+#
 # DeepHyper uses an API called :class:`deephyper.evaluator.Evaluator` to distribute the computation of black-box functions and adapt to different backends (e.g., threads, processes, MPI, Ray). An ``Evaluator`` object wraps the black-box function ``f`` that we want to optimize. Then a ``method`` parameter is used to select the backend and ``method_kwargs`` defines some available options of this backend.
 #
 #
@@ -95,19 +96,18 @@ from deephyper.evaluator.callback import TqdmCallback
 evaluator = Evaluator.create(
     f,
     method="thread",
-    method_kwargs={
-        "num_workers": 1,
-        "callbacks": [TqdmCallback()]
-    },
+    method_kwargs={"num_workers": 1, "callbacks": [TqdmCallback()]},
 )
 
-print(f"Evaluator has {evaluator.num_workers} available worker{'' if evaluator.num_workers == 1 else 's'}")
+print(
+    f"Evaluator has {evaluator.num_workers} available worker{'' if evaluator.num_workers == 1 else 's'}"
+)
 
 # %%
 # Search Algorithm
 # ----------------
-# 
-# The next step is to define the search algorithm that we want to use. Here, we choose :class:`deephyper.hpo.CBO` (Centralized Bayesian Optimization) which is a sampling based Bayesian optimization strategy. 
+#
+# The next step is to define the search algorithm that we want to use. Here, we choose :class:`deephyper.hpo.CBO` (Centralized Bayesian Optimization) which is a sampling based Bayesian optimization strategy.
 # This algorithm has the advantage of being asynchronous which is crutial to keep a good utilization of the resources when the number of available workers increases.
 # We also choose, how to optimize the acquisition function of the Bayesian optimization with ``"ga"`` (i.e., continuous Genetic Algorithm).
 #
@@ -130,13 +130,14 @@ def create_search():
     )
     return search
 
+
 max_evals = 300
 search = create_search()
 results = search.search(evaluator, max_evals)
 
 # %%
 # Finally, let us visualize the results. The ``search(...)`` returns a DataFrame also saved locally under ``results.csv`` (in case of crash we don't want to lose the possibly expensive evaluations already performed).
-# 
+#
 # The DataFrame contains the usual columns:
 #
 # 1. the optimized hyperparameters: such as :math:`x` with name ``p:x``.
@@ -159,7 +160,9 @@ results
 from deephyper.analysis.hpo import parameters_at_max
 
 
-parameters, objective = parameters_at_max(results, column="sol.objective", prefix="sol.p:", n_last=20)
+parameters, objective = parameters_at_max(
+    results, column="sol.objective", prefix="sol.p:", n_last=20
+)
 print("\nEstimated Optimum values")
 print("x:", parameters["x"])
 print("objective:", objective)
